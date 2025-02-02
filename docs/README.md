@@ -9,13 +9,13 @@ title:
 
 [comment]: # "This is the standard layout for the project, but you can clean this and use your own template"
 
-# Project Title
+# HDL Code Generation using LLMs
 
 #### Team
 
-- eNumber, Name, [email](mailto:name@email.com)
-- eNumber, Name, [email](mailto:name@email.com)
-- eNumber, Name, [email](mailto:name@email.com)
+- E/19/205, Sahan Nimantha, [email](mailto:name@email.com)
+- E/19/210, Jaliya Kumarasiri, [email](mailto:name@email.com)
+- E/19/455, Vidura Yashan, [email](mailto:name@email.com)
 
 #### Supervisors
 
