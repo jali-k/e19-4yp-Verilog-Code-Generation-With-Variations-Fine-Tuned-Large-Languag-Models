@@ -13,14 +13,15 @@ title:
 
 #### Team
 
-- E/19/205, Sahan Nimantha, [email](mailto:name@email.com)
-- E/19/210, Jaliya Kumarasiri, [email](mailto:name@email.com)
-- E/19/455, Vidura Yashan, [email](mailto:name@email.com)
+- E/19/205, Sahan Nimantha, [email](mailto:e19205eng.pdn.ac.lk)
+- E/19/210, Jaliya Kumarasiri, [email](mailto:e19210@eng.pdn.ac.lk)
+- E/19/455, Vidura Yashan, [email](mailto:e19455@eng.pdn.ac.lk)
 
 #### Supervisors
 
-- Name, [email](mailto:name@eng.pdn.ac.lk)
-- Name, [email](mailto:name@eng.pdn.ac.lk)
+- Dr. Isuru Nawinne, [email](mailto:isurunawinne@eng.pdn.ac.lk)
+- Prof. Roshan G. Ragel, [email](mailto:roshanr@eng.pdn.ac.lk)
+- Dr. Damayanthi Herath, [email](mailto:damayanthiherath@eng.pdn.ac.lk)
 
 #### Table of content
 
