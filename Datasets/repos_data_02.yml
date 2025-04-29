@@ -1,0 +1,1022 @@
+- code: |
+    module TOP(CLK, RST_X, IN, OUT);
+      input CLK, RST_X;
+      input [7:0] IN;
+      output [7:0] OUT;
+
+      reg [7:0] state;
+      reg [7:0] cnt;
+      
+      reg [7:0] ncnt;
+      reg [7:0] nstate;
+      reg ctrljump;
+
+      always @* begin
+
+        case(state)
+          0: begin
+            ncnt = 0;
+            ctrljump = 1;
+            if(ctrljump) begin
+              OUT = 8'h0;
+              nstate = 1;
+            end
+          end
+          
+          1: begin
+            ncnt = cnt + 1;
+            ctrljump = cnt > 7;
+            if(ctrljump) begin
+              OUT = cnt;
+              nstate = 2;
+            end
+          end
+          
+          2: begin
+            ncnt = cnt + 2;
+            ctrljump = cnt > 20;
+            if(ctrljump) begin
+              OUT = cnt - 8;
+              nstate = 0;
+            end
+          end
+        endcase
+      end
+      
+      always @(posedge CLK) begin
+        if(!RST_X) begin
+          state <= 0;
+          ncnt <= 0;
+        end else begin
+          state <= nstate;
+          cnt <= ncnt;
+        end
+      end
+      
+    endmodule
+  prompt: "Write a Verilog module named 'TOP' that implements a finite state machine with three states. It updates an 8-bit output 'OUT' based on a counter 'cnt' and transitions between states depending on 'cnt' values. Include asynchronous reset and combinational logic for next state and counter logic."
+- code: |
+    module TOP(IN1,SEL);
+      input IN1,SEL;
+      reg bit;
+
+      always @* begin
+          bit <= func1(IN1,SEL);
+      end
+
+      function func1;
+        input in1;
+        input sel;
+        case(sel)
+            'h0:
+              func1 = in1;
+            default:
+              func1 = 1'b0;
+        endcase
+      endfunction
+
+    /*
+      always @* begin
+        case(SEL)
+            'h0:
+              bit = IN1;
+            default:
+              bit = 1'b0;
+        endcase
+      end
+    */
+
+    endmodule
+  prompt: "Write a Verilog module that uses a function to implement conditional logic based on a select signal. The function 'func1' takes two inputs and returns the first input if the select is 0, otherwise returns 0. Use the function output to drive a register."
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt;
+      always @(posedge CLK) begin
+        if(RST) begin
+          cnt <= 0;
+        end else begin
+          case(cnt)
+            'h0, 'h1, 'h2: begin
+              cnt <= cnt + 1;
+            end
+            'hff: begin
+              cnt <= 0;
+            end
+            default: begin
+              cnt <= cnt + 1;
+            end
+          endcase
+        end
+      end
+    endmodule
+  prompt: "Write a Verilog module that increments an 8-bit counter on every positive clock edge, with a reset. The counter has special behavior: if it is 0, 1, or 2, it increments normally; if it reaches 0xFF, it resets to 0; otherwise, it continues incrementing."
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt;
+      always @(posedge CLK) begin
+        if(RST) begin
+          cnt <= 0;
+        end else begin
+          casex(cnt)
+            'b00: begin
+              cnt <= cnt + 1;
+            end
+            'b1x: begin
+              cnt <= 0;
+            end
+            default: begin
+              cnt <= cnt + 1;
+            end
+          endcase
+        end
+      end
+    endmodule
+  prompt: "Write a Verilog module with an 8-bit counter that uses a casex statement to increment the counter or reset it based on specific bit patterns in the counter value."
+
+- code: |
+    module TOP(CLK, RST_X);
+      input CLK;
+      input RST_X;
+      reg [3:0] cnt;
+
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          cnt <= 0;
+        end else begin
+          cnt <= cnt + 1;
+        end
+      end
+
+    endmodule
+  prompt: "Write a Verilog module for a 4-bit counter that increments on each positive clock edge and resets on a negative edge of an active-low reset signal."
+
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt;
+
+      always @(posedge CLK or negedge RST) begin
+        if(RST) begin
+          cnt <= 'd0;
+        end else begin
+          cnt <= cnt + 1'sd1;
+        end
+      end
+
+    endmodule
+  prompt: "Write a Verilog module that defines an 8-bit counter with a synchronous active-high reset and uses signed constant to increment the counter."
+
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt;
+
+      always @(posedge CLK or negedge RST) begin
+        if(RST) begin
+          cnt <= 'd0;
+        end else begin
+          cnt <= cnt + 8'd1;
+        end
+      end
+
+    endmodule
+  prompt: "Write a Verilog module with an 8-bit counter that increments by 1 using an 8-bit unsigned decimal constant. The counter resets synchronously when reset is asserted."
+
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt;
+
+      always @(posedge CLK or negedge RST) begin
+        if(RST) begin
+          cnt <= 'd0;
+        end else begin
+          cnt <= cnt + 'd1;
+        end
+      end
+
+    endmodule
+  prompt: "Implement an 8-bit Verilog counter that resets on active-high reset and increments on each clock cycle using a decimal constant."
+
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      reg [31:0] cnt;
+      always @(posedge CLK) begin
+        if(RST) begin
+          cnt <= 0;
+        end else begin
+          case(cnt)
+            0 : begin
+              cnt <= 0 + 1;
+            end
+            1 : begin
+              cnt <= 1 + 1;
+            end
+            2 : begin
+              cnt <= 2 + 1;
+            end
+            3 : begin
+              cnt <= 3 + 1;
+            end
+            4 : begin
+              cnt <= 4 + 1;
+            end
+            5 : begin
+              cnt <= 5 + 1;
+            end
+            6 : begin
+              cnt <= 6 + 1;
+            end
+            7 : begin
+              cnt <= 7 + 1;
+            end
+            8 : begin
+              cnt <= 8 + 1;
+            end
+            9 : begin
+              cnt <= 9 + 1;
+            end
+            10 : begin
+              cnt <= 10 + 1;
+            end
+            11 : begin
+              cnt <= 11 + 1;
+            end
+            12 : begin
+              cnt <= 12 + 1;
+            end
+            13 : begin
+              cnt <= 13 + 1;
+            end
+            14 : begin
+              cnt <= 14 + 1;
+            end
+            15 : begin
+              cnt <= 15 + 1;
+            end
+            16 : begin
+              cnt <= 16 + 1;
+            end
+            17 : begin
+              cnt <= 17 + 1;
+            end
+            18 : begin
+              cnt <= 18 + 1;
+            end
+            19 : begin
+              cnt <= 19 + 1;
+            end
+            20 : begin
+              cnt <= 20 + 1;
+            end
+            21 : begin
+              cnt <= 21 + 1;
+            end
+            22 : begin
+              cnt <= 22 + 1;
+            end
+            23 : begin
+              cnt <= 23 + 1;
+            end
+            24 : begin
+              cnt <= 24 + 1;
+            end
+            25 : begin
+              cnt <= 25 + 1;
+            end
+            26 : begin
+              cnt <= 26 + 1;
+            end
+            27 : begin
+              cnt <= 27 + 1;
+            end
+            28 : begin
+              cnt <= 28 + 1;
+            end
+            29 : begin
+              cnt <= 29 + 1;
+            end
+            30 : begin
+              cnt <= 30 + 1;
+            end
+            31 : begin
+              cnt <= 31 + 1;
+            end
+            default: begin
+              cnt <= cnt + 1;
+            end
+          endcase
+        end
+      end
+    endmodule
+  prompt: "Create a Verilog module that uses a 32-bit counter and a case statement to explicitly define increment operations for counter values from 0 to 31, with a default case to continue incrementing."
+- code: |
+    `timescale 1ns / 1ps
+
+    module main #
+    (
+     parameter STEP = 10
+    )
+    (
+     input CLK,
+     input RST,
+     output reg [7:0] LED
+     );
+
+      localparam DELAY = 10;
+
+      always @(posedge CLK) begin
+        if(RST) begin
+          LED <= 0;
+        end else begin
+          LED <= #DELAY LED + 1;
+        end
+      end
+    endmodule
+  prompt: Create a Verilog testbench and explain the delayed LED increment behavior.
+
+- code: |
+    module \1234 
+      (
+       \CLK~ , // "\CLK~"
+       LE$D, // LE$D
+       \1234RST*%&  // "\1234RST*%&"
+       );
+
+      input \CLK~ , \1234RST*%& ;
+      output LE$D;
+
+      genvar i, j;
+      generate for(i=0; i<4; i=i+1) begin: \1stLoop
+        for(j=0; j<4; j=j+1) begin: \2ndLoop
+          wire [7:0] tmp;
+          assign tmp = i * j;
+        end
+      end endgenerate
+
+      wire [7:0] rslt;
+      assign rslt = \1stLoop [0].\2ndLoop [1].tmp;
+
+    endmodule
+  prompt: Explain how generate loops and unusual identifiers (escaped names) are used in this Verilog code.
+
+- code: |
+    module TOP(CLK, RST_X);
+      input CLK;
+      input RST_X;
+      reg [3:0] cnt;
+
+      function [3:0] inc;
+        input [3:0] in;
+        begin
+          if(&inc) begin
+            inc = 0;
+          end else begin
+            inc = in + 1;
+          end
+        end
+      endfunction
+
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          cnt <= 0;
+        end else begin
+          cnt <= inc(cnt);
+        end
+      end
+
+    endmodule
+  prompt: Analyze the use of a Verilog function inside an always block and describe what the circuit does.
+
+- code: |
+    module TOP(CLK, RST_X,
+               IN0, IN1, IN2, IN3, IN4,
+               OUT0, OUT1, OUT2, OUT3, OUT4);
+
+      parameter WA = 32;
+      parameter WD = 4;
+      parameter LEN = 8;
+
+      input CLK, RST_X;
+
+      input [WD-1:0] IN0;
+      input [WD-1:0] IN1;
+      input [WD-1:0] IN2;
+      input [WD-1:0] IN3;
+      input [WD-1:0] IN4;
+
+      output [WD-1:0] OUT0;
+      output [WD-1:0] OUT1;
+      output [WD-1:0] OUT2;
+      output [WD-1:0] OUT3;
+      output [WD-1:0] OUT4;
+
+      wire [WD-1:0] in [0:4];
+      wire [WD-1:0] out [0:4];
+
+      assign in[0] = IN0;
+      assign in[1] = IN1;
+      assign in[2] = IN2;
+      assign in[3] = IN3;
+      assign in[4] = IN4;
+
+      assign OUT0 = out[0];
+      assign OUT1 = out[1];
+      assign OUT2 = out[2];
+      assign OUT3 = out[3];
+      assign OUT4 = out[4];
+
+      reg [2:0] cnt;
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          cnt <= 0;
+        end else begin
+          cnt <= (cnt < 4)? cnt + 1 : 0;
+        end
+      end
+
+      genvar i;
+      generate for(i=0; i<5; i=i+1) begin: loop
+        SUB #(WD)
+        sub (CLK, RST_X, in[cnt], out[i]);
+      end endgenerate
+
+    endmodule
+
+    module SUB(CLK, RST_X, subin, subout);
+      parameter WD = 8;
+      input CLK;
+      input RST_X;
+      input [WD-1:0] subin;
+      output [WD-1:0] subout;
+
+      genvar j;
+      generate for(j=0; j<WD; j=j+1) begin: subloop
+        if(j == 0) begin: _subt
+          wire tmp;
+          assign subout[j] = subin[j];
+          assign tmp = ~subin[j];
+        end else begin: _subf
+          wire tmp;
+          if(j == 1) begin
+            assign subout[j] = subloop[j-1]._subt.tmp ^ subin[j];
+          end else begin
+            assign subout[j] = subloop[j-1]._subf.tmp ^ subin[j];
+          end
+        end
+      end endgenerate
+
+    endmodule
+  prompt: Describe the behavior of the dynamic input selection and bitwise transformation in the nested generate structure.
+
+- code: |
+    module TOP(CLK, RST_X, subin, subout);
+      parameter WD = 4;
+      input CLK;
+      input RST_X;
+      input [WD-1:0] subin;
+      output [WD-1:0] subout;
+
+      genvar j;
+      generate for(j=0; j<WD; j=j+1) begin: subloop
+        if(j == 0) begin: _subt
+          wire tmp;
+          assign subout[j] = subin[j];
+          assign tmp = ~subin[j];
+        end else begin: _subf
+          wire tmp;
+          if(j == 1) begin
+            assign subout[j] = subloop[j-1]._subt.tmp ^ subin[j];
+          end else begin
+            assign subout[j] = subloop[j-1]._subf.tmp ^ subin[j];
+          end
+        end
+      end endgenerate
+
+    endmodule
+  prompt: Explain the bitwise operation chain constructed using generate loops for 4-bit input transformation.
+
+- code: |
+    module TOP
+      (
+       input [3:0] VAL,
+       input [3:0] in0, in1, in2,
+       input in3, in4, in5,
+       output [3:0] LED0, LED1, LED2, LED3,
+       output LED4, LED5
+       );
+
+      SUB 
+        # (.MODE(0))
+        inst_sub0 (VAL[0], LED0[0]),
+        inst_sub1 (VAL[1], LED0[1]),
+        inst_sub2 (VAL[2], LED0[2]),
+        inst_sub3 (VAL[3], LED0[3]);
+
+      SUB 
+        # (.MODE(0))
+        inst_sub4[3:0] (VAL, LED1),
+        inst_sub5[3:0] (VAL, LED2);
+
+      and U0[3:0] (LED3, in0, in1, in2);
+      and (LED4, in3, in4, in5), (LED5, in3, in4, in5);
+    endmodule
+
+    module SUB #
+      (
+       parameter MODE = 0
+       )
+      (
+       input VAL,
+       output LED
+       );
+      assign LED = ~VAL & MODE;
+    endmodule
+  prompt: Analyze the module instantiation with array and multiple-output logic using gate-level operators and parameterized modules.
+
+- code: |
+    module TOP
+    (
+     input CLK,
+     input RST,
+     output [7:0] LED
+     );
+
+      // empty parameter
+      led #
+        (
+         )
+      inst_led
+        (
+         .CLK(CLK),
+         .RST(RST),
+         .LED(LED)
+         );
+
+    endmodule
+
+    module led #
+      (
+       parameter STEP = 10
+       )
+      (
+       input CLK,
+       input RST,
+       output reg [7:0] LED
+       );
+
+      reg [31:0] count;
+
+      always @(posedge CLK) begin
+        if(RST) begin
+          count <= 0;
+          LED <= 0;
+        end else begin
+          if(count == STEP - 1) begin
+            count <= 0;
+            LED <= LED + 1;
+          end else begin
+            count <= count + 1;
+          end
+        end
+      end
+    endmodule
+  prompt: Create a testbench for the parameterized LED counter and explain how count controls the LED update.
+
+- code: |
+    `default_nettype none
+    `include "led.v"
+
+    module main
+    (
+     input CLK,
+     input RST,
+     output [7:0] LED
+     );
+
+      led #
+        (
+         .STEP(`STEP)
+         )
+      inst_led
+        (
+         .CLK(CLK),
+         .RST(RST),
+         .LED(LED)
+         );
+
+    endmodule
+  prompt: Show how the `include` and parameter macros integrate with the LED module, and describe the effect of `default_nettype none`.
+- code: |
+    module led #
+      (
+       parameter STEP = 10
+       )
+      (
+       input CLK,
+       input RST,
+       output reg [7:0] LED
+       );
+      
+      reg [31:0] count;
+      
+      always @(posedge CLK) begin
+        if(RST) begin
+          count <= 0;
+          LED <= 0;
+        end else begin
+          if(count == STEP - 1) begin
+            count <= 0;
+            LED <= LED + 1;
+          end else begin
+            count <= count + 1;
+          end
+        end
+      end
+    endmodule
+  prompt: <Prompt for Problem 1>
+
+- code: |
+    module TOP(CLK, RST_X, IN, OUT);
+      input CLK, RST_X;
+      input [7:0] IN;
+      output [7:0] OUT;
+      reg [7:0] OUT;
+
+      reg [7:0] mem [0:255];
+      
+      genvar i;
+      generate for(i=0; i<4; i=i+1) begin
+        always @(posedge CLK) begin
+          mem[IN][2*(i+1)-1:2*i] <= mem[IN][2*(i+1)-1:2*i] + 2'b1;
+        end
+      end endgenerate
+      
+    endmodule
+  prompt: <Prompt for Problem 2>
+
+- code: |
+    module TOP(CLK, RST, reg1, OUT);
+      input CLK, RST;
+      reg [1:0] reg1;
+      reg [6:4] reg3;
+      wire [2:1] in1;
+      wire [11:10] in2;
+
+
+      assign in1[2:1] = reg3[6:5];
+
+      always @(posedge CLK or negedge RST) begin
+        reg1 <= in1[2:1];
+      end
+
+      always @(posedge CLK or negedge RST) begin
+        if(RST) begin
+          reg3 <= 3'd0;
+        end else begin
+          reg3 <= 3'd1;
+        end
+      end
+
+    endmodule
+  prompt: <Prompt for Problem 3>
+
+- code: |
+    module TOP 
+      (
+       CLK, RST,
+       in1, in2, in3, in4,
+       out0, out1, out2, out3, out4, out5, out6, out7
+       );
+      
+      input CLK, RST;
+      input in1, in2, in3, in4;
+      output out0, out1, out2, out3, out4, out5, out6, out7;
+     
+      and  U0 (out0, in1, in2, in3, in4);
+      nand U1 (out1, in1, in2, in3, in4);
+      or   U2 (out2, in1, in2, in3, in4);
+      nor  U3 (out3, in1, in2, in3, in4);
+      xor  U4 (out4, in1, in2, in3, in4);
+      xnor U5 (out5, in1, in2, in3, in4);
+      not  U6 (out6, in1);
+      buf  U7 (out7, in1);
+    endmodule
+  prompt: <Prompt for Problem 4>
+
+- code: |
+    module TOP(CLK,RST);
+      input [3:1] CLK;
+      input [1:0] RST;
+      reg cnt;
+      
+      always @(posedge CLK[2] or posedge RST[0]) begin
+        if(RST[0]) begin
+          cnt <= 'd0;
+        end
+      end
+
+    endmodule
+  prompt: <Prompt for Problem 5>
+
+- code: |
+    module TOP(CLK, RST_X, ADDR, WE, D, Q);
+      input CLK;
+      input RST_X;
+
+      input [7:0] ADDR;
+      input WE;
+      input [7:0] D;
+      output [7:0] Q;
+
+      reg [7:0] mem [0:255];
+      reg [7:0] d_ADDR;
+      
+      always @(posedge CLK) begin
+        if(WE) mem[ADDR] <= D;
+        d_ADDR <= ADDR;
+      end
+      assign Q = mem[d_ADDR];
+      
+    endmodule
+  prompt: <Prompt for Problem 6>
+
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt1,cnt2,cnt3,cnt4,cnt5,cnt6,cnt7,cnt8,cnt9,cnt10;
+      parameter zero = 0;
+
+      //reset
+      always @(posedge CLK) begin
+        if(RST[0]) begin
+          cnt1 <= 0;
+        end else begin
+          cnt1 <= 8'd1;
+        end
+      end
+
+      //reset
+      always @(posedge CLK or posedge RST)
+        if(RST)
+          cnt2 <= 0;
+        else
+          cnt2 <= 8'd1;
+
+      //not reset
+      always @(posedge CLK or posedge RST) begin
+        if(RST) begin
+          cnt3 <= cnt1[0];
+        end else begin
+          cnt3 <= 8'd1;
+        end
+      end
+
+      //not reset
+      always @(posedge CLK or posedge RST) begin
+        cnt4 <= 0;
+      end
+
+      //reset
+      always @(posedge CLK or posedge RST) begin
+        if(RST) begin
+          cnt5 <= {2'd0,6'd0};
+        end else begin
+          cnt5 <= 8'd1;
+        end
+      end
+
+      //not reset
+      always @(posedge CLK or posedge RST) begin
+        if(RST) begin
+          cnt6 <= 7'd0 + cnt1[1:0];
+        end else begin
+          cnt6 <= 8'd1;
+        end
+      end
+
+      //reset
+      always @(posedge CLK) begin
+        if(!RST) begin
+          cnt7 <= 0;
+        end else begin
+          cnt7 <= 8'd1;
+        end
+      end
+
+      //not reset
+      always @(posedge CLK) begin
+        if(RST && RST) begin
+          cnt8 <= 0;
+        end else begin
+          cnt8 <= 8'd1;
+        end
+      end
+
+      always @(posedge CLK) begin
+        if(RST[zero]) begin
+          cnt10 <= 0;
+        end else begin
+          cnt10 <= 8'd1;
+        end
+      end
+
+      SUB sub(CLK,RST);
+
+    endmodule
+
+    module SUB(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt9;
+      parameter zero = 0;
+
+      always @(posedge CLK) begin
+        if(RST) begin
+          cnt9 <= zero;
+        end else begin
+          cnt9 <= 8'd1;
+        end
+      end
+    endmodule
+  prompt: <Prompt for Problem 7>
+
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt;
+
+      always @(posedge CLK or negedge RST) begin
+        if(RST) begin
+          cnt <= $signed(cnt);
+        end else begin
+          cnt <= $unsigned(cnt);
+        end
+      end
+
+    endmodule
+  prompt: <Prompt for Problem 8>
+
+- code: |
+    `default_nettype none
+      
+    module TOP(CLK, RST_X, MEM_A, MEM_RE, MEM_WE, MEM_D, MEM_Q, MEM_BUSY, MEM_DONE);
+      input CLK;
+      input RST_X;
+
+      parameter WA = 32;
+      parameter WD = 32;
+      
+      output reg [WA-1:0] MEM_A;
+      output reg MEM_RE;
+      output reg MEM_WE;
+      output reg [WD-1:0] MEM_D;
+      input [WD-1:0] MEM_Q;
+      input MEM_DONE;
+      input MEM_BUSY;
+
+      reg [3:0] state;
+      reg [3:0] cnt;
+
+      wire [3:0] wire_cnt0;
+      assign wire_cnt0 = cnt + 1;
+      wire [3:0] wire_cnt1;
+      assign wire_cnt1 = wire_cnt0 + 1;
+
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          MEM_RE <= 0;
+        end else begin
+          MEM_RE <= 0;
+        end
+      end
+      
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          state <= 0;
+          cnt <= 0;
+        end else begin
+          if(state == 0) begin
+            cnt <= cnt + 1;
+            if(cnt == 8) begin
+              state <= 1;
+              cnt <= 0;
+            end
+          end else if(state == 1) begin
+            cnt <= cnt + 1;
+            if(cnt == 8) begin
+              state <= 0;
+              cnt <= 0;
+            end
+          end
+        end
+      end
+    endmodule
+  prompt: <Prompt for Problem 9>
+
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      parameter AAA = 1;
+      supply0 VSS;
+      supply1 VDD;
+    endmodule
+  prompt: <Prompt for Problem 10>
+
+- code: |
+    module TOP(CLK, RST_X,
+               MEM_A, MEM_RE, MEM_WE, MEM_D, MEM_Q, MEM_BUSY, MEM_DONE);
+      input CLK;
+      input RST_X;
+      
+      parameter WA = 32;
+      parameter WD = 32;
+      parameter SIZE = 1024 * 32;
+
+      localparam OFFSET0 = 0;
+      localparam OFFSET1 = SIZE * 1;
+      localparam OFFSET2 = SIZE * 2;
+      
+      output reg [WA-1:0] MEM_A;
+      output reg MEM_RE;
+      output reg MEM_WE;
+      output reg [WD-1:0] MEM_D;
+      input [WD-1:0] MEM_Q;
+      input MEM_DONE;
+      input MEM_BUSY;
+
+      reg [WA-1:0] cnt0;
+      reg [WA-1:0] cnt1;
+      reg [WA-1:0] cnt2;
+      reg [WD-1:0] readdata0;
+      reg [WD-1:0] readdata1;
+      reg [WD-1:0] writedata;
+      reg [3:0] state;
+
+      localparam ST_INIT = 0;
+      localparam ST_READ0 = 1;
+      localparam ST_READWAIT0 = 2;
+      localparam ST_INTERVAL = 3;
+      localparam ST_READ1 = 4;
+      localparam ST_READWAIT1 = 5;
+      localparam ST_CALC = 6;
+      localparam ST_WRITE = 7;
+      localparam ST_WRITEWAIT = 8;
+      localparam ST_DONE = 9;
+
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          state <= ST_INIT;
+          cnt0 <= 0;
+          cnt1 <= 0;
+          cnt2 <= 0;
+        end else begin
+          if(state == ST_INIT) begin
+            MEM_WE <= 0;
+            MEM_RE <= 0;
+            if(!MEM_BUSY) state <= ST_READ0;
+          end else if(state == ST_READ0) begin
+            MEM_RE <= 1;
+            MEM_A <= cnt0 + OFFSET0;
+            if(MEM_BUSY) state <= ST_READWAIT0;
+          end else if(state == ST_READWAIT0) begin
+            MEM_RE <= 0;
+            readdata0 <= MEM_Q;
+            if(MEM_DONE) state <= ST_INTERVAL;
+          end else if(state == ST_INTERVAL) begin
+            if(!MEM_BUSY) state <= ST_READ1;
+          end else if(state == ST_READ1) begin
+            MEM_RE <= 1;
+            MEM_A <= cnt1 + OFFSET1;
+            if(MEM_BUSY) state <= ST_READWAIT1;
+          end else if(state == ST_READWAIT1) begin
+            MEM_RE <= 0;
+            readdata1 <= MEM_Q;
+            if(MEM_DONE) state <= ST_CALC;
+          end else if(state == ST_CALC) begin
+            writedata <= readdata0 + readdata1;
+            if(!MEM_BUSY) state <= ST_WRITE;
+          end else if(state == ST_WRITE) begin
+            MEM_WE <= 1;
+            MEM_D <= writedata;
+            MEM_A <= cnt2 + OFFSET2;
+            if(MEM_BUSY) state <= ST_WRITEWAIT;
+          end else if(state == ST_WRITEWAIT) begin
+            MEM_WE <= 0;
+            if(MEM_DONE) begin
+              cnt0 <= cnt0 + 32;
+              cnt1 <= cnt1 + 32;
+              cnt2 <= cnt2 + 32;
+              if(cnt0 < SIZE) state <= ST_INIT;
+              else state <= ST_DONE;
+            end
+          end else if(state == ST_DONE) begin
+            $display("Done");
+            //do nothing
+          end
+        end
+      end
+    endmodule
+  prompt: <Prompt for Problem 11>
