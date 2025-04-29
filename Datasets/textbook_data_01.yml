@@ -1,0 +1,1323 @@
+- code: |
+    module NRZ_NRZI (B_out, B_in, clk, rst); // problem 3.9
+    output B_out;
+    input B_in;
+    input clk, rst;
+    parameter s0 = 0;
+    parameter s1 = 1;
+    reg state, next_state;
+    reg B_out;
+
+    always @ (negedge clk or posedge rst)
+        if (rst == 1)
+            state <= s0;
+        else
+            state <= next_state;
+
+    always @ (state or B_in) begin
+        next_state = state;
+        B_out = 0;
+        case(state)
+            s0: if (B_in == 1) begin
+                    next_state = s1;
+                    B_out = 0;
+                end
+            s1: if (B_in == 1) begin
+                    next_state = s0;
+                    B_out = 1;
+                end
+        endcase
+    end
+    endmodule
+
+    module t_NRZ_NRZI (); // problem 3.9 testbench
+    wire B_out;
+    reg B_in;
+    reg clk, rst;
+    reg clk_NRZ;
+
+    NRZ_NRZI M1 (B_out, B_in, clk, rst);
+
+    initial #400 $finish;
+
+    initial begin
+        rst = 0;
+        #10 rst = 1;
+        #20 rst = 0;
+        #147 rst = 1; // reset on-the-fly
+        #5 rst = 0;
+    end
+
+    initial begin
+        clk = 1;
+        forever #5 clk = ~clk;
+    end
+
+    initial begin
+        clk_NRZ = 1;
+        forever #10 clk_NRZ = ~clk_NRZ;
+    end
+
+    initial begin // Data waveform
+        B_in = 1;
+        #40 B_in = 0;
+        #40 B_in = 1;
+        #40 B_in = 0;
+        #40 B_in = 1;
+        #100 B_in = 0;
+        #100 B_in = 1;
+    end
+    endmodule
+  prompt: Write a Verilog module and testbench for a Moore machine that converts NRZ input coding to NRZI output coding, sampling at the midpoint of the bit time.
+
+- code: |
+    module encoder (BCD_in, Excess_3_out);
+    input [3:0] BCD_in;
+    output [3:0] Excess_3_out;
+    assign Excess_3_out = BCD_in + 3;
+    endmodule
+
+    module t_encoder();
+    reg [3:0] BCD_in;
+    wire [3:0] Excess_3_out;
+    encoder M0(BCD_in, Excess_3_out);
+    initial
+    $monitor($time,,"BCD = %b, Excess-3 Code = %b", BCD_in, Excess_3_out);
+
+    initial begin
+    #500 $finish; //Simulation Time Out
+    end
+    initial begin //Simulation Test Pattern
+    #20 BCD_in = 4'b0000;
+    #20 BCD_in = 4'b0001;
+    #20 BCD_in = 4'b0010;
+    #20 BCD_in = 4'b0011;
+    #20 BCD_in = 4'b0100;
+    #20 BCD_in = 4'b0101;
+    #20 BCD_in = 4'b0110;
+    #20 BCD_in = 4'b0111;
+    #20 BCD_in = 4'b1000;
+    #20 BCD_in = 4'b1001;
+    end
+    endmodule
+  prompt: Write a Verilog module that converts a 4-bit BCD input into Excess-3 code using a single continuous assignment, and test it with BCD inputs from 0 to 9.
+
+- code: |
+    module Problem_4_7 (Y1, Y2, A, B, C, D);
+    output Y1, Y2;
+    input A, B, C, D;
+    not (A_not, A);
+    not (B_not, B);
+    not (C_not, C);
+    not (D_not, D);
+    and (w1, A_not, B, C_not, D_not);
+    and (w2, A_not, B, C_not, D);
+    and (w3, A_not, B, C, D_not);
+    and (w4, A_not, B, C, D);
+    and (w5, A, B_not, C, D);
+    and (w6, A, B, C_not, D_not);
+    and (w7, A, B, C_not, D);
+    or (Y1, w1, w2, w3, w4, w5, w6, w7);
+    and (w8, A_not, B_not, C_not, D);
+    and (w9, A_not, B_not, C, D_not);
+    and (w10, A_not, B, C_not, D_not);
+    and (w11, A_not, B, C_not, D);
+    or (Y2, w8, w9, w10, w11);
+    endmodule
+
+    module t_Problem_4_7();
+    reg A, B, C, D;
+    wire Y1, Y2;
+    Problem_4_7 M0 (Y1, Y2, A, B, C, D);
+    initial begin
+    #5 {A, B, C, D} = 4'b0000;
+    #5 {A, B, C, D} = 4'b0001;
+    #5 {A, B, C, D} = 4'b0010;
+    #5 {A, B, C, D} = 4'b0011;
+    #5 {A, B, C, D} = 4'b0100;
+    #5 {A, B, C, D} = 4'b0101;
+    #5 {A, B, C, D} = 4'b0110;
+    #5 {A, B, C, D} = 4'b0111;
+    #5 {A, B, C, D} = 4'b1000;
+    #5 {A, B, C, D} = 4'b1001;
+    #5 {A, B, C, D} = 4'b1010;
+    #5 {A, B, C, D} = 4'b1011;
+    #5 {A, B, C, D} = 4'b1100;
+    #5 {A, B, C, D} = 4'b1101;
+    #5 {A, B, C, D} = 4'b1110;
+    #5 {A, B, C, D} = 4'b1111;
+    end
+    initial begin #500 $finish; end
+    //initial begin $monitor ($time,,”%h %b“, {A, B, C, D}, Y); end
+    endmodule
+  prompt: |
+    Design a Verilog module `Problem_4_7` to generate two outputs Y1 and Y2 based on four inputs A, B, C, D using only basic logic gates (NOT, AND, OR).
+    Also, create a testbench `t_Problem_4_7` that tests all 16 input combinations for the module and ends simulation after 500 time units.
+  
+- code: |
+    module Combo_str (Y, A, B, C, D);
+    output Y;
+    input A, B, C, D;
+    and (Y, w1, w3);
+    not (w1, w2);
+    or (w2, A, D);
+    and (w3, B, C, w4);
+    not (w4, D);
+    endmodule
+
+    module t_Combo_str ();
+    reg A, B, C, D;
+    wire Y;
+    Combo_str M0 (Y, A, B, C, D);
+
+    initial begin
+        #5 {A, B, C, D} = 4'b0000;
+        #5 {A, B, C, D} = 4'b0001;
+        #5 {A, B, C, D} = 4'b0010;
+        #5 {A, B, C, D} = 4'b0011;
+        #5 {A, B, C, D} = 4'b0100;
+        #5 {A, B, C, D} = 4'b0101;
+        #5 {A, B, C, D} = 4'b0110;
+        #5 {A, B, C, D} = 4'b0111;
+        #5 {A, B, C, D} = 4'b1000;
+        #5 {A, B, C, D} = 4'b1001;
+        #5 {A, B, C, D} = 4'b1010;
+        #5 {A, B, C, D} = 4'b1011;
+        #5 {A, B, C, D} = 4'b1100;
+        #5 {A, B, C, D} = 4'b1101;
+        #5 {A, B, C, D} = 4'b1110;
+        #5 {A, B, C, D} = 4'b1111;
+    end
+
+    initial begin
+        #500 $finish;
+    end
+    endmodule
+  prompt: Write a Verilog structural model using gates (and, or, not) to implement a combinational logic function with four inputs A, B, C, D and one output Y. Provide a testbench to simulate all input combinations.
+
+- code: |
+    module Combo_UDP (Y, A, B, C, D);
+    output Y;
+    input A, B, C, D;
+    Combo_prim M0 (Y, A, B, C, D);
+    endmodule
+
+    module t_Combo_UDP ();
+    reg A, B, C, D;
+    wire Y;
+    Combo_UDP M0 (Y, A, B, C, D);
+
+    initial begin
+        #5 {A, B, C, D} = 4'b0000;
+        #5 {A, B, C, D} = 4'b0001;
+        #5 {A, B, C, D} = 4'b0010;
+        #5 {A, B, C, D} = 4'b0011;
+        #5 {A, B, C, D} = 4'b0100;
+        #5 {A, B, C, D} = 4'b0101;
+        #5 {A, B, C, D} = 4'b0110;
+        #5 {A, B, C, D} = 4'b0111;
+        #5 {A, B, C, D} = 4'b1000;
+        #5 {A, B, C, D} = 4'b1001;
+        #5 {A, B, C, D} = 4'b1010;
+        #5 {A, B, C, D} = 4'b1011;
+        #5 {A, B, C, D} = 4'b1100;
+        #5 {A, B, C, D} = 4'b1101;
+        #5 {A, B, C, D} = 4'b1110;
+        #5 {A, B, C, D} = 4'b1111;
+    end
+
+    initial begin
+        #500 $finish;
+    end
+    endmodule
+
+    primitive Combo_prim (Y, A, B, C, D);
+    output Y;
+    input A, B, C, D;
+    table
+        0000 : 0;
+        0001 : 0;
+        0010 : 0;
+        0011 : 0;
+        0100 : 0;
+        0101 : 0;
+        0110 : 1;
+        0111 : 0;
+        1000 : 0;
+        1001 : 0;
+        1010 : 0;
+        1011 : 0;
+        1100 : 0;
+        1101 : 0;
+        1110 : 0;
+        1111 : 0;
+    endtable
+    endprimitive
+  prompt: Write a Verilog module using a user-defined primitive (UDP) to implement a combinational logic function based on a truth table for inputs A, B, C, D. Include a testbench to simulate all input patterns.
+
+- code: |
+    module Add_half(sum, c_out, a, b);
+    output sum, c_out;
+    input a, b;
+    xor #1 M1(sum, a, b);
+    and #1 M2(c_out, a, b);
+    endmodule
+
+    module Add_full(sum, c_out, a, b, c_in);
+    output sum, c_out;
+    input a, b, c_in;
+    wire w1, w2, w3;
+    Add_half M1(w1, w2, a, b);
+    Add_half M2(sum, w3, w1, c_in);
+    or #1 M3(c_out, w2, w3);
+    endmodule
+
+    module t_Adder();
+    wire sum, c_out;
+    reg a, b, c_in;
+    Add_full M0(sum, c_out, a, b, c_in);
+    initial
+    $monitor($time,,"a=%b, b=%b, c_in=%b, sum=%b, c_out=%b", a, b, c_in, sum, c_out);
+    initial begin
+    #500 $finish;
+    end
+    initial begin
+    #10 a=0; b=0; c_in=0;
+    #10 a=0; b=0; c_in=1;
+    #10 a=0; b=1; c_in=0;
+    #10 a=0; b=1; c_in=1;
+    #10 a=1; b=0; c_in=0;
+    #10 a=1; b=0; c_in=1;
+    #10 a=1; b=1; c_in=0;
+    #10 a=1; b=1; c_in=1;
+    end
+    endmodule
+  prompt: |
+    Design a Verilog full adder module `Add_full` using two instances of a half adder module `Add_half` and an OR gate.
+    Create a testbench `t_Adder` that tests all 8 possible input combinations of a, b, and c_in, monitors the outputs sum and c_out, and terminates the simulation after 500 time units.
+
+- code: |
+    `timescale 1ns/10ps
+
+    module delay_mux (y, Sel, A, B, C, D);
+    input A, B, C, D, Sel;
+    output y;
+    wire Out1, Out2;
+    nand #3 M1(Out1, A, B);
+    nand #4 M2(Out2, C, D);
+    mux M3(y, Out1, Out2, Sel);
+    endmodule
+
+    module mux(y, y1, y2, Sel);
+    input y1, y2, Sel;
+    output y;
+    wire w1, w2;
+    or M1(w1, y1, Sel);
+    or M2(w2, y2, Sel);
+    nand M3(y, w1, w1);
+    endmodule
+
+    module t_delay_mux();
+    reg A, B, C, D, Sel;
+    wire y;
+    delay_mux M0(y, Sel, A, B, C, D);
+
+    initial
+    $monitor($time,,"A=%b, B=%b, C=%b, D=%b, Sel=%b, y=%b", A, B, C, D, Sel, y);
+
+    initial begin
+    #500 $finish;
+    end
+
+    initial begin
+    #10 A=0; B=0; C=0; D=0; Sel=0;
+    #10 A=0; B=0; C=0; D=0; Sel=1;
+    #10 A=1; B=0; C=0; D=0; Sel=0;
+    #10 A=1; B=0; C=0; D=0; Sel=1;
+    #10 A=0; B=1; C=0; D=0; Sel=0;
+    #10 A=0; B=1; C=0; D=0; Sel=1;
+    #10 A=1; B=1; C=0; D=0; Sel=0;
+    #10 A=1; B=1; C=0; D=0; Sel=1;
+    #10 A=0; B=0; C=1; D=0; Sel=0;
+    #10 A=0; B=0; C=1; D=0; Sel=1;
+    #10 A=0; B=0; C=0; D=1; Sel=0;
+    #10 A=0; B=0; C=0; D=1; Sel=1;
+    end
+    endmodule
+  prompt: |
+    Write a Verilog module `delay_mux` using two NAND gates with different delays (3ns and 4ns) and a custom `mux` module that selects between the outputs based on `Sel`.
+    Implement a `mux` module using OR and NAND gates.
+    Create a testbench `t_delay_mux` that applies several input combinations to test the `delay_mux` behavior and monitor the output `y` across simulation time, with simulation stopping after 500ns.
+
+- code: |
+    module Combo_CA (Y, A, B, C, D);
+    // 9/12/2003
+    output Y;
+    input A, B, C, D;
+    assign Y = (~(A | D)) & (B & C & ~D);
+    endmodule
+
+    module t_Combo_CA();
+    reg A, B, C, D;
+    wire Y;
+    Combo_CA M0 (Y, A, B, C, D);
+
+    initial begin
+    #5 {A, B, C, D} = 4'b0000;
+    #5 {A, B, C, D} = 4'b0001;
+    #5 {A, B, C, D} = 4'b0010;
+    #5 {A, B, C, D} = 4'b0011;
+    #5 {A, B, C, D} = 4'b0100;
+    #5 {A, B, C, D} = 4'b0101;
+    #5 {A, B, C, D} = 4'b0110;
+    #5 {A, B, C, D} = 4'b0111;
+    #5 {A, B, C, D} = 4'b1000;
+    #5 {A, B, C, D} = 4'b1001;
+    #5 {A, B, C, D} = 4'b1010;
+    #5 {A, B, C, D} = 4'b1011;
+    #5 {A, B, C, D} = 4'b1100;
+    #5 {A, B, C, D} = 4'b1101;
+    #5 {A, B, C, D} = 4'b1110;
+    #5 {A, B, C, D} = 4'b1111;
+    end
+
+    initial begin 
+    #500 $finish; 
+    end
+    endmodule
+  prompt: |
+    Write a Verilog module `Combo_CA` where output `Y` is defined as the AND of (~(A OR D)) and (B AND C AND NOT D).
+    Create a testbench `t_Combo_CA` that tests all 16 combinations of inputs A, B, C, and D, changing every 5 time units.
+    Stop the simulation after 500 time units.
+
+- code: |
+    module AOI_5_CA1_str (y_out, x_in1, x_in2, x_in3, x_in4, x_in5, enable);
+    input x_in1, x_in2, x_in3, x_in4, x_in5, enable;
+    output y_out;
+    wire w1, w2, w3;
+
+    and (w1, x_in1, x_in2);
+    and (w2, x_in3, x_in4, x_in5);
+    or (w3, w1, w2);
+    notif1 (y_out, w3, enable);
+
+    endmodule
+    
+- code: |
+    module tr_latch(q_out, enable, data);
+    output q_out;
+    input enable, data;
+    reg q_out;
+
+    always @(enable or data)
+    begin
+    if (enable == 1)
+      q_out = data;
+    end
+    endmodule
+
+    module t_tr_latch();
+    reg enable, data;
+    wire q_out;
+    tr_latch M0 (q_out, enable, data);
+
+    initial begin
+    enable = 0;
+    data = 0;
+    #10 data = 1;
+    #10 enable = 1;
+    #10 data = 0;
+    #10 data = 1;
+    #10 enable = 0;
+    #10 data = 0;
+    end
+    endmodule
+  prompt: |
+    Write a simple Verilog module for a transparent latch (`tr_latch`) with an `enable` input and a `data` input. 
+    The output `q_out` follows the `data` input when `enable` is high (1) and holds its previous state when `enable` is low (0).
+    Test the module using a testbench `t_tr_latch`, where the `data` and `enable` signals change at different times, and the behavior of `q_out` is monitored.
+
+- code: |
+    module BCD_checker (data, flag);
+    output flag;
+    input [3:0] data;
+    reg flag;
+    always @ (data)
+    case (data)
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9: flag = 0;
+    default: flag = 1;
+    endcase
+    endmodule
+
+    module t_BCD_checker ();
+    wire flag;
+    reg [3:0] data;
+    integer k;
+    BCD_checker M0 (data, flag);
+    initial #500 $finish;
+    initial begin
+    data = 0;
+    for (k = 0; k < 100; k = k +1)
+    #20 data = data + 1;
+    end
+    endmodule
+
+  prompt: |
+    Test plan for the BCD_checker module:
+    1. Verify that the flag is 0 for valid BCD digits (0 to 9).
+    2. Verify that the flag is 1 for invalid BCD digits (greater than 9).
+    3. Verify that the testbench correctly counts from 0 to 99 and triggers the flag for values above 9.
+
+- code: |
+    module Prob_5_13 (GTE, LTE, A, B, C, D);
+    output [3:0] GTE, LTE;
+    input [31: 0] A, B, C, D;
+    reg [3:0] GTE, LTE;
+    always @ (A, B, C, D)
+    begin
+    GTE = 0;
+    LTE = 0;
+    if ((A>=B) && (A>=C) && (A>=D)) GTE = GTE | 4'b1000;
+    if ((B>=A) && (B>=C) && (B>=D)) GTE = GTE | 4'b0100;
+    if ((C>=A) && (C>=B) && (C>=D)) GTE = GTE | 4'b0010;
+    if ((D>=A) && (D>=B) && (D>=C)) GTE = GTE | 4'b0001;
+    if ((A<=B) && (A<=C) && (A<=D)) LTE = LTE | 4'b1000;
+    if ((B<=A) && (B<=C) && (B<=D)) LTE = LTE | 4'b0100;
+    if ((C<=A) && (C<=B) && (C<=D)) LTE = LTE | 4'b0010;
+    if ((D<=A) && (D<=B) && (D<=C)) LTE = LTE | 4'b0001;
+    end
+    endmodule
+
+    module t_Prob_5_13 ();
+    wire [3:0] GTE, LTE;
+    reg [31: 0] A, B, C, D;
+
+    Prob_5_13 M0 (GTE, LTE, A, B, C, D);
+    initial begin
+    A = 2; B = 2; C = 2; D = 2;
+    #10 A = 2; B = 2; C = 2; D = 1;
+    #10 A = 2; B = 2; C = 1; D = 1;
+    #10 A = 2; B = 1; C = 1; D = 1;
+    #10 A = 525; B = 1; C = 2; D = 1;
+    #10 $finish;
+    end
+    endmodule
+
+  prompt: |
+    Test plan for the Prob_5_13 module:
+    1. Verify that the GTE and LTE outputs are correct for various combinations of inputs A, B, C, and D.
+    2. Test the module with equal values for A, B, C, and D (e.g., 2, 2, 2, 2) to ensure that it correctly handles equality.
+    3. Verify the output for scenarios where one input is larger than the others (e.g., A = 525, B = 1, C = 2, D = 1).
+    4. Test edge cases with minimum and maximum possible values for inputs.
+    5. Note that the current design does not handle cases where two or more values are equal and the largest or smallest. Consider modifying the approach as suggested:
+       always @ (A, B, C, D)
+       begin
+       A_GT = (A >= B) && (A >= C) && (A >= D);
+       B_GT = (B >= A) && (B >= C) && (B >= D);
+       C_GT = (C >= A) && (C >= B) && (C >= D);
+       D_GT = (D >= A) && (D >= B) && (D >= C);
+       A_LT = (A <= B) && (A <= C) && (A <= D);
+       B_LT = (B <= A) && (B <= C) && (B <= D);
+       C_LT = (C <= A) && (C <= B) && (C <= D);
+       D_LT = (D <= A) && (D <= B) && (D <= C);
+       end
+
+- code: |
+    module Universal_Shift_Reg (Data_Out, MSB_Out, LSB_Out, Data_In,
+    MSB_In, LSB_In, s1, s0, clk, rst);
+    output [3: 0] Data_Out;
+    output MSB_Out, LSB_Out;
+    input [3: 0] Data_In;
+    input MSB_In, LSB_In;
+    reg [3: 0] Data_Out; // 10-12-2004
+    input s1, s0, clk, rst;
+    assign MSB_Out = Data_Out[3];
+    assign LSB_Out = Data_Out[0];
+    always @ (posedge clk) begin
+    if (rst) Data_Out <= 0;
+    else case ({s1, s0})
+    0: Data_Out <= Data_Out; // Idle
+    1: Data_Out <= {MSB_In, Data_Out[3:1]}; // Shift right
+    2: Data_Out <= {Data_Out[2:0], LSB_In}; // Shift Left
+    3: Data_Out <= Data_In; // Parallel Load
+    endcase
+    end
+    endmodule
+    /*
+    Test Plan
+    Verify initial reset
+    Verify idle
+    Verify shift right
+    Verify shift left
+    Verify parallel load
+    Verify reset-on-the-fly
+    */
+    module t_Universal_Shift_Reg();
+    wire [3: 0] Data_Out;
+    reg [3: 0] Data_In;
+    wire MSB_Out, LSB_Out;
+    reg MSB_In, LSB_In;
+    reg s1, s0, rst;
+    defparam M2.half_cycle = 5;
+
+    Universal_Shift_Reg M1 (Data_Out, MSB_Out, LSB_Out, Data_In, MSB_In, LSB_In, s1,
+    s0, clk, rst);
+    Clock_Gen M2(clk);
+
+    initial #1000 $finish;
+    initial fork
+    begin #5 rst = 1; #20 rst = 0;end
+    begin #120 rst = 1; #20 rst = 0;end
+    begin #260 rst = 1; #20 rst = 0;end
+    begin #380 rst = 1; #20 rst = 0;end
+    join
+    initial fork
+    #10 fork // Verify right shift
+    #10 begin Data_In = 4'b1111; s0 = 0; s1 = 0; LSB_In = 1; MSB_In = 1; end
+    #40 s0 = 1;
+    join
+    #120 fork
+    begin // Verify left shift
+    #10 Data_In = 4'b1111; s0 = 0; s1 = 0; LSB_In = 1; MSB_In = 1; end
+    #40 s1 = 1;
+    join
+    #250 fork
+    begin // Verify load
+    #10 Data_In = 4'b1111; s0 = 0; s1 = 0; LSB_In = 1; MSB_In = 1; end
+    #40 begin s0 = 1; s1 = 1;end
+    join
+    #320 fork
+    begin // reset
+    #10 Data_In = 4'b1111; s0 = 0; s1 = 0; LSB_In = 1; MSB_In = 1; end
+    #40 begin s0 = 0; s1 = 0;end
+    join
+
+    join
+    endmodule
+
+  prompt: |
+    Test Plan for the Universal Shift Register:
+    1. Verify that the module correctly handles initial reset.
+    2. Test that the idle condition (when both s1 and s0 are 0) keeps the Data_Out unchanged.
+    3. Verify the shift right functionality (when s1 = 0 and s0 = 1) by shifting the MSB into the data.
+    4. Verify the shift left functionality (when s1 = 1 and s0 = 0) by shifting the LSB into the data.
+    5. Verify that parallel load works as expected (when s1 = 1 and s0 = 1), loading Data_In directly into Data_Out.
+    6. Test the reset-on-the-fly functionality, ensuring that the register can be reset during operation.
+
+- code: |
+    module Problem_5_16 (count, initial_count, load, enable_b, clock, reset);
+    output [3: 0] count;
+    input [3: 0] initial_count;
+    input load, enable_b, clock, reset;
+    reg [3: 0] count;
+    always @ (negedge clock)
+    if (reset == 1) count <= 0;
+    else if (enable_b == 0) count <= count + 1;
+    else if (load) count <= initial_count;
+    // Alternative below is also possible:
+    // else if (load) count <= initial_count;
+    // else if (enable_b == 0) count <= count + 1;
+    endmodule
+
+    module t_Problem_5_16 ();
+    wire [3: 0] count;
+    reg [3: 0] initial_count;
+    reg load, enable_b, clock, reset;
+    initial #500 $finish;
+    initial begin clock = 0; forever #5 clock = ~clock; end
+    initial fork
+    #5 initial_count = 4'b1010;
+    join
+    initial fork
+    #15 reset = 1;
+    #25 reset = 0;
+    join
+    initial fork
+    #55 enable_b = 0;
+    #155 enable_b = 1;
+    #195 enable_b = 0;
+    #495 enable_b = 1;
+    join
+    initial fork
+    #195 load = 1;
+    #205 load = 0;
+    join
+    Problem_5_16 M0(count, initial_count, load, enable_b, clock, reset);
+    endmodule
+
+  prompt: |
+    This module is a counter with load and enable functionality. 
+    It increments the count on the falling edge of the clock unless the reset is active. 
+    When the load signal is asserted, the counter is loaded with the value of `initial_count`. 
+    The testbench verifies functionality including reset behavior, enable control, and loading the count value.
+
+- code: |
+    module Johnson_Counter (count, enable, clock, reset);
+    output [3: 0] count;
+    input enable;
+    input clock, reset;
+    reg [3: 0] count;
+    always @ (posedge clock, posedge reset)
+    if (reset == 1) count <= 0;
+    else if (enable)
+    case (count)
+    4'b0000,
+    4'b0001,
+    4'b0011,
+    4'b0111: count <= {count[2: 0], 1'b1};
+    4'b1111,
+    4'b1110,
+    4'b1100,
+    4'b1000: count <= {count[2: 0], 1'b0};
+    default: count <= 0;
+    endcase
+    endmodule
+
+    module t_Johnson_Counter ();
+    wire [3: 0] count;
+    reg enable;
+    reg clock, reset;
+    Johnson_Counter M0 (count, enable, clock, reset);
+    initial #500 $finish;
+    initial begin clock = 0; forever #5 clock = ~clock; end
+    initial fork
+    #20 reset = 1;
+    #60 reset = 0;
+    #142 reset = 1;
+    #154 reset = 0;
+    #50 enable = 1;
+    #300 enable = 0;
+    #400 enable = 1;
+    join
+    endmodule
+
+  prompt: |
+    This is a 4-bit Johnson counter module with enable and reset functionality.
+    The counter cycles through a sequence of states when enabled, depending on the current state of `count`.
+    The testbench verifies the reset behavior and the enable functionality by changing the `reset` and `enable` signals.
+
+- code: |
+    // Assumption: positive-edge sensitive, active-high reset.
+    // Assumption: count from reset value
+    module BCD_Counter (count, clk, rst);
+    output [3: 0] count;
+    input clk, rst;
+    reg [3: 0] count;
+    always @ (posedge clk , posedge rst)
+    if (rst == 1) count <= 0;
+    else if (count < 9) count <= count + 1;
+    else count <= 0;
+    endmodule
+
+    module t_BCD_Counter ();
+    wire [3: 0] count;
+    reg clk, rst;
+    BCD_Counter M0 (count, clk, rst);
+    initial #200 $finish;
+    initial begin
+    clk = 0;
+    forever #5 clk = ~clk;
+    end
+    initial begin
+    #10 rst = 1;
+    #20 rst = 0;
+    #100 rst = 1; // Reset 0n-the-fly
+    #20 rst = 0;
+    end
+    endmodule
+
+  prompt: |
+    This module is a 4-bit BCD counter with an active-high reset. The counter increments from 0 to 9 and resets to 0 after reaching 9.
+    The testbench checks the reset functionality and verifies counting behavior, including the ability to reset the counter "on-the-fly."
+
+- code: |
+    // Assumption: positive-edge sensitive, active-high reset.
+    // Assumption: count from reset value
+    module Modulo_6_Counter (count, clk, rst);
+    output [2: 0] count;
+    input clk, rst;
+    reg [2: 0] count;
+    always @ (posedge clk , posedge rst)
+    if (rst == 1) count <= 0;
+    else if (count < 5) count <= count + 1;
+    else count <= 0;
+    endmodule
+
+    module t_Modulo_6_Counter ();
+    wire [2: 0] count;
+    reg clk, rst;
+    Modulo_6_Counter M0 (count, clk, rst);
+    initial #200 $finish;
+    initial begin
+    clk = 0;
+    forever #5 clk = ~clk;
+    end
+    initial begin
+    #10 rst = 1;
+    #20 rst = 0;
+    #100 rst = 1; // Reset 0n-the-fly
+    #20 rst = 0;
+    end
+    endmodule
+
+  prompt: |
+    This module is a 3-bit Modulo-6 counter with an active-high reset. The counter increments from 0 to 5 and resets to 0 after reaching 5.
+    The testbench checks the reset functionality and verifies counting behavior, including the ability to reset the counter "on-the-fly."
+
+- code: |
+    module Problem_5_24a (count, clk, reset);
+    output [7:0] count;
+    input clk, reset;
+    reg [3: 0] state, next_state;
+    reg [7:0] count;
+    always @ (posedge clk)
+    if (reset) state <= 0;
+    else state <= next_state;
+    always @ (state) begin
+    next_state = 1; count = 1;
+    case (state)
+    0: begin next_state = 1; count = 1; end
+    1: begin next_state = 2; count = 2; end
+    2: begin next_state = 3; count = 1; end
+    3: begin next_state = 4; count = 4; end
+    4: begin next_state = 5; count = 1; end
+    5: begin next_state = 6; count = 8; end
+    6: begin next_state = 7; count = 1; end
+    7: begin next_state = 8; count = 16; end
+    8: begin next_state = 9; count = 1; end
+    9: begin next_state = 10; count = 32; end
+    10: begin next_state = 11; count = 1; end
+    11: begin next_state = 12; count = 64; end
+    12: begin next_state = 13; count = 1; end
+    13: begin next_state = 0; count = 128; end
+    endcase
+    end
+    endmodule
+
+    module t_Problem_5_24a ();
+    wire [7:0] count;
+    reg clk, reset;
+    Problem_5_24a M0(count, clk, reset);
+    initial #700 $finish;
+    initial fork
+    #0 reset = 1;
+    #20 reset = 0;
+    #200 reset = 1;
+    #250 reset = 0;
+    join
+    initial begin
+    #0 clk = 0; forever #5 clk = ~clk;
+    end
+    endmodule
+
+  prompt: |
+    This module simulates a state machine with 14 states. The `count` value changes depending on the current state.
+    The testbench applies multiple resets and runs the clock in a continuous manner, checking the transitions between states and the changes in the count value.
+- code: |
+    module Prob_6_7_Moore (Detect_Moore, D_in, clk, rst);
+    // Moore nonresetting sequence detector
+    output Detect_Moore;
+    input D_in, clk, rst;
+    parameter S_0 = 0, S_1 = 1, S_2 = 2, S_3 = 3, S_4 = 4;
+    parameter S_5 = 5, S_6 = 6, S_7 = 7, S_8 = 8;
+    reg [3: 0] state_Moore, next_state;
+    wire Detect_Moore = ((state_Moore == S_4) || (state_Moore == S_8));
+    always @ (posedge clk) if (rst) state_Moore <= S_0; else state_Moore <= next_state;
+    always @ (state_Moore, D_in) begin
+    next_state = S_0;
+    case (state_Moore)
+    S_0: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_5;
+    S_1: if (D_in) next_state = S_2; else if (D_in == 0) next_state = S_5;
+    S_2: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_5;
+    S_3: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_4;
+    S_4: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_6;
+    S_5: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_6;
+    S_6: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_7;
+    S_7: if (D_in) next_state = S_8; else if (D_in == 0) next_state = S_7;
+    S_8: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_6;
+    default: next_state = S_0;
+    endcase
+    end
+    endmodule
+  prompt: Moore non-resetting sequence detector for Problem 6-7.
+
+- code: |
+    module Prob_6_7_Mealy (Detect_Mealy, D_in, clk, rst);
+    // Mealy nonresetting sequence detector
+    output Detect_Mealy;
+    input D_in, clk, rst;
+    parameter S_0 = 0, S_1 = 1, S_2 = 2, S_3 = 3;
+    parameter S_5 = 5, S_6 = 6, S_7 = 7;
+    reg [2: 0] state_Mealy, next_state;
+    wire Detect_Mealy = (((state_Mealy == S_3)&&(D_in == 0))
+    || ((state_Mealy == S_7)&&(D_in ==1)));
+    always @ (posedge clk) if (rst) state_Mealy <= S_0; else state_Mealy <= next_state;
+    always @ (state_Mealy, D_in) begin
+    next_state = S_0;
+    case (state_Mealy)
+    S_0: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_5;
+    S_1: if (D_in) next_state = S_2; else if (D_in == 0) next_state = S_5;
+    S_2: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_5;
+    S_3: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_5;
+    S_5: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_6;
+    S_6: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_7;
+    S_7: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_7;
+    default: next_state = S_0;
+    endcase
+    end
+    endmodule
+  prompt: Mealy non-resetting sequence detector for Problem 6-7.
+
+- code: |
+    module t_Prob_6_7 ();
+    wire Detect_Moore, Detect_Mealy;
+    reg D_in, clk, rst;
+    Prob_6_7_Moore M0 (Detect_Moore, D_in, clk, rst);
+    Prob_6_7_Mealy M1 (Detect_Mealy, D_in, clk, rst);
+    initial #500 $finish;
+    initial begin clk = 0; forever #5 clk = ~clk; end
+    initial fork
+    #10 rst = 1;
+    #50 rst = 0;
+    #40 D_in = 1;
+    #120 D_in = 0;
+    #170 D_in = 1;
+    #200 rst = 1;
+    #230 rst = 0;
+    join
+    endmodule
+  prompt: Testbench for both Moore and Mealy sequence detectors (Problem 6-7) with reset and input stimulus.
+
+- code: |
+    module Prob_6_8 (majority, D_in, clk, rst);
+    // majority function
+    output majority;
+    input D_in, clk, rst;
+    parameter S_0 = 0, S_1 = 1, S_2 = 2, S_3 = 3, S_4 = 4;
+    parameter S_5 = 5, S_6 = 6, S_7 = 7, S_8 = 8;
+    parameter S_9 = 9, S_10 = 10, S_11 = 11, S_12 = 12;
+    parameter S_13 = 13, S_14 = 14;
+    reg [4: 0] state, next_state;
+    reg majority;
+    always @ (posedge clk) if (rst) state <= S_0; else state <= next_state;
+    always @ (state, D_in) begin
+    next_state = S_0;
+    case (state)
+    S_0: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_8;
+    S_1: if (D_in) next_state = S_2; else if (D_in == 0) next_state = S_5;
+    S_2: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_4;
+    S_3: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_4;
+    S_4: if (D_in) next_state = S_6; else if (D_in == 0) next_state = S_7;
+    S_5: if (D_in) next_state = S_6; else if (D_in == 0) next_state = S_7;
+    S_6: if (D_in) next_state = S_10; else if (D_in == 0) next_state = S_11;
+    S_7: if (D_in) next_state = S_13; else if (D_in == 0) next_state = S_14;
+    S_8: if (D_in) next_state = S_9; else if (D_in == 0) next_state = S_12;
+    S_9: if (D_in) next_state = S_10; else if (D_in == 0) next_state = S_11;
+    S_10: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_4;
+    S_11: if (D_in) next_state = S_6; else if (D_in == 0) next_state = S_7;
+    S_12: if (D_in) next_state = S_13; else if (D_in == 0) next_state = S_14;
+    S_13: if (D_in) next_state = S_10; else if (D_in == 0) next_state = S_11;
+    S_14: if (D_in) next_state = S_13; else if (D_in == 0) next_state = S_14;
+    default: next_state = S_0;
+    endcase
+    end
+    always @ (state, D_in) begin
+    majority = 0;
+    case (state)
+    S_3, S_4, S_6, S_10: majority = 1;
+    default: majority = 0;
+    endcase
+    end
+    endmodule
+- prompt: Create a Verilog module for a majority function FSM (Finite State Machine) with clock and reset. Do not modify the provided code.
+
+- code: |
+    module t_Prob_6_8 ();
+    wire majority;
+    reg D_in, clk, rst;
+    reg [2:0] Data_Reg;
+    // View the data stream:
+    always @ (posedge clk) Data_Reg <= {D_in,Data_Reg[2: 1]};
+    Prob_6_8 M0 (majority, D_in, clk, rst);
+    initial #500 $finish;
+    initial begin clk = 0; forever #5 clk = ~clk; end
+    initial fork
+    #10 rst = 1;
+    #50 rst = 0;
+    #100 D_in = 0;
+    #130 D_in = 1;
+    #160 D_in = 0;
+    #170 D_in = 1;
+    #180 D_in = 0;
+    join
+    endmodule
+- prompt: Create a testbench for the majority function FSM to stimulate the inputs `D_in`, `clk`, and `rst` based on the given waveform. Do not modify the provided code.
+
+- code: |
+    module Problem1(input [3:0] a, b, output [3:0] sum);
+      assign sum = a + b;
+    endmodule
+  prompt: Add two 4-bit numbers 'a' and 'b', and output their sum 'sum'
+
+- code: |
+    module Problem2(input clk, reset, output reg [7:0] counter);
+      always @(posedge clk or posedge reset) begin
+        if (reset)
+          counter <= 0;
+        else
+          counter <= counter + 1;
+      end
+    endmodule
+  prompt: Design a 8-bit up-counter with a clock 'clk' and a reset signal 'reset'
+
+- code: |
+    module Problem3(input [3:0] a, b, output reg [3:0] prod);
+      integer i;
+      always @(*) begin
+        prod = 0;
+        for (i = 0; i < 4; i = i + 1) begin
+          prod = prod + (a[i] & b[i]) << i;
+        end
+      end
+    endmodule
+  prompt: Perform a bitwise AND operation between two 4-bit inputs 'a' and 'b', and output the result 'prod'
+
+- code: |
+    module Problem4(input clk, reset, enable, output reg [3:0] out);
+      always @(posedge clk or posedge reset) begin
+        if (reset)
+          out <= 4'b0000;
+        else if (enable)
+          out <= out + 1;
+      end
+    endmodule
+  prompt: Create a 4-bit counter that increments on each clock cycle when 'enable' is high, and resets when 'reset' is high
+
+- code: |
+    module Problem5(input a, b, c, output reg y);
+      always @(*) begin
+        y = (a & b) | (~c);
+      end
+    endmodule
+  prompt: Implement a Boolean expression 'y = (a AND b) OR (NOT c)'
+
+- code: |
+    module Problem6(input [7:0] data_in, output reg [7:0] data_out);
+      always @(*) begin
+        data_out = ~data_in;
+      end
+    endmodule
+  prompt: Create a module that inverts an 8-bit input 'data_in' and outputs 'data_out'
+
+- code: |
+    module Problem7(input clk, reset, output reg [3:0] state);
+      always @(posedge clk or posedge reset) begin
+        if (reset)
+          state <= 4'b0000;
+        else
+          state <= state + 1;
+      end
+    endmodule
+  prompt: Design a 4-bit state machine with a clock 'clk' and a reset signal 'reset', where the state increments on each clock cycle
+
+- code: |
+    module Problem8(input [3:0] a, b, output [3:0] diff);
+      assign diff = a - b;
+    endmodule
+  prompt: Subtract two 4-bit numbers 'a' and 'b', and output their difference 'diff'
+
+- code: |
+    module Problem9(input clk, reset, enable, output reg [15:0] data);
+      always @(posedge clk or posedge reset) begin
+        if (reset)
+          data <= 16'b0;
+        else if (enable)
+          data <= data + 1;
+      end
+    endmodule
+  prompt: Design a 16-bit register that increments on each clock cycle when 'enable' is high, and resets when 'reset' is high
+
+- code: |
+    // Verilog code for Problem 1
+    module AND_Gate(
+        input A, B,
+        output Y
+    );
+        assign Y = A & B;
+    endmodule
+  prompt: "Create a 2-input AND gate in Verilog."
+
+- code: |
+    // Verilog code for Problem 2
+    module OR_Gate(
+        input A, B,
+        output Y
+    );
+        assign Y = A | B;
+    endmodule
+  prompt: "Create a 2-input OR gate in Verilog."
+
+- code: |
+    // Verilog code for Problem 3
+    module NOT_Gate(
+        input A,
+        output Y
+    );
+        assign Y = ~A;
+    endmodule
+  prompt: "Create a NOT gate in Verilog."
+
+- code: |
+    // Verilog code for Problem 4
+    module XOR_Gate(
+        input A, B,
+        output Y
+    );
+        assign Y = A ^ B;
+    endmodule
+  prompt: "Create a 2-input XOR gate in Verilog."
+
+- code: |
+    // Verilog code for Problem 5
+    module Half_Adder(
+        input A, B,
+        output Sum, Carry
+    );
+        assign Sum = A ^ B;
+        assign Carry = A & B;
+    endmodule
+  prompt: "Create a Half Adder in Verilog."
+
+- code: |
+    // Verilog code for Problem 6
+    module Full_Adder(
+        input A, B, Cin,
+        output Sum, Carry
+    );
+        wire sum_half, carry_half1, carry_half2;
+        Half_Adder HA1(A, B, sum_half, carry_half1);
+        Half_Adder HA2(sum_half, Cin, Sum, carry_half2);
+        assign Carry = carry_half1 | carry_half2;
+    endmodule
+  prompt: "Create a Full Adder in Verilog using two Half Adders."
+
+- code: |
+    // Verilog code for Problem 7
+    module D_FlipFlop(
+        input D, CLK, RST,
+        output reg Q
+    );
+        always @(posedge CLK or posedge RST) begin
+            if (RST) 
+                Q <= 0;
+            else 
+                Q <= D;
+        end
+    endmodule
+  prompt: "Create a D Flip-Flop with asynchronous reset in Verilog."
+
+- code: |
+    // Verilog code for Problem 8
+    module Shift_Register(
+        input CLK, RST, SI,
+        output reg [3:0] Q
+    );
+        always @(posedge CLK or posedge RST) begin
+            if (RST) 
+                Q <= 4'b0000;
+            else 
+                Q <= {SI, Q[3:1]};
+        end
+    endmodule
+  prompt: "Create a 4-bit shift register in Verilog."
+
+- code: |
+    // Verilog code for Problem 9
+    module Counter(
+        input CLK, RST,
+        output reg [3:0] Q
+    );
+        always @(posedge CLK or posedge RST) begin
+            if (RST) 
+                Q <= 4'b0000;
+            else 
+                Q <= Q + 1;
+        end
+    endmodule
+  prompt: "Create a 4-bit binary up-counter in Verilog."
+- code: |
+    module MEM;
+    endmodule
+
+    module SC;
+    endmodule
+
+    module Xbar;
+    endmodule
+
+    module IS;
+        MEM mem1();
+        SC sc1();
+        Xbar xbar1();
+    endmodule
+
+    module Top;
+        IS isl();
+    endmodule
+  prompt: |
+    1. An interconnect switch (IS) contains the following components, a shared memory (MEM), a system controller (SC) and a data crossbar (Xbar).
+    a. Define the modules MEM, SC, and Xbar, using the module/endmodule keywords. You do not need to define the internals. Assume that the modules have no terminal lists.
+    b. Define the module IS, using the module/endmodule keywords. Instantiate the modules MEM, SC, Xbar and call the instances mem1, sc1, and xbar1, respectively. You do not need to define the internals. Assume that the module IS has no terminals.
+    c. Define a stimulus block (Top), using the module/endmodule keywords. Instantiate the design block IS and call the instance isl. This is the final step in building the simulation environment.
+  
+- code: |
+    module FA;
+    endmodule
+
+    module Ripple_Add;
+        FA fa0();
+        FA fa1();
+        FA fa2();
+        FA fa3();
+    endmodule
+  prompt: |
+    2. A Cbit ripple carry adder (Ripple-Add) contains four 1-bit full adders (FA).
+    a. Define the module FA. Do not define the internals or the terminal list.
+    b. Define the module Ripple-Add. Do not define the internals or the terminal list. Instantiate four full adders of the type FA in the module Ripple-Add and call them fa0, fa1, fa2, and fa3.
+
+- code: |
+    module mux2to1 (
+        input wire a, b, sel,
+        output wire y
+    );
+    assign y = (sel) ? b : a;
+    endmodule
+  prompt: "Write a Verilog module for a 2-to-1 multiplexer."
+
+- code: |
+    module and_gate (
+        input wire a, b,
+        output wire y
+    );
+    assign y = a & b;
+    endmodule
+  prompt: "Write a Verilog module for a 2-input AND gate."
+
+- code: |
+    module or_gate (
+        input wire a, b,
+        output wire y
+    );
+    assign y = a | b;
+    endmodule
+  prompt: "Write a Verilog module for a 2-input OR gate."
+
+- code: |
+    module d_flip_flop (
+        input wire clk, rst, d,
+        output wire q
+    );
+    always @(posedge clk or posedge rst) begin
+        if (rst) q <= 0;
+        else q <= d;
+    end
+    endmodule
+  prompt: "Write a Verilog module for a D flip-flop with asynchronous reset."
+
+- code: |
+    module full_adder (
+        input wire a, b, cin,
+        output wire sum, cout
+    );
+    assign sum = a ^ b ^ cin;
+    assign cout = (a & b) | (cin & (a ^ b));
+    endmodule
+  prompt: "Write a Verilog module for a full adder."
+
+- code: |
+    module counter (
+        input wire clk, rst,
+        output reg [3:0] count
+    );
+    always @(posedge clk or posedge rst) begin
+        if (rst) count <= 4'b0000;
+        else count <= count + 1;
+    end
+    endmodule
+  prompt: "Write a Verilog module for a 4-bit binary counter with asynchronous reset."
+
+- code: |
+    module shift_register (
+        input wire clk, rst, load, shift_in,
+        output reg [3:0] shift_out
+    );
+    always @(posedge clk or posedge rst) begin
+        if (rst) shift_out <= 4'b0000;
+        else if (load) shift_out <= 4'b1010;
+        else shift_out <= {shift_out[2:0], shift_in};
+    end
+    endmodule
+  prompt: "Write a Verilog module for a 4-bit shift register with load and shift-in functionality."
+
+- code: |
+    module priority_encoder (
+        input wire [3:0] in,
+        output reg [1:0] out,
+        output reg valid
+    );
+    always @(in) begin
+        case (in)
+            4'b0001: {out, valid} = {2'b00, 1'b1};
+            4'b0010: {out, valid} = {2'b01, 1'b1};
+            4'b0100: {out, valid} = {2'b10, 1'b1};
+            4'b1000: {out, valid} = {2'b11, 1'b1};
+            default: {out, valid} = {2'b00, 1'b0};
+        endcase
+    end
+    endmodule
+  prompt: "Write a Verilog module for a 4-input priority encoder."
+
+- code: |
+    module jk_flip_flop (
+        input wire clk, rst, j, k,
+        output reg q
+    );
+    always @(posedge clk or posedge rst) begin
+        if (rst) q <= 0;
+        else case ({j, k})
+            2'b00: q <= q;
+            2'b01: q <= 0;
+            2'b10: q <= 1;
+            2'b11: q <= ~q;
+        endcase
+    end
+    endmodule
+  prompt: "Write a Verilog module for a JK flip-flop."
+
+- code: |
+    module multiplexer_4to1 (
+        input wire [3:0] a, b, c, d,
+        input wire [1:0] sel,
+        output wire y
+    );
+    assign y = (sel == 2'b00) ? a :
+               (sel == 2'b01) ? b :
+               (sel == 2'b10) ? c : d;
+    endmodule
+  prompt: "Write a Verilog module for a 4-to-1 multiplexer."
+
+- code: |
+    module mux_8to1 (
+        input wire [7:0] a, b, c, d, e, f, g, h,
+        input wire [2:0] sel,
+        output wire y
+    );
+    assign y = (sel == 3'b000) ? a :
+               (sel == 3'b001) ? b :
+               (sel == 3'b010) ? c :
+               (sel == 3'b011) ? d :
+               (sel == 3'b100) ? e :
+               (sel == 3'b101) ? f :
+               (sel == 3'b110) ? g : h;
+    endmodule
+  prompt: "Write a Verilog module for an 8-to-1 multiplexer."
