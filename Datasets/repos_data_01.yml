@@ -1,6 +1,5 @@
 - code: |
     // Create a module with one input and one output that behaves like a wire
-
     module wire_assign( input in, output out );
         // assign out to in
         assign out = in;
@@ -9,20 +8,24 @@
 
 - code: |
     // This is a module that assigns the output to the input
-    module wire_assign( input in, output out );
+    module wire_assign(input in, output out);
+        assign out = in;
+    endmodule
   prompt: Write a Verilog module with one input and one output, and describe it as a module that assigns the output to the input.
 
 - code: |
     // This is a module that assigns the output to the input
-    module wire_assign( input in, output out );
-    // assign the output to the input
-  prompt: Declare a Verilog module with an input and an output and comment that the output is assigned to the input.
+    module wire_assign(input in, output out);
+        assign out = in;
+    endmodule
+  prompt: Write a Verilog module with one input and one output, and describe it as a module that assigns the output to the input.
 
 - code: |
     // This is a module that assigns the output to the input
-    module wire_assign( input in, output out );
-    // assign the output out to the input in
-  prompt: Create a Verilog module header with an input and an output, and comment that the output is being connected to the input.
+    module wire_assign(input in, output out);
+        assign out = in;
+    endmodule
+  prompt: Write a Verilog module with one input and one output, and describe it as a module that assigns the output to the input.
 
 - code: |
     `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
@@ -387,20 +390,20 @@
     module counter( 
         input clk,
         input reset,
-        output [3:0] q
+        output reg [3:0] q
     ); 
 
-        reg q;
-
         always @ (posedge clk) begin
-            if (reset) q <= 4'd1;
-            else if (q == 4'd12) q<= 4'd1;
-            else q <= q+4'd1;
+            if (reset) 
+                q <= 4'd1;
+            else if (q == 4'd12) 
+                q <= 4'd1;
+            else 
+                q <= q + 4'd1;
         end
 
     endmodule
-  prompt: Design a Verilog module `counter` that counts from 1 to 12. It should have an input `clk` (clock) and `reset` (reset signal), and a 4-bit output `q` that represents the count value.
-
+  prompt: Design a Verilog counter module that counts from 1 to 12 with a clock and reset input, and a 4-bit output.
 - code: |
     `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
 
@@ -766,43 +769,37 @@
     // This is a Moore state machine with two states 0 and 1, one input in, and one output out. 
     // Reset state is 0. Output is high in state 0. If in is low, state changes.
     module simple_fsm(input clk, input reset, input in, output out);
-    reg present_state, next_state;
-    // In state 0, if in=1, stay in state 0. In state 0, if in=0, go to state 1
-    // In state 1, if in=1, stay in state 1. In state 1, if in=0, go to state 0
-    // out=1 in state 0 and out=0 in state 1
-
+    
+        reg present_state, next_state;
+        
+        // State flip-flops
         always @(posedge clk) begin
             if (reset) begin  
                 present_state <= 0;
-            end 
-            else begin
-                // State flip-flops
+            end else begin
                 present_state <= next_state;  
             end
-
         end
 
-        always @(present_state,in) begin
+        // Next state logic (combinational block)
+        always @(present_state, in) begin
             case (present_state)
-            // next state logic
-            0: begin
-                if(in) next_state <= 0;
-                else next_state <= 1;
-            end
-            1: begin
-                if(in) next_state <= 1;
-                else next_state <= 0;
-            end
+                0: begin
+                    if (in) next_state = 0;
+                    else next_state = 1;
+                end
+                1: begin
+                    if (in) next_state = 1;
+                    else next_state = 0;
+                end
             endcase 
-
         end
 
-        // output logic
-        assign out = present_state?0:1;
+        // Output logic for Moore machine
+        assign out = (present_state == 0) ? 1 : 0;
 
     endmodule
   prompt: This is a Moore state machine with two states 0 and 1, one input `in`, and one output `out`. The reset state is 0. The output is high in state 0, and if `in` is low, the state changes. Implement the state transitions and output logic based on the given conditions.
-
 - code: |
     `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
 
@@ -1144,10 +1141,13 @@
     endmodule
   prompt: Write a Verilog testbench `tb_ram` to test the RAM module. The testbench should simulate writing to and reading from specific addresses in the RAM, displaying the results of each operation.
 - code: |
+    // This module implements a permutation box that takes a 32-bit input and outputs a 32-bit result, 
+    // where each bit in the output is selected based on the corresponding index from a predefined table.
     module P_box ( input wire [31:0] In32, output reg [31:0] Out32 );
-    localparam len_table = 32;
-    reg [5:0] In32table [len_table-1:0];
-
+    
+        localparam len_table = 32;
+        reg [4:0] In32table [len_table-1:0];  // 5 bits are enough to index 32 bits (0 to 31)
+        
         initial begin
             In32table[0] = 15;
             In32table[1] = 6;
@@ -1187,7 +1187,7 @@
 
         always @(In32) begin
             for (i = 0; i < len_table; i = i + 1) begin
-            Out32[i] <= In32[In32table[i]];
+                Out32[i] = In32[In32table[i]];
             end
         end
 
@@ -1359,7 +1359,10 @@
     assign f = (~x3 && ~x2 && ~x1) || (~x3 && ~x2 && x1) || (~x3 && x2 && x1) || (x3 && x2 && ~x1);
 
     endmodule
+  prompt: |
+    This module implements a combinational logic circuit based on a truth table with three inputs (x3, x2, x1) and one output (f). The output is set to 1 only for specific input combinations.
 
+- code: |
     `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
 
     module tb_truthtable;
@@ -1443,11 +1446,9 @@
             $display("all tests passed");
             $finish;
         end
-
-
     endmodule
-  prompt: | 
-    This is a Verilog code implementation of a truth table for a three-input, one-output function. The circuit has 8 rows for all possible input combinations and a corresponding output column. The code verifies the truth table with a testbench to ensure correctness by comparing the expected output for each input combination.
+  prompt: |
+    This is the testbench for the truthtable module. It checks all 8 combinations of the three input signals and validates the output `f` against expected results. If any test fails, it halts with an error message; otherwise, it prints the result and confirms all tests passed.
 
 - code: |
     // Design a signed adder that adds two 8-bit 2's complement numbers, a[7:0] and b[7:0]. 
@@ -1524,13 +1525,16 @@
         always @ (posedge clk) begin
             if (reset) q <= 4'd0;
             else if (slowena) begin
-            	if (q == 4'd9) q<= 4'd0;
-            	else q <= q+4'd1;
+                if (q == 4'd9) q <= 4'd0;
+                else q <= q + 4'd1;
             end
         end
 
     endmodule
+  prompt: |
+    This Verilog module implements a decade counter that counts from 0 to 9. The counter resets synchronously to 0 when `reset` is high. It increments only when `slowena` is enabled, and holds its value otherwise.
 
+- code: |
     `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
 
     module tb_count_slow;
@@ -1543,18 +1547,18 @@
         count_slow UUT (.clk(clk), .reset(reset), .slowena(slowena), .q(q) );
 
         initial // Clock generation
-            begin
+        begin
             clk = 0;
             forever begin
-            #(period/2);
-            clk = ~clk;
+                #(period/2);
+                clk = ~clk;
             end
         end
 
         initial begin
 
             #2;
-            
+
             // check reset
             reset = 1;
             #period;
@@ -1671,7 +1675,120 @@
 
     endmodule
   prompt: |
-    This Verilog code describes a decade counter that counts from 0 to 9. It uses the `reset` input to reset the counter to 0 synchronously. The `slowena` input allows the counter to increment when enabled. The counter stays paused when `slowena` is disabled. The testbench checks various conditions like reset functionality, counter increments, and pauses to ensure correctness.
+    This is a testbench for the `count_slow` module. It verifies counter behavior under reset, enables counting, pauses via `slowena`, and checks wrap-around from 9 to 0. It prints errors on failure and confirms correctness on success.
+
+- code: |
+    // This is a finite state machine that recognizes the sequence 101 on the input signal x. 
+    module adv_fsm(
+        input clk,
+        input reset,
+        input x,
+        output z
+    ); 
+        reg [1:0] present_state, next_state;
+        parameter IDLE=0, S1=1, S10=2, S101=3;
+
+        // State register
+        always @(posedge clk) begin
+            if (reset) 
+                present_state <= IDLE;
+            else 
+                present_state <= next_state;
+        end
+
+        // Next-state logic
+        always @(*) begin
+            case (present_state)
+                IDLE: next_state = x ? S1 : IDLE;
+                S1:   next_state = x ? IDLE : S10;
+                S10:  next_state = x ? S101 : IDLE;
+                S101: next_state = IDLE;
+                default: next_state = IDLE;
+            endcase
+        end
+
+        // Output logic
+        assign z = (present_state == S101);
+
+    endmodule
+  prompt: |
+    This Verilog code defines a finite state machine (FSM) that detects the sequence "101" on the input signal `x`. It cycles through four states: IDLE, S1, S10, and S101. The FSM asserts output `z` high only when it reaches the S101 state, indicating the sequence has been successfully detected. The state transitions occur synchronously on the positive edge of the clock and are reset to IDLE with the `reset` signal.
+
+- code: |
+    `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
+
+    module tb_adv_fsm;
+
+        reg clk, reset, x;
+        wire z;
+
+        localparam period = 20;  
+        adv_fsm UUT (.clk(clk), .reset(reset), .x(x), .z(z) );
+
+        // Clock generation
+        initial begin
+            clk = 0;
+            forever #(period/2) clk = ~clk;
+        end
+
+        initial begin
+            #2;
+            
+            // Check reset
+            reset = 1; x = 0;
+            #period;
+            if(z !== 0) begin
+                $display("test 1 failed");
+                $finish;
+            end else $display("x=%b, z=%b", x, z);
+
+            // FSM in IDLE
+            reset = 0; x = 0;
+            #period;
+            if(z !== 0) begin
+                $display("test 2 failed");
+                $finish;
+            end else $display("x=%b, z=%b", x, z);
+
+            // Begin pattern 1
+            x = 1;
+            #period;
+            if(z !== 0) begin
+                $display("test 3 failed");
+                $finish;
+            end else $display("x=%b, z=%b", x, z);
+
+            // Continue pattern 10
+            x = 0;
+            #period;
+            if(z !== 0) begin
+                $display("test 4 failed");
+                $finish;
+            end else $display("x=%b, z=%b", x, z);
+
+            // Complete pattern 101
+            x = 1;
+            #period;
+            if(z !== 1) begin
+                $display("test 5 failed");
+                $finish;
+            end else $display("x=%b, z=%b", x, z);
+
+            // Should go back to IDLE
+            #period;
+            if(z !== 0) begin
+                $display("test 6 failed");
+                $finish;
+            end else $display("x=%b, z=%b", x, z);
+
+            $display("all tests passed");
+            $finish;
+        end
+
+    endmodule
+  prompt: |
+    This Verilog testbench verifies the functionality of the FSM that detects the sequence "101". It simulates clock cycles, applies input transitions to form the 101 pattern, and checks if the output `z` is asserted at the correct state. The testbench also confirms proper behavior under reset and ensures the FSM returns to the IDLE state as expected.
+
 - code: |
     // This is a finite state machine that recognizes the sequence 101 on the input signal x. 
     module adv_fsm(
@@ -1681,113 +1798,85 @@
     output z ); 
     reg [1:0] present_state, next_state;
     parameter IDLE=0, S1=1, S10=2, S101=3;
-    // output signal z is asserted to 1 when present_state is S101 
-    // present_state is reset to IDLE when reset is high
-    // otherwise it is assigned next state
-    // if present_state is IDLE, next_state is assigned S1 if x is 1, otherwise next_state stays at IDLE
-    // if present_state is S1, next_state is assigned S10 if x is 0, otherwise next_state stays at IDLE 
-    // if present_state is S10, next_state is assigned S101 if x is 1, otherwise next_state stays at IDLE 
-    // if present_state is S101, next_state is assigned IDLE
 
-    `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
+    always @(posedge clk or posedge reset)
+    begin
+        if(reset)
+            present_state <= IDLE;
+        else
+            present_state <= next_state;
+    end
+
+    always @(*)
+    begin
+        case (present_state)
+            IDLE: next_state = x ? S1 : IDLE;
+            S1:   next_state = x ? IDLE : S10;
+            S10:  next_state = x ? S101 : IDLE;
+            S101: next_state = IDLE;
+            default: next_state = IDLE;
+        endcase
+    end
+
+    assign z = (present_state == S101);
+
+    endmodule
+  prompt: |
+    This Verilog code defines a finite state machine (FSM) that recognizes the sequence "101" on the input signal `x`. The FSM transitions through four states: `IDLE`, `S1`, `S10`, and `S101`. The output signal `z` is asserted when the FSM reaches state `S101`. The state machine resets to `IDLE` when `reset` is high. The transitions depend on the input `x` and follow the pattern to detect the 101 sequence.
+
+- code: |
+    `timescale 1 ns/10 ps
 
     module tb_adv_fsm;
 
         reg clk, reset, x;
         wire z;
 
-        // duration for each bit = 20 * timescale = 20 * 1 ns  = 20ns
         localparam period = 20;  
         adv_fsm UUT (.clk(clk), .reset(reset), .x(x), .z(z) );
 
-        initial // Clock generation
-            begin
+        initial begin
             clk = 0;
-            forever begin
-            #(period/2);
-            clk = ~clk;
-            end
+            forever #(period/2) clk = ~clk;
         end
 
         initial begin
 
             #2;
-            
-            // check reset
             reset = 1; x = 0;
             #period;
-            // goes to state IDLE
-            if(z!==0) begin
-                $display("test 1 failed");
-                $finish;
-            end
-            else $display("x=%b, z=%b",x,z);
+            if(z!==0) begin $display("test 1 failed"); $finish; end else $display("x=%b, z=%b",x,z);
 
-            // start fsm
-            reset = 0; 
-            x = 0;
+            reset = 0; x = 0;
             #period;
-            // stays in state IDLE
-            if(z!==0) begin
-                $display("test 2 failed");
-                $finish;
-            end
-            else $display("x=%b, z=%b",x,z);
+            if(z!==0) begin $display("test 2 failed"); $finish; end else $display("x=%b, z=%b",x,z);
 
-            // start pattern
             x = 1;
             #period;
-            // goes to S1
-            if(z!==0) begin
-                $display("test 3 failed");
-                $finish;
-            end
-            else $display("x=%b, z=%b",x,z);
+            if(z!==0) begin $display("test 3 failed"); $finish; end else $display("x=%b, z=%b",x,z);
+
             x = 0;
             #period;
-            // goes to S2
-            if(z!==0) begin
-                $display("test 4 failed");
-                $finish;
-            end
-            else $display("x=%b, z=%b",x,z);
+            if(z!==0) begin $display("test 4 failed"); $finish; end else $display("x=%b, z=%b",x,z);
+
             x = 1;
             #period;
-            // goes to S3
-            if(z!==1) begin
-                $display("test 5 failed");
-                $finish;
-            end
-            else $display("x=%b, z=%b",x,z);
+            if(z!==1) begin $display("test 5 failed"); $finish; end else $display("x=%b, z=%b",x,z);
 
             #period;
-            // goes to S1
-            if(z!==0) begin
-                $display("test 6 failed");
-                $finish;
-            end
-            else $display("x=%b, z=%b",x,z);
+            if(z!==0) begin $display("test 6 failed"); $finish; end else $display("x=%b, z=%b",x,z);
 
             $display("all tests passed");
             $finish;
-
         end
 
     endmodule
   prompt: |
-    This Verilog code defines a finite state machine (FSM) that recognizes the sequence "101" on the input signal `x`. The FSM transitions through four states: `IDLE`, `S1`, `S10`, and `S101`. The output signal `z` is asserted when the FSM reaches state `S101`. The testbench verifies the FSM's correct operation by providing various inputs and checking the state transitions and output.
+    This Verilog testbench verifies the behavior of a sequence detector FSM that identifies the sequence "101". It checks the output `z` after each input to ensure that the FSM transitions correctly through states and asserts `z` only when the pattern has been matched.
+
 - code: |
     // Build a 64-bit arithmetic shift register, with synchronous load. 
     // The shifter can shift both left and right, and by 1 or 8 bit positions, selected by amount. 
-    // load: Loads shift register with data[63:0] instead of shifting.
-    // ena: Chooses whether to shift.
-    // amount: Chooses which direction and how much to shift.
-        // 2'b00: shift left by 1 bit.
-        // 2'b01: shift left by 8 bits.
-        // 2'b10: shift right by 1 bit.
-        // 2'b11: shift right by 8 bits.
-    // q: The contents of the shifter.
-
     module advshift(input clk,
         input load,
         input ena,
@@ -1797,20 +1886,24 @@
 
         always @(posedge clk) begin
             if (load) begin
-                q<=data;
+                q <= data;
             end
             else if (ena) begin
                 case (amount)
-                    0: q <= {q[62:0],1'b0};
-                    1: q <= {q[55:0],8'b0};
-                    2: q <= {1'b0,q[63:1]};
-                    3: q <= {8'b0,q[63:8]};
+                    2'b00: q <= {q[62:0], 1'b0};
+                    2'b01: q <= {q[55:0], 8'b0};
+                    2'b10: q <= {1'b0, q[63:1]};
+                    2'b11: q <= {8'b0, q[63:8]};
                 endcase
             end
         end
-    endmodule
 
-    `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
+    endmodule
+  prompt: |
+    This Verilog code defines a 64-bit arithmetic shift register with synchronous load functionality. The shift register can shift left or right by 1 bit or 8 bits, depending on the `amount` input. The output `q` reflects the result of either loading the data or performing the specified shift operation during the rising edge of the clock.
+
+- code: |
+    `timescale 1 ns/10 ps
 
     module tb_adv_shifter;
 
@@ -1819,116 +1912,49 @@
         reg [63:0] data;
         wire [63:0] q;
 
-        // duration for each bit = 20 * timescale = 20 * 1 ns  = 20ns
         localparam period = 20;  
         advshift UUT (.clk(clk), .load(load), .amount(amount), .data(data), .ena(ena), .q(q) );
 
-        initial // Clock generation
-            begin
+        initial begin
             clk = 0;
-            forever begin
-            #(period/2);
-            clk = ~clk;
-            end
+            forever #(period/2) clk = ~clk;
         end
 
         initial begin
-            // load data (load not enabled, should not load)
             data = 64'hffff_ffff_ffff_ffff;
-            load = 0;
-            amount = 0;
-            ena = 0;
+            load = 0; ena = 0; amount = 0;
             #period;
-            if(q===64'hffff_ffff_ffff_ffff) begin
-                $display("test 1 failed");
-                $finish;
-            end
-            else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
+            if(q === 64'hffff_ffff_ffff_ffff) begin $display("test 1 failed"); $finish; end else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
 
-            // enable load
-            load = 1;
-            amount = 0;
-            ena = 0;
-            #period;
-            if(q!==64'hffff_ffff_ffff_ffff) begin
-                $display("test 2 failed");
-                $finish;
-            end
-            else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
+            load = 1; #period;
+            if(q !== 64'hffff_ffff_ffff_ffff) begin $display("test 2 failed"); $finish; end else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
 
-            // chead load override
-            load = 1;
-            amount = 2;
-            ena = 0;
-            #period;
-            if(q!==64'hffff_ffff_ffff_ffff) begin
-                $display("test 3 failed");
-                $finish;
-            end
-            else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
+            load = 1; amount = 2; #period;
+            if(q !== 64'hffff_ffff_ffff_ffff) begin $display("test 3 failed"); $finish; end else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
 
-            // amount = 0 but not enabled (checking enable functionality)
-            load = 0;
-            amount = 0;
-            ena = 0;
-            #period;
-            if(q===64'hffff_ffff_ffff_fffe) begin
-                $display("test 4 failed");
-                $finish;
-            end
-            else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
+            load = 0; amount = 0; ena = 0; #period;
+            if(q === 64'hffff_ffff_ffff_fffe) begin $display("test 4 failed"); $finish; end else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
 
-            // enable, amount=0
-            load = 0;
-            amount = 0;
-            ena = 1;
-            #period;
-            if(q!==64'hffff_ffff_ffff_fffe) begin
-                $display("test 5 failed");
-                $finish;
-            end
-            else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
+            ena = 1; #period;
+            if(q !== 64'hffff_ffff_ffff_fffe) begin $display("test 5 failed"); $finish; end else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
 
-            // enable, amount=1
-            load = 0;
-            amount = 1;
-            ena = 1;
-            #period;
-            if(q!==64'hffff_ffff_ffff_fe00) begin
-                $display("test 6 failed");
-                $finish;
-            end
-            else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
+            amount = 1; #period;
+            if(q !== 64'hffff_ffff_ffff_fe00) begin $display("test 6 failed"); $finish; end else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
 
-            // enable, amount=2
-            load = 0;
-            amount = 2;
-            ena = 1;
-            #period;
-            if(q!==64'h7fff_ffff_ffff_ff00) begin
-                $display("test 7 failed");
-                $finish;
-            end
-            else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
+            amount = 2; #period;
+            if(q !== 64'h7fff_ffff_ffff_ff00) begin $display("test 7 failed"); $finish; end else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
 
-            // enable, amount=3
-            load = 0;
-            amount = 3;
-            ena = 1;
-            #period;
-            if(q!==64'h007f_ffff_ffff_ffff) begin
-                $display("test 8 failed");
-                $finish;
-            end
-            else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
+            amount = 3; #period;
+            if(q !== 64'h007f_ffff_ffff_ffff) begin $display("test 8 failed"); $finish; end else $display("load =%b, amount = %b, ena=%b, q=%b",load,amount,ena, q);
 
             $display("all tests passed");
             $finish;
-
         end
+
     endmodule
   prompt: |
-    This Verilog code defines a 64-bit arithmetic shift register with synchronous load functionality. The shift register can shift left or right by 1 bit or 8 bits, depending on the `amount` input. The testbench verifies the behavior of the shift register by checking various load and shift conditions, including shifting and loading data. If the expected results do not match, a failure message will be displayed.
+    This Verilog testbench validates the behavior of a 64-bit shift register module. It tests various scenarios including loading data into the register and shifting the contents by 1 or 8 bits in both directions. Each step checks if the output `q` matches the expected result after each clock cycle and condition.
+
 - code: |
     module abro( 
         input clk,
