@@ -1,0 +1,362 @@
+- code: |
+    module TOP(CLK, RST, reg1, OUT);
+      input CLK, RST;
+      reg [1:0] reg1;
+      reg [6:4] reg3;
+      wire [2:1] in1;
+      wire [11:10] in2;
+
+
+      assign in1[2:1] = reg3[6:5];
+
+      always @(posedge CLK or negedge RST) begin
+        reg1 <= in1[2:1];
+      end
+
+      always @(posedge CLK or negedge RST) begin
+        if(RST) begin
+          reg3 <= 3'd0;
+        end else begin
+          reg3 <= 3'd1;
+        end
+      end
+
+    endmodule
+  prompt: <Prompt for Problem 3>
+
+- code: |
+    module TOP 
+      (
+       CLK, RST,
+       in1, in2, in3, in4,
+       out0, out1, out2, out3, out4, out5, out6, out7
+       );
+      
+      input CLK, RST;
+      input in1, in2, in3, in4;
+      output out0, out1, out2, out3, out4, out5, out6, out7;
+     
+      and  U0 (out0, in1, in2, in3, in4);
+      nand U1 (out1, in1, in2, in3, in4);
+      or   U2 (out2, in1, in2, in3, in4);
+      nor  U3 (out3, in1, in2, in3, in4);
+      xor  U4 (out4, in1, in2, in3, in4);
+      xnor U5 (out5, in1, in2, in3, in4);
+      not  U6 (out6, in1);
+      buf  U7 (out7, in1);
+    endmodule
+  prompt: <Prompt for Problem 4>
+
+- code: |
+    module TOP(CLK,RST);
+      input [3:1] CLK;
+      input [1:0] RST;
+      reg cnt;
+      
+      always @(posedge CLK[2] or posedge RST[0]) begin
+        if(RST[0]) begin
+          cnt <= 'd0;
+        end
+      end
+
+    endmodule
+  prompt: <Prompt for Problem 5>
+
+- code: |
+    module TOP(CLK, RST_X, ADDR, WE, D, Q);
+      input CLK;
+      input RST_X;
+
+      input [7:0] ADDR;
+      input WE;
+      input [7:0] D;
+      output [7:0] Q;
+
+      reg [7:0] mem [0:255];
+      reg [7:0] d_ADDR;
+      
+      always @(posedge CLK) begin
+        if(WE) mem[ADDR] <= D;
+        d_ADDR <= ADDR;
+      end
+      assign Q = mem[d_ADDR];
+      
+    endmodule
+  prompt: <Prompt for Problem 6>
+
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt1,cnt2,cnt3,cnt4,cnt5,cnt6,cnt7,cnt8,cnt9,cnt10;
+      parameter zero = 0;
+
+      //reset
+      always @(posedge CLK) begin
+        if(RST[0]) begin
+          cnt1 <= 0;
+        end else begin
+          cnt1 <= 8'd1;
+        end
+      end
+
+      //reset
+      always @(posedge CLK or posedge RST)
+        if(RST)
+          cnt2 <= 0;
+        else
+          cnt2 <= 8'd1;
+
+      //not reset
+      always @(posedge CLK or posedge RST) begin
+        if(RST) begin
+          cnt3 <= cnt1[0];
+        end else begin
+          cnt3 <= 8'd1;
+        end
+      end
+
+      //not reset
+      always @(posedge CLK or posedge RST) begin
+        cnt4 <= 0;
+      end
+
+      //reset
+      always @(posedge CLK or posedge RST) begin
+        if(RST) begin
+          cnt5 <= {2'd0,6'd0};
+        end else begin
+          cnt5 <= 8'd1;
+        end
+      end
+
+      //not reset
+      always @(posedge CLK or posedge RST) begin
+        if(RST) begin
+          cnt6 <= 7'd0 + cnt1[1:0];
+        end else begin
+          cnt6 <= 8'd1;
+        end
+      end
+
+      //reset
+      always @(posedge CLK) begin
+        if(!RST) begin
+          cnt7 <= 0;
+        end else begin
+          cnt7 <= 8'd1;
+        end
+      end
+
+      //not reset
+      always @(posedge CLK) begin
+        if(RST && RST) begin
+          cnt8 <= 0;
+        end else begin
+          cnt8 <= 8'd1;
+        end
+      end
+
+      always @(posedge CLK) begin
+        if(RST[zero]) begin
+          cnt10 <= 0;
+        end else begin
+          cnt10 <= 8'd1;
+        end
+      end
+
+      SUB sub(CLK,RST);
+
+    endmodule
+
+    module SUB(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt9;
+      parameter zero = 0;
+
+      always @(posedge CLK) begin
+        if(RST) begin
+          cnt9 <= zero;
+        end else begin
+          cnt9 <= 8'd1;
+        end
+      end
+    endmodule
+  prompt: <Prompt for Problem 7>
+
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      reg [7:0] cnt;
+
+      always @(posedge CLK or negedge RST) begin
+        if(RST) begin
+          cnt <= $signed(cnt);
+        end else begin
+          cnt <= $unsigned(cnt);
+        end
+      end
+
+    endmodule
+  prompt: <Prompt for Problem 8>
+
+- code: |
+    `default_nettype none
+      
+    module TOP(CLK, RST_X, MEM_A, MEM_RE, MEM_WE, MEM_D, MEM_Q, MEM_BUSY, MEM_DONE);
+      input CLK;
+      input RST_X;
+
+      parameter WA = 32;
+      parameter WD = 32;
+      
+      output reg [WA-1:0] MEM_A;
+      output reg MEM_RE;
+      output reg MEM_WE;
+      output reg [WD-1:0] MEM_D;
+      input [WD-1:0] MEM_Q;
+      input MEM_DONE;
+      input MEM_BUSY;
+
+      reg [3:0] state;
+      reg [3:0] cnt;
+
+      wire [3:0] wire_cnt0;
+      assign wire_cnt0 = cnt + 1;
+      wire [3:0] wire_cnt1;
+      assign wire_cnt1 = wire_cnt0 + 1;
+
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          MEM_RE <= 0;
+        end else begin
+          MEM_RE <= 0;
+        end
+      end
+      
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          state <= 0;
+          cnt <= 0;
+        end else begin
+          if(state == 0) begin
+            cnt <= cnt + 1;
+            if(cnt == 8) begin
+              state <= 1;
+              cnt <= 0;
+            end
+          end else if(state == 1) begin
+            cnt <= cnt + 1;
+            if(cnt == 8) begin
+              state <= 0;
+              cnt <= 0;
+            end
+          end
+        end
+      end
+    endmodule
+  prompt: <Prompt for Problem 9>
+
+- code: |
+    module TOP(CLK, RST);
+      input CLK, RST;
+      parameter AAA = 1;
+      supply0 VSS;
+      supply1 VDD;
+    endmodule
+  prompt: <Prompt for Problem 10>
+
+- code: |
+    module TOP(CLK, RST_X,
+               MEM_A, MEM_RE, MEM_WE, MEM_D, MEM_Q, MEM_BUSY, MEM_DONE);
+      input CLK;
+      input RST_X;
+      
+      parameter WA = 32;
+      parameter WD = 32;
+      parameter SIZE = 1024 * 32;
+
+      localparam OFFSET0 = 0;
+      localparam OFFSET1 = SIZE * 1;
+      localparam OFFSET2 = SIZE * 2;
+      
+      output reg [WA-1:0] MEM_A;
+      output reg MEM_RE;
+      output reg MEM_WE;
+      output reg [WD-1:0] MEM_D;
+      input [WD-1:0] MEM_Q;
+      input MEM_DONE;
+      input MEM_BUSY;
+
+      reg [WA-1:0] cnt0;
+      reg [WA-1:0] cnt1;
+      reg [WA-1:0] cnt2;
+      reg [WD-1:0] readdata0;
+      reg [WD-1:0] readdata1;
+      reg [WD-1:0] writedata;
+      reg [3:0] state;
+
+      localparam ST_INIT = 0;
+      localparam ST_READ0 = 1;
+      localparam ST_READWAIT0 = 2;
+      localparam ST_INTERVAL = 3;
+      localparam ST_READ1 = 4;
+      localparam ST_READWAIT1 = 5;
+      localparam ST_CALC = 6;
+      localparam ST_WRITE = 7;
+      localparam ST_WRITEWAIT = 8;
+      localparam ST_DONE = 9;
+
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          state <= ST_INIT;
+          cnt0 <= 0;
+          cnt1 <= 0;
+          cnt2 <= 0;
+        end else begin
+          if(state == ST_INIT) begin
+            MEM_WE <= 0;
+            MEM_RE <= 0;
+            if(!MEM_BUSY) state <= ST_READ0;
+          end else if(state == ST_READ0) begin
+            MEM_RE <= 1;
+            MEM_A <= cnt0 + OFFSET0;
+            if(MEM_BUSY) state <= ST_READWAIT0;
+          end else if(state == ST_READWAIT0) begin
+            MEM_RE <= 0;
+            readdata0 <= MEM_Q;
+            if(MEM_DONE) state <= ST_INTERVAL;
+          end else if(state == ST_INTERVAL) begin
+            if(!MEM_BUSY) state <= ST_READ1;
+          end else if(state == ST_READ1) begin
+            MEM_RE <= 1;
+            MEM_A <= cnt1 + OFFSET1;
+            if(MEM_BUSY) state <= ST_READWAIT1;
+          end else if(state == ST_READWAIT1) begin
+            MEM_RE <= 0;
+            readdata1 <= MEM_Q;
+            if(MEM_DONE) state <= ST_CALC;
+          end else if(state == ST_CALC) begin
+            writedata <= readdata0 + readdata1;
+            if(!MEM_BUSY) state <= ST_WRITE;
+          end else if(state == ST_WRITE) begin
+            MEM_WE <= 1;
+            MEM_D <= writedata;
+            MEM_A <= cnt2 + OFFSET2;
+            if(MEM_BUSY) state <= ST_WRITEWAIT;
+          end else if(state == ST_WRITEWAIT) begin
+            MEM_WE <= 0;
+            if(MEM_DONE) begin
+              cnt0 <= cnt0 + 32;
+              cnt1 <= cnt1 + 32;
+              cnt2 <= cnt2 + 32;
+              if(cnt0 < SIZE) state <= ST_INIT;
+              else state <= ST_DONE;
+            end
+          end else if(state == ST_DONE) begin
+            $display("Done");
+            //do nothing
+          end
+        end
+      end
+    endmodule
+  prompt: <Prompt for Problem 11>
