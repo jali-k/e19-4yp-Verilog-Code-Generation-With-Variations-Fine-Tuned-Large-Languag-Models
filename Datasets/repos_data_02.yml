@@ -249,77 +249,6 @@
         end
     endmodule
   prompt: "Write a testbench for the Verilog module 'TOP_NEW'. The testbench should apply various test cases for the inputs, monitor the output counter, and simulate the reset and clock functionality."
-
-- code: |
-    module TOP_CASEx(CLK, RST, cnt);
-      input CLK, RST;
-      output reg [7:0] cnt;
-
-      always @(posedge CLK) begin
-        if(RST) begin
-          cnt <= 0;
-        end else begin
-          casex(cnt)
-            'b00: begin
-              cnt <= cnt + 1;
-            end
-            'b1x: begin
-              cnt <= 0;
-            end
-            default: begin
-              cnt <= cnt + 1;
-            end
-          endcase
-        end
-      end
-    endmodule
-  prompt: "Write a Verilog module with an 8-bit counter that uses a casex statement to increment the counter or reset it based on specific bit patterns in the counter value."
-
-- code: |
-    `timescale 1ns / 1ps
-
-    module tb_TOP_CASEx;
-        reg CLK;
-        reg RST;
-        wire [7:0] cnt;
-
-        // Instantiate the TOP_CASEx module
-        TOP_CASEx uut (
-            .CLK(CLK),
-            .RST(RST),
-            .cnt(cnt)
-        );
-
-        // Clock generation
-        always begin
-            #5 CLK = ~CLK;
-        end
-
-        // Test cases
-        initial begin
-            CLK = 0; RST = 1;  // Initialize
-            $display("Starting TOP_CASEx Testbench...");
-            $dumpfile("top_casex_tb.vcd");
-            $dumpvars(0, tb_TOP_CASEx);
-            
-            // Apply reset
-            #10 RST = 0;  // Release reset
-            #100 RST = 1; // Apply reset again
-            #10 RST = 0;  // Release reset again
-
-            // Wait for the test to complete
-            #200;
-            $display("Testbench completed.");
-            $finish;
-        end
-
-        // Monitor signals
-        initial begin
-            $monitor("Time: %0t | CLK: %0b | RST: %0b | cnt: %0h", $time, CLK, RST, cnt);
-        end
-    endmodule
-  prompt: "Write a testbench for the Verilog module 'TOP_CASEx'. The testbench should apply various test cases for the inputs, monitor the output counter, and simulate the reset and clock functionality."
-
 - code: |
     module TOP_CTR_NEG(CLK, RST_X, cnt);
       input CLK;
@@ -975,31 +904,6 @@
       end
     endmodule
   prompt: Provide a testbench to verify the bitwise chaining behavior across the bits in the output.
-
-- code: |
-    `default_nettype none
-    `include "led.v"
-
-    module main
-    (
-     input CLK,
-     input RST,
-     output [7:0] LED
-     );
-
-      led #
-        (
-         .STEP(`STEP)
-         )
-      inst_led
-        (
-         .CLK(CLK),
-         .RST(RST),
-         .LED(LED)
-         );
-
-    endmodule
-  prompt: Show how the `include` and parameter macros integrate with the LED module, and describe the effect of `default_nettype none`.
 - code: |
     module led #
       (
