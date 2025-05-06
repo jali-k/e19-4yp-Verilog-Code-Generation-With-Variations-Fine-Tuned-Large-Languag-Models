@@ -1,3 +1,6 @@
+// Change the reset condition from `if(RST)` to `if(!RST)` (active-low reset).
+
+
 module top #
 (
   parameter DATAWID = 32
@@ -12,7 +15,7 @@ module top #
   assign led = count[DATAWID-1:DATAWID-8];
 
   always @(posedge CLK) begin
-    if(RST) begin
+    if(!RST) begin
       count <= 0;
     end else begin
       count <= count + 1;

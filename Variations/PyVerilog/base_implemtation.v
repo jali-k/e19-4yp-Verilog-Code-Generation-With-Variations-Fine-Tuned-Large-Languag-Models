@@ -1,3 +1,4 @@
+
 module top #
 (
   parameter DATAWID = 32
