@@ -1,0 +1,1049 @@
+- code: |
+    module FSM_TOP(CLK, RST_X, IN, OUT);
+      input CLK, RST_X;
+      input [7:0] IN;
+      output reg [7:0] OUT;
+
+      reg [7:0] state;
+      reg [7:0] cnt;
+
+      reg [7:0] ncnt;
+      reg [7:0] nstate;
+      reg ctrljump;
+
+      always @* begin
+        ncnt = cnt;
+        nstate = state;
+        OUT = 8'h00;
+        ctrljump = 0;
+
+        case(state)
+          0: begin
+            ncnt = 0;
+            ctrljump = 1;
+            if(ctrljump) begin
+              OUT = 8'h0;
+              nstate = 1;
+            end
+          end
+          
+          1: begin
+            ncnt = cnt + 1;
+            ctrljump = cnt > 7;
+            if(ctrljump) begin
+              OUT = cnt;
+              nstate = 2;
+            end
+          end
+          
+          2: begin
+            ncnt = cnt + 2;
+            ctrljump = cnt > 20;
+            if(ctrljump) begin
+              OUT = cnt - 8;
+              nstate = 0;
+            end
+          end
+        endcase
+      end
+      
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          state <= 0;
+          cnt <= 0;
+        end else begin
+          state <= nstate;
+          cnt <= ncnt;
+        end
+      end
+    endmodule
+  prompt: |
+    Write a Verilog module named 'FSM_TOP' that implements a finite state machine with three states. 
+    It updates an 8-bit output 'OUT' based on a counter 'cnt' and transitions between states depending 
+    on 'cnt' values. Include asynchronous reset and combinational logic for next state and counter logic.
+
+- code: |
+    `timescale 1ns / 1ps
+
+    module tb_fsm_top;
+      reg CLK;
+      reg RST_X;
+      reg [7:0] IN;
+      wire [7:0] OUT;
+
+      // Instantiate the FSM_TOP module
+      FSM_TOP uut (
+        .CLK(CLK),
+        .RST_X(RST_X),
+        .IN(IN),
+        .OUT(OUT)
+      );
+
+      // Clock generation: 10 ns period (100 MHz)
+      always #5 CLK = ~CLK;
+
+      initial begin
+        $display("Starting FSM_TOP Testbench...");
+        $dumpfile("fsm_top_tb.vcd");
+        $dumpvars(0, tb_fsm_top);
+
+        // Initial values
+        CLK = 0;
+        RST_X = 0;
+        IN = 8'h00;
+
+        // Apply reset
+        #10;
+        RST_X = 1;
+
+        // Run simulation for some time
+        #200;
+
+        $display("Testbench completed.");
+        $finish;
+      end
+
+      // Monitor signals
+      initial begin
+        $monitor("Time: %0t | State: %0d | CNT: %0d | OUT: %0h", $time, uut.state, uut.cnt, OUT);
+      end
+    endmodule
+  prompt: |
+    Write a Verilog testbench for the 'FSM_TOP' module. Generate a clock, apply reset, initialize the input, 
+    and observe output changes. Use `$monitor` to trace internal state, counter, and output. Include 
+    `$dumpfile` and `$dumpvars` for waveform generation.
+
+- code: |
+    module TOP_NEW(IN1, SEL, bit_out);
+        input IN1, SEL;   // Declare inputs
+        output bit_out;   // Declare output
+
+        // The function output should be assigned directly to bit_out
+        assign bit_out = func1(IN1, SEL);
+
+        // Function definition
+        function [0:0] func1;  // Return type of the function should be specified
+            input in1;
+            input sel;
+            begin
+                case(sel)
+                    1'b0: func1 = in1;    // Return in1 when SEL is 0
+                    default: func1 = 1'b0; // Return 0 when SEL is not 0
+                endcase
+            end
+        endfunction
+
+    endmodule
+  prompt: "Write a Verilog module that uses a function to implement conditional logic based on a select signal. The function 'func1' takes two inputs and returns the first input if the select is 0, otherwise returns 0. Use the function output to drive a register."
+
+- code: |
+    `timescale 1ns / 1ps
+
+    module tb_TOP_NEW;
+        reg IN1;
+        reg SEL;
+        wire bit_out;
+
+        // Instantiate the TOP_NEW module
+        TOP_NEW uut (
+            .IN1(IN1),
+            .SEL(SEL),
+            .bit_out(bit_out)
+        );
+
+        // Test cases
+        initial begin
+            $display("Starting TOP_NEW Testbench...");
+            $dumpfile("top_new_tb.vcd");
+            $dumpvars(0, tb_TOP_NEW);
+
+            // Test case 1: IN1 = 0, SEL = 0
+            IN1 = 0; SEL = 0; #10;
+            
+            // Test case 2: IN1 = 1, SEL = 0
+            IN1 = 1; SEL = 0; #10;
+            
+            // Test case 3: IN1 = 1, SEL = 1
+            IN1 = 1; SEL = 1; #10;
+            
+            // Test case 4: IN1 = 0, SEL = 1
+            IN1 = 0; SEL = 1; #10;
+
+            $display("Testbench completed.");
+            $finish;
+        end
+
+        // Monitor signals
+        initial begin
+            $monitor("Time: %0t | IN1: %0b | SEL: %0b | bit_out: %0b", $time, IN1, SEL, bit_out);
+        end
+    endmodule
+  prompt: "Write a testbench for the Verilog module 'TOP_NEW'. The testbench should apply various test cases for the inputs and monitor the output. Use proper initialization, signal monitoring, and simulation control statements."
+
+- code: |
+    module TOP_NEW(CLK, RST, cnt);
+      input CLK, RST;
+      output reg [7:0] cnt;  // Declare cnt as an output
+
+      always @(posedge CLK) begin
+        if(RST) begin
+          cnt <= 0;
+        end else begin
+          case(cnt)
+            'h0, 'h1, 'h2: begin
+              cnt <= cnt + 1;
+            end
+            'hff: begin
+              cnt <= 0;
+            end
+            default: begin
+              cnt <= cnt + 1;
+            end
+          endcase
+        end
+      end
+    endmodule
+  prompt: "Write a Verilog module that increments an 8-bit counter on every positive clock edge, with a reset. The counter has special behavior: if it is 0, 1, or 2, it increments normally; if it reaches 0xFF, it resets to 0; otherwise, it continues incrementing."
+
+- code: |
+    `timescale 1ns / 1ps
+
+    module tb_TOP_NEW;
+        reg CLK;
+        reg RST;
+        wire [7:0] cnt;
+
+        // Instantiate the TOP_NEW module
+        TOP_NEW uut (
+            .CLK(CLK),
+            .RST(RST),
+            .cnt(cnt)  // Connect the cnt wire to the output
+        );
+
+        // Clock generation
+        always begin
+            #5 CLK = ~CLK;  // 100MHz clock
+        end
+
+        // Test cases
+        initial begin
+            CLK = 0; RST = 1;  // Initialize
+            $display("Starting TOP_NEW Testbench...");
+            $dumpfile("top_new_tb.vcd");
+            $dumpvars(0, tb_TOP_NEW);
+            
+            // Apply reset
+            #10 RST = 0;  // Release reset
+            #100 RST = 1; // Apply reset again
+            #10 RST = 0;  // Release reset again
+
+            // Wait for the test to complete
+            #200;
+            $display("Testbench completed.");
+            $finish;
+        end
+
+        // Monitor signals
+        initial begin
+            $monitor("Time: %0t | CLK: %0b | RST: %0b | cnt: %0h", $time, CLK, RST, cnt);
+        end
+    endmodule
+  prompt: "Write a testbench for the Verilog module 'TOP_NEW'. The testbench should apply various test cases for the inputs, monitor the output counter, and simulate the reset and clock functionality."
+
+- code: |
+    module TOP_CASEx(CLK, RST, cnt);
+      input CLK, RST;
+      output reg [7:0] cnt;
+
+      always @(posedge CLK) begin
+        if(RST) begin
+          cnt <= 0;
+        end else begin
+          casex(cnt)
+            'b00: begin
+              cnt <= cnt + 1;
+            end
+            'b1x: begin
+              cnt <= 0;
+            end
+            default: begin
+              cnt <= cnt + 1;
+            end
+          endcase
+        end
+      end
+    endmodule
+  prompt: "Write a Verilog module with an 8-bit counter that uses a casex statement to increment the counter or reset it based on specific bit patterns in the counter value."
+
+- code: |
+    `timescale 1ns / 1ps
+
+    module tb_TOP_CASEx;
+        reg CLK;
+        reg RST;
+        wire [7:0] cnt;
+
+        // Instantiate the TOP_CASEx module
+        TOP_CASEx uut (
+            .CLK(CLK),
+            .RST(RST),
+            .cnt(cnt)
+        );
+
+        // Clock generation
+        always begin
+            #5 CLK = ~CLK;
+        end
+
+        // Test cases
+        initial begin
+            CLK = 0; RST = 1;  // Initialize
+            $display("Starting TOP_CASEx Testbench...");
+            $dumpfile("top_casex_tb.vcd");
+            $dumpvars(0, tb_TOP_CASEx);
+            
+            // Apply reset
+            #10 RST = 0;  // Release reset
+            #100 RST = 1; // Apply reset again
+            #10 RST = 0;  // Release reset again
+
+            // Wait for the test to complete
+            #200;
+            $display("Testbench completed.");
+            $finish;
+        end
+
+        // Monitor signals
+        initial begin
+            $monitor("Time: %0t | CLK: %0b | RST: %0b | cnt: %0h", $time, CLK, RST, cnt);
+        end
+    endmodule
+  prompt: "Write a testbench for the Verilog module 'TOP_CASEx'. The testbench should apply various test cases for the inputs, monitor the output counter, and simulate the reset and clock functionality."
+
+- code: |
+    module TOP_CTR_NEG(CLK, RST_X, cnt);
+      input CLK;
+      input RST_X;
+      output reg [3:0] cnt;
+
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          cnt <= 0;
+        end else begin
+          cnt <= cnt + 1;
+        end
+      end
+
+    endmodule
+  prompt: "Write a Verilog module for a 4-bit counter that increments on each positive clock edge and resets on a negative edge of an active-low reset signal."
+
+- code: |
+    `timescale 1ns / 1ps
+
+    module tb_TOP_CTR_NEG;
+        reg CLK;
+        reg RST_X;
+        wire [3:0] cnt;
+
+        // Instantiate the TOP_CTR_NEG module
+        TOP_CTR_NEG uut (
+            .CLK(CLK),
+            .RST_X(RST_X),
+            .cnt(cnt)
+        );
+
+        // Clock generation
+        always begin
+            #5 CLK = ~CLK;
+        end
+
+        // Test cases
+        initial begin
+            CLK = 0; RST_X = 1;  // Initialize
+            $display("Starting TOP_CTR_NEG Testbench...");
+            $dumpfile("top_ctr_neg_tb.vcd");
+            $dumpvars(0, tb_TOP_CTR_NEG);
+            
+            // Apply reset
+            #10 RST_X = 0;  // Apply active-low reset
+            #10 RST_X = 1;  // Release reset
+
+            // Wait for the test to complete
+            #100;
+            $display("Testbench completed.");
+            $finish;
+        end
+
+        // Monitor signals
+        initial begin
+            $monitor("Time: %0t | CLK: %0b | RST_X: %0b | cnt: %0h", $time, CLK, RST_X, cnt);
+        end
+    endmodule
+  prompt: "Write a testbench for the Verilog module 'TOP_CTR_NEG'. The testbench should apply various test cases for the inputs, monitor the output counter, and simulate the reset and clock functionality."
+
+- code: |
+    module TOP_CTR_SGN(CLK, RST, cnt);
+      input CLK, RST;
+      output reg [7:0] cnt;
+
+      always @(posedge CLK or negedge RST) begin
+        if(RST) begin
+          cnt <= 'd0;
+        end else begin
+          cnt <= cnt + 1'sd1;
+        end
+      end
+
+    endmodule
+  prompt: "Write a Verilog module that defines an 8-bit counter with a synchronous active-high reset and uses signed constant to increment the counter."
+
+- code: |
+    `timescale 1ns / 1ps
+
+    module tb_TOP_CTR_SGN;
+        reg CLK;
+        reg RST;
+        wire [7:0] cnt;
+
+        // Instantiate the TOP_CTR_SGN module
+        TOP_CTR_SGN uut (
+            .CLK(CLK),
+            .RST(RST),
+            .cnt(cnt)
+        );
+
+        // Clock generation
+        always begin
+            #5 CLK = ~CLK;
+        end
+
+        // Test cases
+        initial begin
+            CLK = 0; RST = 1;  // Initialize
+            $display("Starting TOP_CTR_SGN Testbench...");
+            $dumpfile("top_ctr_sgn_tb.vcd");
+            $dumpvars(0, tb_TOP_CTR_SGN);
+            
+            // Apply reset
+            #10 RST = 0;  // Apply reset
+            #10 RST = 1;  // Release reset
+
+            // Wait for the test to complete
+            #100;
+            $display("Testbench completed.");
+            $finish;
+        end
+
+        // Monitor signals
+        initial begin
+            $monitor("Time: %0t | CLK: %0b | RST: %0b | cnt: %0h", $time, CLK, RST, cnt);
+        end
+    endmodule
+  prompt: "Write a testbench for the Verilog module 'TOP_CTR_SGN'. The testbench should apply various test cases for the inputs, monitor the output counter, and simulate the reset and clock functionality."
+
+- code: |
+    module TOP_CTR_UNSIGNED(CLK, RST, cnt);
+      input CLK, RST;
+      output reg [7:0] cnt;
+
+      always @(posedge CLK or negedge RST) begin
+        if(RST) begin
+          cnt <= 'd0;
+        end else begin
+          cnt <= cnt + 8'd1;
+        end
+      end
+
+    endmodule
+  prompt: "Write a Verilog module with an 8-bit counter that increments by 1 using an 8-bit unsigned decimal constant. The counter resets synchronously when reset is asserted."
+
+- code: |
+    `timescale 1ns / 1ps
+
+    module tb_TOP_CTR_UNSIGNED;
+        reg CLK;
+        reg RST;
+        wire [7:0] cnt;
+
+        // Instantiate the TOP_CTR_UNSIGNED module
+        TOP_CTR_UNSIGNED uut (
+            .CLK(CLK),
+            .RST(RST),
+            .cnt(cnt)
+        );
+
+        // Clock generation
+        always begin
+            #5 CLK = ~CLK;
+        end
+
+        // Test cases
+        initial begin
+            CLK = 0; RST = 1;  // Initialize
+            $display("Starting TOP_CTR_UNSIGNED Testbench...");
+            $dumpfile("top_ctr_unsigned_tb.vcd");
+            $dumpvars(0, tb_TOP_CTR_UNSIGNED);
+            
+            // Apply reset
+            #10 RST = 0;  // Apply reset
+            #10 RST = 1;  // Release reset
+
+            // Wait for the test to complete
+            #100;
+            $display("Testbench completed.");
+            $finish;
+        end
+
+        // Monitor signals
+        initial begin
+            $monitor("Time: %0t | CLK: %0b | RST: %0b | cnt: %0h", $time, CLK, RST, cnt);
+        end
+    endmodule
+  prompt: "Write a testbench for the Verilog module 'TOP_CTR_UNSIGNED'. The testbench should apply various test cases for the inputs, monitor the output counter, and simulate the reset and clock functionality."
+
+- code: |
+    module TOP_CTR_DECIMAL(CLK, RST, cnt);
+      input CLK, RST;
+      output reg [7:0] cnt;
+
+      always @(posedge CLK or negedge RST) begin
+        if(RST) begin
+          cnt <= 'd0;
+        end else begin
+          cnt <= cnt + 'd1;
+        end
+      end
+
+    endmodule
+  prompt: "Implement an 8-bit Verilog counter that resets on active-high reset and increments on each clock cycle using a decimal constant."
+
+- code: |
+    `timescale 1ns / 1ps
+
+    module tb_TOP_CTR_DECIMAL;
+        reg CLK;
+        reg RST;
+        wire [7:0] cnt;
+
+        // Instantiate the TOP_CTR_DECIMAL module
+        TOP_CTR_DECIMAL uut (
+            .CLK(CLK),
+            .RST(RST),
+            .cnt(cnt)
+        );
+
+        // Clock generation
+        always begin
+            #5 CLK = ~CLK;
+        end
+
+        // Test cases
+        initial begin
+            CLK = 0; RST = 1;  // Initialize
+            $display("Starting TOP_CTR_DECIMAL Testbench...");
+            $dumpfile("top_ctr_decimal_tb.vcd");
+            $dumpvars(0, tb_TOP_CTR_DECIMAL);
+            
+            // Apply reset
+            #10 RST = 0;  // Apply reset
+            #10 RST = 1;  // Release reset
+
+            // Wait for the test to complete
+            #100;
+            $display("Testbench completed.");
+            $finish;
+        end
+
+        // Monitor signals
+        initial begin
+            $monitor("Time: %0t | CLK: %0b | RST: %0b | cnt: %0h", $time, CLK, RST, cnt);
+        end
+    endmodule
+  prompt: "Write a testbench for the Verilog module 'TOP_CTR_DECIMAL'. The testbench should apply various test cases for the inputs, monitor the output counter, and simulate the reset and clock functionality."
+
+- code: |
+    module TOP_CTR_CASE(CLK, RST, cnt);
+      input CLK, RST;
+      output reg [31:0] cnt;
+
+      always @(posedge CLK) begin
+        if(RST) begin
+          cnt <= 0;
+        end else begin
+          case(cnt)
+            0 : begin
+              cnt <= cnt + 1;
+            end
+            1 : begin
+              cnt <= cnt + 1;
+            end
+            2 : begin
+              cnt <= cnt + 1;
+            end
+            3 : begin
+              cnt <= cnt + 1;
+            end
+            4 : begin
+              cnt <= cnt + 1;
+            end
+            5 : begin
+              cnt <= cnt + 1;
+            end
+            6 : begin
+              cnt <= cnt + 1;
+            end
+            7 : begin
+              cnt <= cnt + 1;
+            end
+            8 : begin
+              cnt <= cnt + 1;
+            end
+            9 : begin
+              cnt <= cnt + 1;
+            end
+            10 : begin
+              cnt <= cnt + 1;
+            end
+            11 : begin
+              cnt <= cnt + 1;
+            end
+            12 : begin
+              cnt <= cnt + 1;
+            end
+            13 : begin
+              cnt <= cnt + 1;
+            end
+            14 : begin
+              cnt <= cnt + 1;
+            end
+            15 : begin
+              cnt <= cnt + 1;
+            end
+            16 : begin
+              cnt <= cnt + 1;
+            end
+            17 : begin
+              cnt <= cnt + 1;
+            end
+            18 : begin
+              cnt <= cnt + 1;
+            end
+            19 : begin
+              cnt <= cnt + 1;
+            end
+            20 : begin
+              cnt <= cnt + 1;
+            end
+            21 : begin
+              cnt <= cnt + 1;
+            end
+            22 : begin
+              cnt <= cnt + 1;
+            end
+            23 : begin
+              cnt <= cnt + 1;
+            end
+            24 : begin
+              cnt <= cnt + 1;
+            end
+            25 : begin
+              cnt <= cnt + 1;
+            end
+            26 : begin
+              cnt <= cnt + 1;
+            end
+            27 : begin
+              cnt <= cnt + 1;
+            end
+            28 : begin
+              cnt <= cnt + 1;
+            end
+            29 : begin
+              cnt <= cnt + 1;
+            end
+            30 : begin
+              cnt <= cnt + 1;
+            end
+            31 : begin
+              cnt <= cnt + 1;
+            end
+            default: begin
+              cnt <= cnt + 1;
+            end
+          endcase
+        end
+      end
+    endmodule
+  prompt: "Create a Verilog module that uses a 32-bit counter and a case statement to explicitly define increment operations for counter values from 0 to 31, with a default case to continue incrementing."
+
+- code: |
+    `timescale 1ns / 1ps
+
+    module tb_TOP_CTR_CASE;
+        reg CLK;
+        reg RST;
+        wire [31:0] cnt;
+
+        // Instantiate the TOP_CTR_CASE module
+        TOP_CTR_CASE uut (
+            .CLK(CLK),
+            .RST(RST),
+            .cnt(cnt)
+        );
+
+        // Clock generation
+        always begin
+            #5 CLK = ~CLK;
+        end
+
+        // Test cases
+        initial begin
+            CLK = 0; RST = 1;  // Initialize
+            $display("Starting TOP_CTR_CASE Testbench...");
+            $dumpfile("top_ctr_case_tb.vcd");
+            $dumpvars(0, tb_TOP_CTR_CASE);
+            
+            // Apply reset
+            #10 RST = 0;  // Apply reset
+            #10 RST = 1;  // Release reset
+
+            // Wait for the test to complete
+            #100;
+            $display("Testbench completed.");
+            $finish;
+        end
+
+        // Monitor signals
+        initial begin
+            $monitor("Time: %0t | CLK: %0b | RST: %0b | cnt: %0h", $time, CLK, RST, cnt);
+        end
+    endmodule
+  prompt: "Write a testbench for the Verilog module 'TOP_CTR_CASE'. The testbench should apply various test cases for the inputs, monitor the output counter, and simulate the reset and clock functionality."
+- code: |
+    `timescale 1ns / 1ps
+
+    module main #
+    (
+     parameter STEP = 10
+    )
+    (
+     input CLK,
+     input RST,
+     output reg [7:0] LED
+     );
+
+      localparam DELAY = 10;
+
+      always @(posedge CLK) begin
+        if(RST) begin
+          LED <= 0;
+        end else begin
+          LED <= #DELAY LED + 1;
+        end
+      end
+    endmodule
+  prompt: Create a Verilog testbench and explain the delayed LED increment behavior.
+
+- code: |
+    module \1234 
+      (
+       \CLK~ , // "\CLK~"
+       LE$D, // LE$D
+       \1234RST*%&  // "\1234RST*%&"
+       );
+
+      input \CLK~ , \1234RST*%& ;
+      output LE$D;
+
+      genvar i, j;
+      generate for(i=0; i<4; i=i+1) begin: \1stLoop
+        for(j=0; j<4; j=j+1) begin: \2ndLoop
+          wire [7:0] tmp;
+          assign tmp = i * j;
+        end
+      end endgenerate
+
+      wire [7:0] rslt;
+      assign rslt = \1stLoop [0].\2ndLoop [1].tmp;
+
+    endmodule
+  prompt: Explain how generate loops and unusual identifiers (escaped names) are used in this Verilog code.
+
+- code: |
+    module TB_1234;
+      reg \CLK~ , \1234RST*%& ;
+      wire LE$D;
+
+      // Instantiate the DUT (Device Under Test)
+      \1234 uut (
+        .\CLK~(\CLK~),
+        .\1234RST*%&(\1234RST*%&),
+        .LE$D(LE$D)
+      );
+
+      initial begin
+        // Initialize the signals
+        \CLK~ = 0;
+        \1234RST*%& = 0;
+
+        // Apply reset signal
+        #5 \1234RST*%& = 1;
+
+        // Generate clock signal
+        #5 \CLK~ = 1;
+        #5 \CLK~ = 0;
+        
+        // Run the simulation for some time
+        #10 $finish;
+      end
+
+      // Clock generation
+      always #5 \CLK~ = ~\CLK~;
+    endmodule
+  prompt: Write a testbench for the module `\1234`, generating a clock and reset signals and observing the output `LE$D`.
+
+- code: |
+    module TOP1(CLK, RST_X);
+      input CLK;
+      input RST_X;
+      reg [3:0] cnt;
+
+      function [3:0] inc;
+        input [3:0] in;
+        begin
+          if(&in) begin
+            inc = 0;
+          end else begin
+            inc = in + 1;
+          end
+        end
+      endfunction
+
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) begin
+          cnt <= 0;
+        end else begin
+          cnt <= inc(cnt);
+        end
+      end
+    endmodule
+  prompt: Analyze the use of a Verilog function inside an always block and describe what the circuit does.
+- code: |
+    module tb_TOP1;
+      reg CLK, RST_X;
+      TOP1 uut(.CLK(CLK), .RST_X(RST_X));
+
+      initial begin
+        CLK = 0;
+        forever #5 CLK = ~CLK;
+      end
+
+      initial begin
+        RST_X = 0; #10;
+        RST_X = 1;
+        #100 $finish;
+      end
+    endmodule
+  prompt: Create a testbench to verify the counter behavior implemented using a function.
+
+- code: |
+    module TOP2(CLK, RST_X,
+               IN0, IN1, IN2, IN3, IN4,
+               OUT0, OUT1, OUT2, OUT3, OUT4);
+
+      parameter WD = 4;
+
+      input CLK, RST_X;
+      input [WD-1:0] IN0, IN1, IN2, IN3, IN4;
+      output [WD-1:0] OUT0, OUT1, OUT2, OUT3, OUT4;
+
+      wire [WD-1:0] in [0:4];
+      wire [WD-1:0] out [0:4];
+
+      assign in[0] = IN0;
+      assign in[1] = IN1;
+      assign in[2] = IN2;
+      assign in[3] = IN3;
+      assign in[4] = IN4;
+
+      assign OUT0 = out[0];
+      assign OUT1 = out[1];
+      assign OUT2 = out[2];
+      assign OUT3 = out[3];
+      assign OUT4 = out[4];
+
+      reg [2:0] cnt;
+      always @(posedge CLK or negedge RST_X) begin
+        if(!RST_X) cnt <= 0;
+        else cnt <= (cnt < 4)? cnt + 1 : 0;
+      end
+
+      genvar i;
+      generate for(i=0; i<5; i=i+1) begin: loop
+        SUB2 #(WD)
+        sub (.CLK(CLK), .RST_X(RST_X), .subin(in[cnt]), .subout(out[i]));
+      end endgenerate
+    endmodule
+
+    module SUB2(CLK, RST_X, subin, subout);
+      parameter WD = 4;
+      input CLK, RST_X;
+      input [WD-1:0] subin;
+      output [WD-1:0] subout;
+
+      genvar j;
+      generate for(j=0; j<WD; j=j+1) begin: subloop
+        if(j == 0) begin: _subt
+          wire tmp;
+          assign subout[j] = subin[j];
+          assign tmp = ~subin[j];
+        end else begin: _subf
+          wire tmp;
+          if(j == 1)
+            assign subout[j] = subloop[j-1]._subt.tmp ^ subin[j];
+          else
+            assign subout[j] = subloop[j-1]._subf.tmp ^ subin[j];
+        end
+      end endgenerate
+    endmodule
+  prompt: Describe the behavior of the dynamic input selection and bitwise transformation in the nested generate structure.
+- code: |
+    module tb_TOP2;
+      reg CLK, RST_X;
+      reg [3:0] IN0, IN1, IN2, IN3, IN4;
+      wire [3:0] OUT0, OUT1, OUT2, OUT3, OUT4;
+
+      TOP2 uut(.CLK(CLK), .RST_X(RST_X), .IN0(IN0), .IN1(IN1), .IN2(IN2), .IN3(IN3), .IN4(IN4),
+               .OUT0(OUT0), .OUT1(OUT1), .OUT2(OUT2), .OUT3(OUT3), .OUT4(OUT4));
+
+      initial begin
+        CLK = 0;
+        forever #5 CLK = ~CLK;
+      end
+
+      initial begin
+        RST_X = 0;
+        IN0 = 4'b0001; IN1 = 4'b0010; IN2 = 4'b0100; IN3 = 4'b1000; IN4 = 4'b1111;
+        #10 RST_X = 1;
+        #100 $finish;
+      end
+    endmodule
+  prompt: Write a testbench to verify the input rotation and SUB module transformation across the outputs.
+
+- code: |
+    module TOP3(CLK, RST_X, subin, subout);
+      parameter WD = 4;
+      input CLK;
+      input RST_X;
+      input [WD-1:0] subin;
+      output [WD-1:0] subout;
+
+      genvar j;
+      generate for(j=0; j<WD; j=j+1) begin: subloop
+        if(j == 0) begin: _subt
+          wire tmp;
+          assign subout[j] = subin[j];
+          assign tmp = ~subin[j];
+        end else begin: _subf
+          wire tmp;
+          if(j == 1)
+            assign subout[j] = subloop[j-1]._subt.tmp ^ subin[j];
+          else
+            assign subout[j] = subloop[j-1]._subf.tmp ^ subin[j];
+        end
+      end endgenerate
+    endmodule
+  prompt: Explain the bitwise operation chain constructed using generate loops for 4-bit input transformation.
+- code: |
+    module tb_TOP3;
+      reg CLK, RST_X;
+      reg [3:0] subin;
+      wire [3:0] subout;
+
+      TOP3 uut(.CLK(CLK), .RST_X(RST_X), .subin(subin), .subout(subout));
+
+      initial begin
+        CLK = 0;
+        forever #5 CLK = ~CLK;
+      end
+
+      initial begin
+        RST_X = 0; #10;
+        RST_X = 1;
+        subin = 4'b1010;
+        #100 $finish;
+      end
+    endmodule
+  prompt: Provide a testbench to verify the bitwise chaining behavior across the bits in the output.
+
+- code: |
+    `default_nettype none
+    `include "led.v"
+
+    module main
+    (
+     input CLK,
+     input RST,
+     output [7:0] LED
+     );
+
+      led #
+        (
+         .STEP(`STEP)
+         )
+      inst_led
+        (
+         .CLK(CLK),
+         .RST(RST),
+         .LED(LED)
+         );
+
+    endmodule
+  prompt: Show how the `include` and parameter macros integrate with the LED module, and describe the effect of `default_nettype none`.
+- code: |
+    module led #
+      (
+       parameter STEP = 10
+       )
+      (
+       input CLK,
+       input RST,
+       output reg [7:0] LED
+       );
+      
+      reg [31:0] count;
+      
+      always @(posedge CLK) begin
+        if(RST) begin
+          count <= 0;
+          LED <= 0;
+        end else begin
+          if(count == STEP - 1) begin
+            count <= 0;
+            LED <= LED + 1;
+          end else begin
+            count <= count + 1;
+          end
+        end
+      end
+    endmodule
+  prompt: Create a Verilog module named `led` with a parameterized step size. The module uses a clock and synchronous reset to increment an internal counter. When the counter reaches `STEP - 1`, it resets and increments an 8-bit `LED` register to simulate LED pattern updates.
+
+- code: |
+    module TOP(CLK, RST_X, IN, OUT);
+      input CLK, RST_X;
+      input [7:0] IN;
+      output [7:0] OUT;
+      reg [7:0] OUT;
+
+      reg [7:0] mem [0:255];
+      
+      genvar i;
+      generate for(i=0; i<4; i=i+1) begin
+        always @(posedge CLK) begin
+          mem[IN][2*(i+1)-1:2*i] <= mem[IN][2*(i+1)-1:2*i] + 2'b1;
+        end
+      end endgenerate
+      
+    endmodule
+  prompt: Create a Verilog module named `TOP` that uses a generate loop to increment each 2-bit slice of an 8-bit memory word located at the address specified by input `IN`. The memory is 256 entries deep, and the operation occurs on every rising edge of `CLK`. The `generate` block handles the bit-slice updates using parameterized indexing.
