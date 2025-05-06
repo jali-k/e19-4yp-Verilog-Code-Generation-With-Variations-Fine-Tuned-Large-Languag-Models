@@ -1,0 +1,1062 @@
+- prompt: |
+    Modify the variable type of `count` from `reg` to `wire` in the Verilog module.
+  code: |
+    from __future__ import absolute_import
+    from __future__ import print_function
+    import sys
+    import os
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('CLK'))
+        rst = vast.Ioport(vast.Input('RST'))
+        width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('led', width=width))
+        ports = vast.Portlist([clk, rst, led])
+
+        width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Wire('count', width=width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('led')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('8'))
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('CLK'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_count_true = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+        if0_true = vast.Block([assign_count_true])
+
+        count_plus_1 = vast.Plus(vast.Identifier('count'), vast.IntConst('1'))
+        assign_count_false = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(count_plus_1)
+        )
+        if0_false = vast.Block([assign_count_false])
+
+        if0 = vast.IfStatement(vast.Identifier('RST'), if0_true, if0_false)
+        statement = vast.Block([if0])
+
+        always = vast.Always(senslist, statement)
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("top", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+- prompt: |
+    Change the module name from `top` to `blinker_module`.
+  code: |
+    from __future__ import absolute_import
+    from __future__ import print_function
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('CLK'))
+        rst = vast.Ioport(vast.Input('RST'))
+        width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('led', width=width))
+        ports = vast.Portlist([clk, rst, led])
+
+        width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Reg('count', width=width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('led')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('8'))
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('CLK'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_count_true = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+        if0_true = vast.Block([assign_count_true])
+
+        count_plus_1 = vast.Plus(vast.Identifier('count'), vast.IntConst('1'))
+        assign_count_false = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(count_plus_1)
+        )
+        if0_false = vast.Block([assign_count_false])
+
+        if0 = vast.IfStatement(vast.Identifier('RST'), if0_true, if0_false)
+        statement = vast.Block([if0])
+
+        always = vast.Always(senslist, statement)
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("blinker_module", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+
+- prompt: |
+    Rename the output port from `led` to `led_out`.
+  code: |
+    from __future__ import absolute_import
+    from __future__ import print_function
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('CLK'))
+        rst = vast.Ioport(vast.Input('RST'))
+        width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('led_out', width=width))
+        ports = vast.Portlist([clk, rst, led])
+
+        width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Reg('count', width=width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('led_out')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('8'))
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('CLK'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_count_true = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+        if0_true = vast.Block([assign_count_true])
+
+        count_plus_1 = vast.Plus(vast.Identifier('count'), vast.IntConst('1'))
+        assign_count_false = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(count_plus_1)
+        )
+        if0_false = vast.Block([assign_count_false])
+
+        if0 = vast.IfStatement(vast.Identifier('RST'), if0_true, if0_false)
+        statement = vast.Block([if0])
+
+        always = vast.Always(senslist, statement)
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("top", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+- prompt: |
+    Change the reset condition from `if(RST)` to `if(!RST)` (active-low reset).
+  code: |
+    from __future__ import absolute_import
+    from __future__ import print_function
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('CLK'))
+        rst = vast.Ioport(vast.Input('RST'))
+        width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('led', width=width))
+        ports = vast.Portlist([clk, rst, led])
+
+        width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Reg('count', width=width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('led')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('8'))
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('CLK'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_count_true = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(count_plus_1 := vast.Plus(vast.Identifier('count'), vast.IntConst('1')))
+        )
+        assign_count_false = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+
+        if0 = vast.IfStatement(
+            vast.Unot(vast.Identifier('RST')),
+            vast.Block([assign_count_false]),
+            vast.Block([assign_count_true])
+        )
+
+        statement = vast.Block([if0])
+        always = vast.Always(senslist, statement)
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("top", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+
+- prompt: |
+    Change the output signal width to [3:0] instead of [7:0].
+  code: |
+    from __future__ import absolute_import
+    from __future__ import print_function
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('CLK'))
+        rst = vast.Ioport(vast.Input('RST'))
+        width = vast.Width(vast.IntConst('3'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('led', width=width))
+        ports = vast.Portlist([clk, rst, led])
+
+        width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Reg('count', width=width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('led')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('4'))
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('CLK'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_count_true = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+        count_plus_1 = vast.Plus(vast.Identifier('count'), vast.IntConst('1'))
+        assign_count_false = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(count_plus_1)
+        )
+
+        if0 = vast.IfStatement(vast.Identifier('RST'), vast.Block([assign_count_true]), vast.Block([assign_count_false]))
+        statement = vast.Block([if0])
+
+        always = vast.Always(senslist, statement)
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("top", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+
+- prompt: |
+    Add an enable (`EN`) input signal and only increment `count` when `EN` is high.
+  code: |
+    from __future__ import absolute_import
+    from __future__ import print_function
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('CLK'))
+        rst = vast.Ioport(vast.Input('RST'))
+        en = vast.Ioport(vast.Input('EN'))
+        width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('led', width=width))
+        ports = vast.Portlist([clk, rst, en, led])
+
+        width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Reg('count', width=width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('led')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('8'))
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('CLK'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_reset = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+
+        count_plus_1 = vast.Plus(vast.Identifier('count'), vast.IntConst('1'))
+        assign_inc = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(count_plus_1)
+        )
+        if_en = vast.IfStatement(vast.Identifier('EN'), vast.Block([assign_inc]), None)
+
+        if_rst = vast.IfStatement(vast.Identifier('RST'), vast.Block([assign_reset]), vast.Block([if_en]))
+        always = vast.Always(senslist, vast.Block([if_rst]))
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("top", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+- prompt: |
+    Change the input port name from `CLK` to `clk_in`.
+  code: |
+    from __future__ import absolute_import, print_function
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('clk_in'))
+        rst = vast.Ioport(vast.Input('RST'))
+        width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('led', width=width))
+        ports = vast.Portlist([clk, rst, led])
+
+        width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Reg('count', width=width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('led')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('8'))
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('clk_in'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_count_true = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+        if0_true = vast.Block([assign_count_true])
+
+        count_plus_1 = vast.Plus(vast.Identifier('count'), vast.IntConst('1'))
+        assign_count_false = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(count_plus_1)
+        )
+        if0_false = vast.Block([assign_count_false])
+
+        if0 = vast.IfStatement(vast.Identifier('RST'), if0_true, if0_false)
+        statement = vast.Block([if0])
+
+        always = vast.Always(senslist, statement)
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("top", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+
+- prompt: |
+    Replace the reset condition `if(RST)` with `if(!RST)`.
+  code: |
+    # Same code as base, except the IfStatement uses Not(RST)
+    ...
+    if0 = vast.IfStatement(vast.Unot(vast.Identifier('RST')), if0_true, if0_false)
+    ...
+
+- prompt: |
+    Change the output port width from [7:0] to [3:0].
+  code: |
+    ...
+    width = vast.Width(vast.IntConst('3'), vast.IntConst('0'))
+    led = vast.Ioport(vast.Output('led', width=width))
+    ...
+    assign = vast.Assign(
+        vast.Lvalue(vast.Identifier('led')),
+        vast.Rvalue(
+            vast.Partselect(
+                vast.Identifier('count'),
+                vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('4'))
+            )
+        )
+    )
+    ...
+
+- prompt: |
+    Rename the parameter `DATAWID` to `WIDTH`.
+  code: |
+    datawid = vast.Parameter('WIDTH', vast.Rvalue(vast.IntConst('32')))
+    params = vast.Paramlist([datawid])
+    ...
+    width = vast.Width(
+        vast.Minus(vast.Identifier('WIDTH'), vast.IntConst('1')),
+        vast.IntConst('0')
+    )
+    ...
+    assign = vast.Assign(
+        vast.Lvalue(vast.Identifier('led')),
+        vast.Rvalue(
+            vast.Partselect(
+                vast.Identifier('count'),
+                vast.Minus(vast.Identifier('WIDTH'), vast.IntConst('1')),
+                vast.Minus(vast.Identifier('WIDTH'), vast.IntConst('8'))
+            )
+        )
+    )
+    ...
+
+- prompt: |
+    Save the generated Verilog to `generated.v` instead of printing.
+  code: |
+    ...
+    rslt = codegen.visit(ast)
+    with open("generated.v", "w") as f:
+        f.write(rslt)
+    ...
+- prompt: |
+    Add a new input port named `EN` (Enable signal) to the module.
+  code: |
+    from __future__ import absolute_import, print_function
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('CLK'))
+        rst = vast.Ioport(vast.Input('RST'))
+        en = vast.Ioport(vast.Input('EN'))
+        width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('led', width=width))
+        ports = vast.Portlist([clk, rst, en, led])
+
+        count_width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Reg('count', width=count_width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('led')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('8'))
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('CLK'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_rst = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+        assign_en = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(
+                vast.Plus(vast.Identifier('count'), vast.IntConst('1'))
+            )
+        )
+        inner_if = vast.IfStatement(vast.Identifier('EN'), vast.Block([assign_en]))
+        outer_if = vast.IfStatement(vast.Identifier('RST'), vast.Block([assign_rst]), vast.Block([inner_if]))
+
+        always = vast.Always(senslist, vast.Block([outer_if]))
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("top", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+- prompt: |
+    Rename the module from `top` to `counter_led`.
+  code: |
+    from __future__ import absolute_import, print_function
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('CLK'))
+        rst = vast.Ioport(vast.Input('RST'))
+        width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('led', width=width))
+        ports = vast.Portlist([clk, rst, led])
+
+        width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Reg('count', width=width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('led')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('8'))
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('CLK'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_count_true = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+        if0_true = vast.Block([assign_count_true])
+
+        count_plus_1 = vast.Plus(vast.Identifier('count'), vast.IntConst('1'))
+        assign_count_false = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(count_plus_1)
+        )
+        if0_false = vast.Block([assign_count_false])
+
+        if0 = vast.IfStatement(vast.Identifier('RST'), if0_true, if0_false)
+        statement = vast.Block([if0])
+
+        always = vast.Always(senslist, statement)
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("counter_led", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+- prompt: |
+    Rename the output port `led` to `out_led`.
+  code: |
+    from __future__ import absolute_import, print_function
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('CLK'))
+        rst = vast.Ioport(vast.Input('RST'))
+        width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('out_led', width=width))
+        ports = vast.Portlist([clk, rst, led])
+
+        width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Reg('count', width=width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('out_led')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+                    vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('8'))
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('CLK'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_count_true = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+        if0_true = vast.Block([assign_count_true])
+
+        count_plus_1 = vast.Plus(vast.Identifier('count'), vast.IntConst('1'))
+        assign_count_false = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(count_plus_1)
+        )
+        if0_false = vast.Block([assign_count_false])
+
+        if0 = vast.IfStatement(vast.Identifier('RST'), if0_true, if0_false)
+        statement = vast.Block([if0])
+
+        always = vast.Always(senslist, statement)
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("top", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+- prompt: |
+    Replace the counter increment with a decrement operation.
+  code: |
+    ...
+    count_minus_1 = vast.Minus(vast.Identifier('count'), vast.IntConst('1'))
+    assign_count_false = vast.NonblockingSubstitution(
+        vast.Lvalue(vast.Identifier('count')),
+        vast.Rvalue(count_minus_1)
+    )
+    ...
+- prompt: |
+    Change the always block sensitivity list to use `negedge CLK`.
+  code: |
+    ...
+    sens = vast.Sens(vast.Identifier('CLK'), type='negedge')
+    senslist = vast.SensList([sens])
+    ...
+- prompt: |
+    Modify the output assignment to use only the lower 4 bits of `count` instead of 8 bits.
+  code: |
+    from __future__ import absolute_import, print_function
+    import pyverilog.vparser.ast as vast
+    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+
+    def main():
+        datawid = vast.Parameter('DATAWID', vast.Rvalue(vast.IntConst('32')))
+        params = vast.Paramlist([datawid])
+
+        clk = vast.Ioport(vast.Input('CLK'))
+        rst = vast.Ioport(vast.Input('RST'))
+        width = vast.Width(vast.IntConst('3'), vast.IntConst('0'))
+        led = vast.Ioport(vast.Output('led', width=width))
+        ports = vast.Portlist([clk, rst, led])
+
+        width = vast.Width(
+            vast.Minus(vast.Identifier('DATAWID'), vast.IntConst('1')),
+            vast.IntConst('0')
+        )
+        count = vast.Reg('count', width=width)
+
+        assign = vast.Assign(
+            vast.Lvalue(vast.Identifier('led')),
+            vast.Rvalue(
+                vast.Partselect(
+                    vast.Identifier('count'),
+                    vast.IntConst('3'),
+                    vast.IntConst('0')
+                )
+            )
+        )
+
+        sens = vast.Sens(vast.Identifier('CLK'), type='posedge')
+        senslist = vast.SensList([sens])
+
+        assign_true = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )
+        assign_false = vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.Plus(vast.Identifier('count'), vast.IntConst('1')))
+        )
+        ifstmt = vast.IfStatement(vast.Identifier('RST'), vast.Block([assign_true]), vast.Block([assign_false]))
+
+        always = vast.Always(senslist, vast.Block([ifstmt]))
+
+        items = [count, assign, always]
+        ast = vast.ModuleDef("top", params, ports, items)
+
+        codegen = ASTCodeGenerator()
+        rslt = codegen.visit(ast)
+        print(rslt)
+
+    if __name__ == '__main__':
+        main()
+- prompt: |
+    Add asynchronous reset logic to the always block by making it sensitive to both posedge CLK and posedge RST.
+  code: |
+    ...
+    senslist = vast.SensList([
+        vast.Sens(vast.Identifier('CLK'), type='posedge'),
+        vast.Sens(vast.Identifier('RST'), type='posedge')
+    ])
+    ...
+- prompt: |
+    Modify the `count` register to be signed.
+  code: |
+    ...
+    count = vast.Reg('count', width=width, signed=True)
+    ...
+- prompt: |
+    Declare the `led` output as a `reg` instead of a wire and assign it inside the always block.
+  code: |
+    ...
+    led = vast.Output('led', width=width, regtype='reg')
+    ...
+    assign = vast.Block([])  # Remove continuous assign
+    ...
+    assign_led = vast.NonblockingSubstitution(
+        vast.Lvalue(vast.Identifier('led')),
+        vast.Rvalue(vast.Partselect(
+            vast.Identifier('count'),
+            vast.IntConst('7'),
+            vast.IntConst('0')
+        ))
+    )
+    always = vast.Always(senslist, vast.Block([ifstmt, assign_led]))
+    ...
+- prompt: |
+    Rename the `count` register to `counter` throughout the code.
+  code: |
+    ...
+    counter = vast.Reg('counter', width=width)
+    ...
+    assign = vast.Assign(
+        vast.Lvalue(vast.Identifier('led')),
+        vast.Rvalue(vast.Partselect(vast.Identifier('counter'), vast.IntConst('7'), vast.IntConst('0')))
+    )
+    ...
+    assign_true = vast.NonblockingSubstitution(
+        vast.Lvalue(vast.Identifier('counter')),
+        vast.Rvalue(vast.IntConst('0'))
+    )
+    assign_false = vast.NonblockingSubstitution(
+        vast.Lvalue(vast.Identifier('counter')),
+        vast.Rvalue(vast.Plus(vast.Identifier('counter'), vast.IntConst('1')))
+    )
+    ...
+- prompt: |
+    Change the LED output assignment to use `count[0:7]` (little endian style).
+  code: |
+    ...
+    assign = vast.Assign(
+        vast.Lvalue(vast.Identifier('led')),
+        vast.Rvalue(vast.Partselect(
+            vast.Identifier('count'),
+            vast.IntConst('0'),
+            vast.IntConst('7')
+        ))
+    )
+    ...
+- prompt: |
+    Add a clock enable (`CE`) input signal and update logic to increment `count` only when `CE` is high.
+  code: |
+    ...
+    ce = vast.Ioport(vast.Input('CE'))
+    ports = vast.Portlist([clk, rst, ce, led])
+    ...
+    inner_if = vast.IfStatement(
+        vast.Identifier('CE'),
+        vast.Block([vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.Plus(vast.Identifier('count'), vast.IntConst('1')))
+        )])
+    )
+    assign_false = vast.Block([inner_if])
+    ...
+- prompt: |
+    Add an `initial` block to initialize `count` to 0.
+  code: |
+    ...
+    init_block = vast.Initial(
+        vast.Block([vast.NonblockingSubstitution(
+            vast.Lvalue(vast.Identifier('count')),
+            vast.Rvalue(vast.IntConst('0'))
+        )])
+    )
+    items = [count, assign, init_block, always]
+    ...
+- prompt: |
+    Use a conditional operator to assign `led = RST ? 8'h00 : count[7:0];`
+  code: |
+    ...
+    assign = vast.Assign(
+        vast.Lvalue(vast.Identifier('led')),
+        vast.Rvalue(
+            vast.Cond(
+                vast.Identifier('RST'),
+                vast.IntConst("8'h00"),
+                vast.Partselect(vast.Identifier('count'), vast.IntConst('7'), vast.IntConst('0'))
+            )
+        )
+    )
+    ...
+- prompt: |
+    Change the reset signal to active-low (`nRST`) and update the logic accordingly.
+  code: |
+    ...
+    nrst = vast.Ioport(vast.Input('nRST'))
+    ports = vast.Portlist([clk, nrst, led])
+    ...
+    reset_cond = vast.Unot(vast.Identifier('nRST'))
+    if0 = vast.IfStatement(reset_cond, if0_true, if0_false)
+    ...
+- prompt: |
+    Add a synthesis directive comment before the `always` block.
+  code: |
+    ...
+    synth_comment = vast.Comment("synthesis keep")
+    always = vast.Always(senslist, statement)
+    items = [count, assign, synth_comment, always]
+    ...
+- prompt: |
+    Replace the `DATAWID` parameter with a `localparam`.
+  code: |
+    ...
+    datawid = vast.Decl([
+        vast.Localparam('DATAWID', vast.Rvalue(vast.IntConst('32')))
+    ])
+    ...
+    ast = vast.ModuleDef("top", None, ports, [datawid] + items)
+    ...
+- prompt: |
+    Remove `DATAWID` and use a fixed bit width of 8 directly in count and assign expressions.
+  code: |
+    ...
+    width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+    count = vast.Reg('count', width=width)
+    ...
+    assign = vast.Assign(
+        vast.Lvalue(vast.Identifier('led')),
+        vast.Rvalue(
+            vast.Partselect(
+                vast.Identifier('count'),
+                vast.IntConst('7'),
+                vast.IntConst('0')
+            )
+        )
+    )
+    ...
+- prompt: |
+    Add a comment header at the top describing the module's functionality.
+  code: |
+    ...
+    header_comment = vast.Comment("This module blinks 8 LEDs using a counter.")
+    ...
+    items = [header_comment, count, assign, always]
+    ...
+- prompt: |
+    Modify the sensitivity list to trigger on the negative edge of the clock.
+  code: |
+    ...
+    sens = vast.Sens(vast.Identifier('CLK'), type='negedge')
+    senslist = vast.SensList([sens])
+    ...
+- prompt: |
+    Change the counter increment from `+1` to `+2`.
+  code: |
+    ...
+    count_plus_1 = vast.Plus(vast.Identifier('count'), vast.IntConst('2'))
+    ...
+- prompt: |
+    Add an `EN` input signal to enable counting only when high.
+  code: |
+    ...
+    en = vast.Ioport(vast.Input('EN'))
+    ports = vast.Portlist([clk, rst, en, led])
+    ...
+    if_en = vast.IfStatement(
+        vast.Identifier('EN'),
+        vast.Block([assign_count_false])
+    )
+    if0 = vast.IfStatement(
+        vast.Identifier('RST'),
+        if0_true,
+        vast.Block([if_en])
+    )
+    ...
+- prompt: |
+    Reduce the output port `led` width from 8 bits to 4 bits.
+  code: |
+    ...
+    width = vast.Width(vast.IntConst('3'), vast.IntConst('0'))
+    led = vast.Ioport(vast.Output('led', width=width))
+    ...
+    assign = vast.Assign(
+        vast.Lvalue(vast.Identifier('led')),
+        vast.Rvalue(
+            vast.Partselect(
+                vast.Identifier('count'),
+                vast.IntConst('3'),
+                vast.IntConst('0')
+            )
+        )
+    )
+    ...
+- prompt: |
+    Rename the internal `count` signal to `counter` throughout the module.
+  code: |
+    ...
+    counter = vast.Reg('counter', width=width)
+    ...
+    assign = vast.Assign(
+        vast.Lvalue(vast.Identifier('led')),
+        vast.Rvalue(
+            vast.Partselect(
+                vast.Identifier('counter'),
+                vast.IntConst('7'),
+                vast.IntConst('0')
+            )
+        )
+    )
+    ...
+    assign_counter_true = vast.NonblockingSubstitution(
+        vast.Lvalue(vast.Identifier('counter')),
+        vast.Rvalue(vast.IntConst('0'))
+    )
+    ...
+    counter_plus_1 = vast.Plus(vast.Identifier('counter'), vast.IntConst('1'))
+    assign_counter_false = vast.NonblockingSubstitution(
+        vast.Lvalue(vast.Identifier('counter')),
+        vast.Rvalue(counter_plus_1)
+    )
+    ...
+- prompt: |
+    Change the reset logic to active-low (trigger when RST == 0).
+  code: |
+    ...
+    not_rst = vast.Unot(vast.Identifier('RST'))
+    if0 = vast.IfStatement(not_rst, if0_true, if0_false)
+    ...
+- prompt: |
+    Add a parameter `INCR` to configure how much to increment `count`.
+  code: |
+    ...
+    incr_param = vast.Parameter('INCR', vast.Rvalue(vast.IntConst('1')))
+    params = vast.Paramlist([datawid, incr_param])
+    ...
+    count_plus_incr = vast.Plus(vast.Identifier('count'), vast.Identifier('INCR'))
+    assign_count_false = vast.NonblockingSubstitution(
+        vast.Lvalue(vast.Identifier('count')),
+        vast.Rvalue(count_plus_incr)
+    )
+    ...
+- prompt: |
+    Add asynchronous reset handling using sensitivity list with both CLK and RST.
+  code: |
+    ...
+    senslist = vast.SensList([
+        vast.Sens(vast.Identifier('CLK'), type='posedge'),
+        vast.Sens(vast.Identifier('RST'), type='posedge')
+    ])
+    ...
+- prompt: |
+    Modify the assignment to output the full `count` value directly to `led`.
+  code: |
+    ...
+    assign = vast.Assign(
+        vast.Lvalue(vast.Identifier('led')),
+        vast.Rvalue(vast.Identifier('count'))
+    )
+    ...
+- prompt: |
+    Change the width of `count` to be a fixed 8-bit register (not based on `DATAWID`).
+  code: |
+    ...
+    fixed_width = vast.Width(vast.IntConst('7'), vast.IntConst('0'))
+    count = vast.Reg('count', width=fixed_width)
+    ...
