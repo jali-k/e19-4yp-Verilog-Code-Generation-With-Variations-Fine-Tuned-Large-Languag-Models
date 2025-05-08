@@ -933,21 +933,21 @@
     endmodule
   prompt: Create a Verilog module named `led` with a parameterized step size. The module uses a clock and synchronous reset to increment an internal counter. When the counter reaches `STEP - 1`, it resets and increments an 8-bit `LED` register to simulate LED pattern updates.
 
-- code: |
-    module TOP(CLK, RST_X, IN, OUT);
-      input CLK, RST_X;
-      input [7:0] IN;
-      output [7:0] OUT;
-      reg [7:0] OUT;
+# - code: |
+#     module TOP(CLK, RST_X, IN, OUT);
+#       input CLK, RST_X;
+#       input [7:0] IN;
+#       output [7:0] OUT;
+#       reg [7:0] OUT;
 
-      reg [7:0] mem [0:255];
+#       reg [7:0] mem [0:255];
       
-      genvar i;
-      generate for(i=0; i<4; i=i+1) begin
-        always @(posedge CLK) begin
-          mem[IN][2*(i+1)-1:2*i] <= mem[IN][2*(i+1)-1:2*i] + 2'b1;
-        end
-      end endgenerate
+#       genvar i;
+#       generate for(i=0; i<4; i=i+1) begin
+#         always @(posedge CLK) begin
+#           mem[IN][2*(i+1)-1:2*i] <= mem[IN][2*(i+1)-1:2*i] + 2'b1;
+#         end
+#       end endgenerate
       
-    endmodule
-  prompt: Create a Verilog module named `TOP` that uses a generate loop to increment each 2-bit slice of an 8-bit memory word located at the address specified by input `IN`. The memory is 256 entries deep, and the operation occurs on every rising edge of `CLK`. The `generate` block handles the bit-slice updates using parameterized indexing.
+#     endmodule
+#   prompt: Create a Verilog module named `TOP` that uses a generate loop to increment each 2-bit slice of an 8-bit memory word located at the address specified by input `IN`. The memory is 256 entries deep, and the operation occurs on every rising edge of `CLK`. The `generate` block handles the bit-slice updates using parameterized indexing.
