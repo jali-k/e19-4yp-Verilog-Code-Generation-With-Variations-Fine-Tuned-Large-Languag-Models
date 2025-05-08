@@ -148,59 +148,59 @@
     The `enable` signal should toggle between 1 and 0 during the simulation, and the output should behave accordingly.
     Simulate all 32 combinations for inputs `x_in1` to `x_in5`, with the `enable` signal first set to 1 and then 0 at the end.
 
-- code: |
-    primitive AOI_UDP (y, x_in1, x_in2, x_in3, x_in4, x_in5);
-      output y;
-      input x_in1, x_in2, x_in3, x_in4, x_in5;
+# - code: |
+#     primitive AOI_UDP (y, x_in1, x_in2, x_in3, x_in4, x_in5);
+#       output y;
+#       input x_in1, x_in2, x_in3, x_in4, x_in5;
 
-      table
-        // x1 x2 x3 x4 x5
-        0 0 0 0 0 : 1;
-        0 0 0 0 1 : 1;
-        0 0 0 1 0 : 1;
-        0 0 0 1 1 : 1;
-        0 0 1 0 0 : 1;
-        0 0 1 0 1 : 1;
-        0 0 1 1 0 : 1;
-        0 0 1 1 1 : 0;
-        0 1 0 0 0 : 1;
-        0 1 0 0 1 : 1;
-        0 1 0 1 0 : 1;
-        0 1 0 1 1 : 1;
-        0 1 1 0 0 : 1;
-        0 1 1 0 1 : 1;
-        0 1 1 1 0 : 1;
-        0 1 1 1 1 : 0;
-        1 0 0 0 0 : 1;
-        1 0 0 0 1 : 1;
-        1 0 0 1 0 : 1;
-        1 0 0 1 1 : 1;
-        1 0 1 0 0 : 1;
-        1 0 1 0 1 : 1;
-        1 0 1 1 0 : 1;
-        1 0 1 1 1 : 0;
-        1 1 0 0 0 : 0;
-        1 1 0 0 1 : 0;
-        1 1 0 1 0 : 0;
-        1 1 0 1 1 : 0;
-        1 1 1 0 0 : 0;
-        1 1 1 0 1 : 0;
-        1 1 1 1 0 : 0;
-        1 1 1 1 1 : 0;
-      endtable
-    endprimitive
-  prompt: |
-    Create a primitive AOI (AND-OR-Invert) gate with 5 inputs (x_in1, x_in2, x_in3, x_in4, x_in5) and the output y, defining the logic using the given truth table.
+#       table
+#         // x1 x2 x3 x4 x5
+#         0 0 0 0 0 : 1;
+#         0 0 0 0 1 : 1;
+#         0 0 0 1 0 : 1;
+#         0 0 0 1 1 : 1;
+#         0 0 1 0 0 : 1;
+#         0 0 1 0 1 : 1;
+#         0 0 1 1 0 : 1;
+#         0 0 1 1 1 : 0;
+#         0 1 0 0 0 : 1;
+#         0 1 0 0 1 : 1;
+#         0 1 0 1 0 : 1;
+#         0 1 0 1 1 : 1;
+#         0 1 1 0 0 : 1;
+#         0 1 1 0 1 : 1;
+#         0 1 1 1 0 : 1;
+#         0 1 1 1 1 : 0;
+#         1 0 0 0 0 : 1;
+#         1 0 0 0 1 : 1;
+#         1 0 0 1 0 : 1;
+#         1 0 0 1 1 : 1;
+#         1 0 1 0 0 : 1;
+#         1 0 1 0 1 : 1;
+#         1 0 1 1 0 : 1;
+#         1 0 1 1 1 : 0;
+#         1 1 0 0 0 : 0;
+#         1 1 0 0 1 : 0;
+#         1 1 0 1 0 : 0;
+#         1 1 0 1 1 : 0;
+#         1 1 1 0 0 : 0;
+#         1 1 1 0 1 : 0;
+#         1 1 1 1 0 : 0;
+#         1 1 1 1 1 : 0;
+#       endtable
+#     endprimitive
+#   prompt: |
+#     Create a primitive AOI (AND-OR-Invert) gate with 5 inputs (x_in1, x_in2, x_in3, x_in4, x_in5) and the output y, defining the logic using the given truth table.
 
-- code: |
-    module AOI_UDP_mod (y, x_in1, x_in2, x_in3, x_in4, x_in5);
-      output y;
-      input x_in1, x_in2, x_in3, x_in4, x_in5;
+# - code: |
+#     module AOI_UDP_mod (y, x_in1, x_in2, x_in3, x_in4, x_in5);
+#       output y;
+#       input x_in1, x_in2, x_in3, x_in4, x_in5;
 
-      AOI_UDP (y, x_in1, x_in2, x_in3, x_in4, x_in5);
-    endmodule
-  prompt: |
-    Create a wrapper module `AOI_UDP_mod` that instantiates the primitive `AOI_UDP` for the AOI gate with 5 inputs and output y.
+#       AOI_UDP (y, x_in1, x_in2, x_in3, x_in4, x_in5);
+#     endmodule
+#   prompt: |
+#     Create a wrapper module `AOI_UDP_mod` that instantiates the primitive `AOI_UDP` for the AOI gate with 5 inputs and output y.
 
 - code: |
     module t_AOI_UDP_mod();
@@ -496,65 +496,65 @@
   prompt: |
     This module represents a finite state machine with a control unit and a datapath unit, where the state transitions depend on various input signals. The testbench is used to simulate different inputs and monitor the output of the machine, testing various cases such as reset behavior, transition conditions, and handling of control signals (F1, F2, Go).
 
-- code: |
-    module Problem_5_27 (alu_out, a, b, c_in, opcode);
-    input [7: 0] a, b;
-    input c_in;
-    input [2: 0] opcode;
-    output reg [8: 0] alu_out;
-    parameter [2: 0] add = 0;
-    parameter [2: 0] subtract = 1;
-    parameter [2: 0] subtract_a = 2;
-    parameter [2: 0] or_ab = 3;
-    parameter [2: 0] and_ab = 4;
-    parameter [2: 0] not_ab = 5;
-    parameter [2: 0] exor = 6;
-    parameter [2: 0] exnor = 7;
-    always @ (a, b, c_in, opcode)
-    case (opcode)
-    add: alu_out = a + b + c_in;
-    subtract: alu_out = a + (~b) + c_in;
-    subtract_a: alu_out = b + (~a) + ~c_in;
-    or_ab: alu_out = {1'b0, a | b};
-    and_ab: alu_out = {1'b0, a & b};
-    not_ab: alu_out = {1'b0, (~a) &b};
-    exor: alu_out = {1'b0, a^b};
-    exnor: alu_out = {1'b0, a ~^ b};
-    endcase
-    endmodule
+# - code: |
+#     module Problem_5_27 (alu_out, a, b, c_in, opcode);
+#     input [7: 0] a, b;
+#     input c_in;
+#     input [2: 0] opcode;
+#     output reg [8: 0] alu_out;
+#     parameter [2: 0] add = 0;
+#     parameter [2: 0] subtract = 1;
+#     parameter [2: 0] subtract_a = 2;
+#     parameter [2: 0] or_ab = 3;
+#     parameter [2: 0] and_ab = 4;
+#     parameter [2: 0] not_ab = 5;
+#     parameter [2: 0] exor = 6;
+#     parameter [2: 0] exnor = 7;
+#     always @ (a, b, c_in, opcode)
+#     case (opcode)
+#     add: alu_out = a + b + c_in;
+#     subtract: alu_out = a + (~b) + c_in;
+#     subtract_a: alu_out = b + (~a) + ~c_in;
+#     or_ab: alu_out = {1'b0, a | b};
+#     and_ab: alu_out = {1'b0, a & b};
+#     not_ab: alu_out = {1'b0, (~a) &b};
+#     exor: alu_out = {1'b0, a^b};
+#     exnor: alu_out = {1'b0, a ~^ b};
+#     endcase
+#     endmodule
 
-    // Test Plan: Verify combinational logic by inspection
-    // for c_in = 0, 1, a = 8'h55, b = 8'haa
-    module t_Problem_5_27 ();
-    reg [7: 0] a, b;
-    reg c_in;
-    reg [2: 0] opcode;
-    reg [79: 0] ocs;
-    wire [8: 0] alu_out;
-    integer j, k;
-    parameter [2: 0] add = 0;
-    parameter [2: 0] subtract = 1;
-    parameter [2: 0] subtract_a = 2;
-    parameter [2: 0] or_ab = 3;
-    parameter [2: 0] and_ab = 4;
+#     // Test Plan: Verify combinational logic by inspection
+#     // for c_in = 0, 1, a = 8'h55, b = 8'haa
+#     module t_Problem_5_27 ();
+#     reg [7: 0] a, b;
+#     reg c_in;
+#     reg [2: 0] opcode;
+#     reg [79: 0] ocs;
+#     wire [8: 0] alu_out;
+#     integer j, k;
+#     parameter [2: 0] add = 0;
+#     parameter [2: 0] subtract = 1;
+#     parameter [2: 0] subtract_a = 2;
+#     parameter [2: 0] or_ab = 3;
+#     parameter [2: 0] and_ab = 4;
 
-    parameter [2: 0] not_ab = 5;
-    parameter [2: 0] exor = 6;
-    parameter [2: 0] exnor = 7;
-    parameter [79: 0] ocs_0 = "add";
-    parameter [79: 0] ocs_1 = "subtract";
-    parameter [79: 0] ocs_2 = "subtract_a";
-    parameter [79: 0] ocs_3 = "or_ab";
-    parameter [79: 0] ocs_4 = "and_ab";
-    parameter [79: 0] ocs_5 = "not_ab";
-    parameter [79: 0] ocs_6 = "exor";
-    parameter [79: 0] ocs_7 = "exnor";
-  prompt: |
-    This module performs arithmetic and logic operations based on a given opcode.
-    The operations supported include addition, subtraction, bitwise OR, AND, NOT, XOR, and XNOR.
-    The input `a` and `b` are 8-bit values, and the `c_in` is a carry-in bit. The result is a 9-bit output.
+#     parameter [2: 0] not_ab = 5;
+#     parameter [2: 0] exor = 6;
+#     parameter [2: 0] exnor = 7;
+#     parameter [79: 0] ocs_0 = "add";
+#     parameter [79: 0] ocs_1 = "subtract";
+#     parameter [79: 0] ocs_2 = "subtract_a";
+#     parameter [79: 0] ocs_3 = "or_ab";
+#     parameter [79: 0] ocs_4 = "and_ab";
+#     parameter [79: 0] ocs_5 = "not_ab";
+#     parameter [79: 0] ocs_6 = "exor";
+#     parameter [79: 0] ocs_7 = "exnor";
+#   prompt: |
+#     This module performs arithmetic and logic operations based on a given opcode.
+#     The operations supported include addition, subtraction, bitwise OR, AND, NOT, XOR, and XNOR.
+#     The input `a` and `b` are 8-bit values, and the `c_in` is a carry-in bit. The result is a 9-bit output.
     
-    The testbench verifies the correctness of each operation by providing specific input values for `a`, `b`, and `c_in`, and checks the output for each operation specified by the `opcode`.
+#     The testbench verifies the correctness of each operation by providing specific input values for `a`, `b`, and `c_in`, and checks the output for each operation specified by the `opcode`.
 
 - code: |
     Problem_5_27 M0 (alu_out, a, b, c_in, opcode);
@@ -717,19 +717,19 @@
   prompt: |
     This design consists of a module that eliminates feedback from the ALU to the Data_in, instead providing `c_in` to the ALU for arithmetic and logic operations. The system includes a register file, which supports reading and writing data to/from registers. The ALU performs various operations (addition, subtraction, AND, OR, etc.) on data read from the register file based on a given opcode and the carry input `c_in`. A testbench is used to verify the functionality of the ALU and register file by writing a walking ones pattern to the registers and testing various ALU operations.
 
-- code: |
-    module Problem_5_29 (P0, Data, Ld, En, clock, rst);
-    output [7: 0] P0;
-    input [7:0] Data;
-    input Ld, En, clock, rst;
-    wire flush_P0_P1, Ld_P1, Ld_P0, Ld_R0;
+# - code: |
+#     module Problem_5_29 (P0, Data, Ld, En, clock, rst);
+#     output [7: 0] P0;
+#     input [7:0] Data;
+#     input Ld, En, clock, rst;
+#     wire flush_P0_P1, Ld_P1, Ld_P0, Ld_R0;
 
-    control_unit
-    M0 (flush_P0_P1, Ld_P1, Ld_P0, Ld_R0, Ld, En, clock, rst);
-    datapath_unit
-    M1 (P0, Data, flush_P0_P1, Ld_P1, Ld_P0, Ld_R0, clock);
-    endmodule
-  prompt: Module that instantiates a control unit and a datapath unit, connecting control signals to manage data flow and state transitions for a pipelined system.
+#     control_unit
+#     M0 (flush_P0_P1, Ld_P1, Ld_P0, Ld_R0, Ld, En, clock, rst);
+#     datapath_unit
+#     M1 (P0, Data, flush_P0_P1, Ld_P1, Ld_P0, Ld_R0, clock);
+#     endmodule
+#   prompt: Module that instantiates a control unit and a datapath unit, connecting control signals to manage data flow and state transitions for a pipelined system.
 
 - code: |
     module control_unit (flush_P0_P1, Ld_P1, Ld_P0, Ld_R0, Ld, En, clock, rst);
@@ -814,21 +814,21 @@
     endmodule
   prompt: Testbench that simulates clock cycles and verifies the functionality of the Problem_5_29 module, including reset conditions, data loading, and pipeline operations.
 
-- code: |
-    module Problem_5_30 (P0, Data, Ld, En, clock, rst);
-    output [7: 0] P0;
-    input [7:0] Data;
-    input Ld, En, clock, rst;
-    wire flush_P0_P1, Ld_P1, Ld_P0;
+# - code: |
+#     module Problem_5_30 (P0, Data, Ld, En, clock, rst);
+#     output [7: 0] P0;
+#     input [7:0] Data;
+#     input Ld, En, clock, rst;
+#     wire flush_P0_P1, Ld_P1, Ld_P0;
 
-    107
+#     107
 
-    control_unit
-    M0 (flush_P0_P1, Ld_P1, Ld_P0, Ld, En, clock, rst);
-    datapath_unit
-    M1 (P0, Data, flush_P0_P1, Ld_P1, Ld_P0, clock);
-    endmodule
-  prompt: Top-level module that instantiates a control unit and datapath unit for Problem_5_30, coordinating the pipeline through load and enable signals.
+#     control_unit
+#     M0 (flush_P0_P1, Ld_P1, Ld_P0, Ld, En, clock, rst);
+#     datapath_unit
+#     M1 (P0, Data, flush_P0_P1, Ld_P1, Ld_P0, clock);
+#     endmodule
+#   prompt: Top-level module that instantiates a control unit and datapath unit for Problem_5_30, coordinating the pipeline through load and enable signals.
 
 - code: |
     module control_unit (flush_P0_P1, Ld_P1, Ld_P0, Ld, En, clock, rst);
@@ -870,20 +870,20 @@
     endmodule
   prompt: Control unit for Problem_5_30 that handles pipeline state transitions based on load and enable signals with a finite state machine.
 
-- code: |
-    module datapath_unit (P0, Data, flush_P0_P1, Ld_P1, Ld_P0, clock);
-    output [7: 0] P0;
-    input [7: 0] Data;
-    input flush_P0_P1, Ld_P1, Ld_P0, clock;
-    reg [15: 0] R0;
-    wire [7: 0] P0 = R0[7: 0];
-    always @ (posedge clock) begin
-    if (flush_P0_P1) begin R0 <= {Data, R0[15: 0]}; end
-    if (Ld_P1) R0[15: 7] <= Data;
-    if (Ld_P0) R0[7: 0] <= R0[15: 8];
-    end
-    endmodule
-  prompt: Datapath unit for Problem_5_30 that implements a simple register-based pipeline with data flushing and staged loading based on control signals.
+# - code: |
+#     module datapath_unit (P0, Data, flush_P0_P1, Ld_P1, Ld_P0, clock);
+#     output [7: 0] P0;
+#     input [7: 0] Data;
+#     input flush_P0_P1, Ld_P1, Ld_P0, clock;
+#     reg [15: 0] R0;
+#     wire [7: 0] P0 = R0[7: 0];
+#     always @ (posedge clock) begin
+#     if (flush_P0_P1) begin R0 <= {Data, R0[15: 0]}; end
+#     if (Ld_P1) R0[15: 7] <= Data;
+#     if (Ld_P0) R0[7: 0] <= R0[15: 8];
+#     end
+#     endmodule
+#   prompt: Datapath unit for Problem_5_30 that implements a simple register-based pipeline with data flushing and staged loading based on control signals.
 
 - code: |
     module t_Problem_5_30 ();
@@ -938,13 +938,13 @@
     endmodule
   prompt: Testbench for Clock_Prog that simulates the generated clock signal for a limited simulation time.
 
-- code: |
-    module annotate_Clock_Prog ();
-    defparam t_Clock_Prog.M1.Latency = 10;
-    defparam t_Clock_Prog.M1.Offset = 5;
-    defparam t_Clock_Prog.M1.Pulse_Width = 5;
-    endmodule
-  prompt: Module annotate_Clock_Prog that overrides parameters of Clock_Prog instance M1 for customized simulation behavior.
+# - code: |
+#     module annotate_Clock_Prog ();
+#     defparam t_Clock_Prog.M1.Latency = 10;
+#     defparam t_Clock_Prog.M1.Offset = 5;
+#     defparam t_Clock_Prog.M1.Pulse_Width = 5;
+#     endmodule
+#   prompt: Module annotate_Clock_Prog that overrides parameters of Clock_Prog instance M1 for customized simulation behavior.
 
 - code: |
     11/18/2004
@@ -1040,45 +1040,45 @@
     - `Datapath_Unit`: Handles counting operations with an asynchronous reset and enable signal.
     Include a testbench (`t_Binary_Counter_Partioned_RTL_by_3`) to verify functionality with clock, reset, and enable signals toggled at specified times.
 
-- code: |
-    // Ripple Carry Counter Top Block
-    module ripple-carry-counter(q, clk, reset);
-        output [3:0] q;
-        input clk, reset;
+# - code: |
+#     // Ripple Carry Counter Top Block
+#     module ripple-carry-counter(q, clk, reset);
+#         output [3:0] q;
+#         input clk, reset;
         
-        T-FF tff0(q[0], clk, reset);
-        T-FF tff1(q[1], q[0], reset);
-        T-FF tff2(q[2], q[1], reset);
-        T-FF tff3(q[3], q[2], reset);
-    endmodule
-  prompt: "Design the top-level block for a ripple carry counter using T flip-flops."
+#         T-FF tff0(q[0], clk, reset);
+#         T-FF tff1(q[1], q[0], reset);
+#         T-FF tff2(q[2], q[1], reset);
+#         T-FF tff3(q[3], q[2], reset);
+#     endmodule
+#   prompt: "Design the top-level block for a ripple carry counter using T flip-flops."
 
-- code: |
-    // Flip-flop T-FF
-    module T-FF(q, clk, reset);
-        output q;
-        input clk, reset;
-        wire d;
+# - code: |
+#     // Flip-flop T-FF
+#     module T-FF(q, clk, reset);
+#         output q;
+#         input clk, reset;
+#         wire d;
         
-        D-FF dff0(q, d, clk, reset);
-        not n1(d, q); // not is a Verilog-provided primitive. case sensitive
-    endmodule
-  prompt: "Design a T flip-flop using a D flip-flop and a NOT gate."
+#         D-FF dff0(q, d, clk, reset);
+#         not n1(d, q); // not is a Verilog-provided primitive. case sensitive
+#     endmodule
+#   prompt: "Design a T flip-flop using a D flip-flop and a NOT gate."
 
-- code: |
-    // Flip-flop D-FF with synchronous reset
-    module D-FF(q, d, clk, reset);
-        output q;
-        input d, clk, reset;
-        reg q;
+# - code: |
+#     // Flip-flop D-FF with synchronous reset
+#     module D-FF(q, d, clk, reset);
+#         output q;
+#         input d, clk, reset;
+#         reg q;
         
-        always @(posedge reset or negedge clk)
-            if (reset)
-                q = 1'b0;
-            else
-                q = d;
-    endmodule
-  prompt: "Design a D flip-flop with a synchronous reset."
+#         always @(posedge reset or negedge clk)
+#             if (reset)
+#                 q = 1'b0;
+#             else
+#                 q = d;
+#     endmodule
+#   prompt: "Design a D flip-flop with a synchronous reset."
 
 - code: |
     // Stimulus Block for Ripple Carry Counter
