@@ -730,39 +730,39 @@
     This module is a 4-bit BCD counter with an active-high reset. The counter increments from 0 to 9 and resets to 0 after reaching 9.
     The testbench checks the reset functionality and verifies counting behavior, including the ability to reset the counter "on-the-fly."
 
-- code: |
-    // Assumption: positive-edge sensitive, active-high reset.
-    // Assumption: count from reset value
-    module Modulo_6_Counter (count, clk, rst);
-    output [2: 0] count;
-    input clk, rst;
-    reg [2: 0] count;
-    always @ (posedge clk , posedge rst)
-    if (rst == 1) count <= 0;
-    else if (count < 5) count <= count + 1;
-    else count <= 0;
-    endmodule
+# - code: |
+#     // Assumption: positive-edge sensitive, active-high reset.
+#     // Assumption: count from reset value
+#     module Modulo_6_Counter (count, clk, rst);
+#     output [2: 0] count;
+#     input clk, rst;
+#     reg [2: 0] count;
+#     always @ (posedge clk , posedge rst)
+#     if (rst == 1) count <= 0;
+#     else if (count < 5) count <= count + 1;
+#     else count <= 0;
+#     endmodule
 
-    module t_Modulo_6_Counter ();
-    wire [2: 0] count;
-    reg clk, rst;
-    Modulo_6_Counter M0 (count, clk, rst);
-    initial #200 $finish;
-    initial begin
-    clk = 0;
-    forever #5 clk = ~clk;
-    end
-    initial begin
-    #10 rst = 1;
-    #20 rst = 0;
-    #100 rst = 1; // Reset 0n-the-fly
-    #20 rst = 0;
-    end
-    endmodule
+#     module t_Modulo_6_Counter ();
+#     wire [2: 0] count;
+#     reg clk, rst;
+#     Modulo_6_Counter M0 (count, clk, rst);
+#     initial #200 $finish;
+#     initial begin
+#     clk = 0;
+#     forever #5 clk = ~clk;
+#     end
+#     initial begin
+#     #10 rst = 1;
+#     #20 rst = 0;
+#     #100 rst = 1; // Reset 0n-the-fly
+#     #20 rst = 0;
+#     end
+#     endmodule
 
-  prompt: |
-    This module is a 3-bit Modulo-6 counter with an active-high reset. The counter increments from 0 to 5 and resets to 0 after reaching 5.
-    The testbench checks the reset functionality and verifies counting behavior, including the ability to reset the counter "on-the-fly."
+#   prompt: |
+#     This module is a 3-bit Modulo-6 counter with an active-high reset. The counter increments from 0 to 5 and resets to 0 after reaching 5.
+#     The testbench checks the reset functionality and verifies counting behavior, including the ability to reset the counter "on-the-fly."
 
 - code: |
     module Problem_5_24a (count, clk, reset);
