@@ -970,17 +970,17 @@
     endmodule
   prompt: Design a 8-bit up-counter with a clock 'clk' and a reset signal 'reset'
 
-- code: |
-    module Problem3(input [3:0] a, b, output reg [3:0] prod);
-      integer i;
-      always @(*) begin
-        prod = 0;
-        for (i = 0; i < 4; i = i + 1) begin
-          prod = prod + (a[i] & b[i]) << i;
-        end
-      end
-    endmodule
-  prompt: Perform a bitwise AND operation between two 4-bit inputs 'a' and 'b', and output the result 'prod'
+# - code: |
+#     module Problem3(input [3:0] a, b, output reg [3:0] prod);
+#       integer i;
+#       always @(*) begin
+#         prod = 0;
+#         for (i = 0; i < 4; i = i + 1) begin
+#           prod = prod + (a[i] & b[i]) << i;
+#         end
+#       end
+#     endmodule
+#   prompt: Perform a bitwise AND operation between two 4-bit inputs 'a' and 'b', and output the result 'prod'
 
 - code: |
     module Problem4(input clk, reset, enable, output reg [3:0] out);
@@ -1088,18 +1088,18 @@
     endmodule
   prompt: "Create a Half Adder in Verilog."
 
-- code: |
-    // Verilog code for Problem 6
-    module Full_Adder(
-        input A, B, Cin,
-        output Sum, Carry
-    );
-        wire sum_half, carry_half1, carry_half2;
-        Half_Adder HA1(A, B, sum_half, carry_half1);
-        Half_Adder HA2(sum_half, Cin, Sum, carry_half2);
-        assign Carry = carry_half1 | carry_half2;
-    endmodule
-  prompt: "Create a Full Adder in Verilog using two Half Adders."
+# - code: |
+#     // Verilog code for Problem 6
+#     module Full_Adder(
+#         input A, B, Cin,
+#         output Sum, Carry
+#     );
+#         wire sum_half, carry_half1, carry_half2;
+#         Half_Adder HA1(A, B, sum_half, carry_half1);
+#         Half_Adder HA2(sum_half, Cin, Sum, carry_half2);
+#         assign Carry = carry_half1 | carry_half2;
+#     endmodule
+#   prompt: "Create a Full Adder in Verilog using two Half Adders."
 
 - code: |
     // Verilog code for Problem 7
@@ -1212,17 +1212,17 @@
     endmodule
   prompt: "Write a Verilog module for a 2-input OR gate."
 
-- code: |
-    module d_flip_flop (
-        input wire clk, rst, d,
-        output wire q
-    );
-    always @(posedge clk or posedge rst) begin
-        if (rst) q <= 0;
-        else q <= d;
-    end
-    endmodule
-  prompt: "Write a Verilog module for a D flip-flop with asynchronous reset."
+# - code: |
+#     module d_flip_flop (
+#         input wire clk, rst, d,
+#         output wire q
+#     );
+#     always @(posedge clk or posedge rst) begin
+#         if (rst) q <= 0;
+#         else q <= d;
+#     end
+#     endmodule
+#   prompt: "Write a Verilog module for a D flip-flop with asynchronous reset."
 
 - code: |
     module full_adder (
@@ -1294,30 +1294,30 @@
     endmodule
   prompt: "Write a Verilog module for a JK flip-flop."
 
-- code: |
-    module multiplexer_4to1 (
-        input wire [3:0] a, b, c, d,
-        input wire [1:0] sel,
-        output wire y
-    );
-    assign y = (sel == 2'b00) ? a :
-               (sel == 2'b01) ? b :
-               (sel == 2'b10) ? c : d;
-    endmodule
-  prompt: "Write a Verilog module for a 4-to-1 multiplexer."
+# - code: |
+#     module multiplexer_4to1 (
+#         input wire [3:0] a, b, c, d,
+#         input wire [1:0] sel,
+#         output wire y
+#     );
+#     assign y = (sel == 2'b00) ? a :
+#                (sel == 2'b01) ? b :
+#                (sel == 2'b10) ? c : d;
+#     endmodule
+#   prompt: "Write a Verilog module for a 4-to-1 multiplexer."
 
-- code: |
-    module mux_8to1 (
-        input wire [7:0] a, b, c, d, e, f, g, h,
-        input wire [2:0] sel,
-        output wire y
-    );
-    assign y = (sel == 3'b000) ? a :
-               (sel == 3'b001) ? b :
-               (sel == 3'b010) ? c :
-               (sel == 3'b011) ? d :
-               (sel == 3'b100) ? e :
-               (sel == 3'b101) ? f :
-               (sel == 3'b110) ? g : h;
-    endmodule
-  prompt: "Write a Verilog module for an 8-to-1 multiplexer."
+# - code: |
+#     module mux_8to1 (
+#         input wire [7:0] a, b, c, d, e, f, g, h,
+#         input wire [2:0] sel,
+#         output wire y
+#     );
+#     assign y = (sel == 3'b000) ? a :
+#                (sel == 3'b001) ? b :
+#                (sel == 3'b010) ? c :
+#                (sel == 3'b011) ? d :
+#                (sel == 3'b100) ? e :
+#                (sel == 3'b101) ? f :
+#                (sel == 3'b110) ? g : h;
+#     endmodule
+#   prompt: "Write a Verilog module for an 8-to-1 multiplexer."
