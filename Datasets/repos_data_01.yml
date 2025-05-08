@@ -6,12 +6,12 @@
     endmodule
   prompt: Create a Verilog module named `wire_assign` with one input and one output that directly connects the input to the output like a wire.
 
-- code: |
-    // This is a module that assigns the output to the input
-    module wire_assign(input in, output out);
-        assign out = in;
-    endmodule
-  prompt: Write a Verilog module with one input and one output, and describe it as a module that assigns the output to the input.
+# - code: |
+#     // This is a module that assigns the output to the input
+#     module wire_assign(input in, output out);
+#         assign out = in;
+#     endmodule
+#   prompt: Write a Verilog module with one input and one output, and describe it as a module that assigns the output to the input.
 
 - code: |
     // This is a module that assigns the output to the input
@@ -20,12 +20,12 @@
     endmodule
   prompt: Write a Verilog module with one input and one output, and describe it as a module that assigns the output to the input.
 
-- code: |
-    // This is a module that assigns the output to the input
-    module wire_assign(input in, output out);
-        assign out = in;
-    endmodule
-  prompt: Write a Verilog module with one input and one output, and describe it as a module that assigns the output to the input.
+# - code: |
+#     // This is a module that assigns the output to the input
+#     module wire_assign(input in, output out);
+#         assign out = in;
+#     endmodule
+#   prompt: Write a Verilog module with one input and one output, and describe it as a module that assigns the output to the input.
 
 - code: |
     `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
