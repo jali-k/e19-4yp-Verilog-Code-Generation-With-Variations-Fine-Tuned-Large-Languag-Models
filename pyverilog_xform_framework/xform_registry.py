@@ -15,8 +15,8 @@ from module_name_xform import transform_module_name
 from rename_port_xform import transform_rename_port
 from change_reset_condition_xform import transform_reset_condition
 
-# from change_signal_width_xform import transform_signal_width
-# from add_enable_signal_xform import transform_add_enable
+from change_signal_width_xform import transform_signal_width
+from add_enable_signal_xform import transform_add_enable
 # from rename_clock_xform import transform_rename_clock
 
 # Dictionary of all available transformations
@@ -80,38 +80,38 @@ AVAILABLE_XFORMS = {
             },
         },
     },
-    # "signal_width": {
-    #     "description": "Change a signal's width in a Verilog module",
-    #     "function": transform_signal_width,
-    #     "args": {
-    #         "signal_name": {
-    #             "help": "Name of the signal to modify",
-    #             "required": True,
-    #             "arg_name": "signal",
-    #         },
-    #         "new_width": {
-    #             "help": "New width in the format 'msb:lsb' (e.g., '3:0')",
-    #             "required": True,
-    #             "arg_name": "width",
-    #         },
-    #     },
-    # },
-    # "add_enable": {
-    #     "description": "Add an enable signal to a counter in a Verilog module",
-    #     "function": transform_add_enable,
-    #     "args": {
-    #         "enable_name": {
-    #             "help": "Name of the enable signal to add",
-    #             "required": True,
-    #             "arg_name": "enable",
-    #         },
-    #         "counter_name": {
-    #             "help": "Name of the counter to control",
-    #             "required": True,
-    #             "arg_name": "counter",
-    #         },
-    #     },
-    # },
+    "signal_width": {
+        "description": "Change a signal's width in a Verilog module",
+        "function": transform_signal_width,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "new_width": {
+                "help": "New width in the format 'msb:lsb' (e.g., '3:0')",
+                "required": True,
+                "arg_name": "width",
+            },
+        },
+    },
+    "add_enable": {
+        "description": "Add an enable signal to a counter in a Verilog module",
+        "function": transform_add_enable,
+        "args": {
+            "enable_name": {
+                "help": "Name of the enable signal to add",
+                "required": True,
+                "arg_name": "enable",
+            },
+            "counter_name": {
+                "help": "Name of the counter to control",
+                "required": True,
+                "arg_name": "counter",
+            },
+        },
+    },
     # "rename_clock": {
     #     "description": "Rename a clock signal in a Verilog module",
     #     "function": transform_rename_clock,
