@@ -5,7 +5,7 @@ module simple_counter (
   output [7:0] count_out
 );
 
-  reg [7:0] count;    // This is the variable we want to transform to wire
+  reg [7:0] count;    
 
   always @(posedge clk or posedge rst) begin
     if (rst) begin
