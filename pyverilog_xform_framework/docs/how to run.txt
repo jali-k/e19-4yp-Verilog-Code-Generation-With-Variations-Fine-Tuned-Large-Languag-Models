@@ -1,0 +1,22 @@
+Requirements
+- Python 3.6 or later
+- PyVerilog library (`pip install pyverilog`)
+
+Generalized Xform Framework script
+python <xform_name>.py <input_verilog_filename>.v <output_verilog_filename>.v --variables
+
+View the list of xforms available in the registry:
+python xform_registry.py --list
+
+Help for an xform
+python xform_registry.py module_name --help
+EXAMPLE: 
+    python xform_registry.py signal_width --help
+
+EXAMPLE:
+
+1. Change the name of the module in the verilog file
+    'python module_name_xform.py simple_counter.v sample_counter_changed.v --from simple_counter --to advanced_counter'
+
+2. change register to wire
+    'python reg_to_wire.py simple_counter.v simple_counter_wire.v --variable count'
