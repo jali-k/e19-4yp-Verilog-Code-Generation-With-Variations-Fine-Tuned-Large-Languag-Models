@@ -1,23 +1,21 @@
-#!/usr/bin/env python3
-"""
-Registry for all available transformations.
-This implementation allows using common argument names (--from, --to) across transformations
-by using subcommands in argparse.
-"""
-
 import sys
 import os
 import argparse
 
 # Import the transformation functions directly
-from reg_to_wire_xform import transform_reg_to_wire
-from module_name_xform import transform_module_name
-from rename_port_xform import transform_rename_port
-from change_reset_condition_xform import transform_reset_condition
+from pyverilog_xform_framework.xform_reg_to_wire import transform_reg_to_wire
+from pyverilog_xform_framework.xform_module_name import transform_module_name
+from pyverilog_xform_framework.xform_rename_port import transform_rename_port
+from pyverilog_xform_framework.xform_change_reset_condition import transform_reset_condition
+from pyverilog_xform_framework.xform_change_signal_width import transform_signal_width
+from pyverilog_xform_framework.xform_add_enable_signal import transform_add_enable
 
-from change_signal_width_xform import transform_signal_width
-from add_enable_signal_xform import transform_add_enable
-# from rename_clock_xform import transform_rename_clock
+# Import the new MDA transformations
+from pyverilog_xform_framework.xform_range_mda import transform_fixed_range_mda
+from pyverilog_xform_framework.xform_dynamic_mda import transform_dynamic_mda
+from pyverilog_xform_framework.xform_queue_mda import transform_queue_mda
+from pyverilog_xform_framework.xform_associative_mda import transform_associative_mda
+from pyverilog_xform_framework.xform_mixed_mda import transform_mixed_mda
 
 # Dictionary of all available transformations
 AVAILABLE_XFORMS = {
@@ -112,22 +110,113 @@ AVAILABLE_XFORMS = {
             },
         },
     },
-    # "rename_clock": {
-    #     "description": "Rename a clock signal in a Verilog module",
-    #     "function": transform_rename_clock,
-    #     "args": {
-    #         "from_name": {
-    #             "help": "Original clock signal name",
-    #             "required": True,
-    #             "arg_name": "from",
-    #         },
-    #         "to_name": {
-    #             "help": "New clock signal name",
-    #             "required": True,
-    #             "arg_name": "to",
-    #         },
-    #     },
-    # },
+    # New MDA transformations
+    "fixed_range_mda": {
+        "description": "Transform a signal to use fixed-range multi-dimensional arrays",
+        "function": transform_fixed_range_mda,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "ranges": {
+                "help": "List of ranges for dimensions (e.g., 7:0 3:0 15:0)",
+                "required": True,
+                "arg_name": "ranges",
+                "nargs": "+",  # Accept multiple args
+            },
+        },
+    },
+    "dynamic_mda": {
+        "description": "Transform a signal to use dynamic multi-dimensional arrays",
+        "function": transform_dynamic_mda,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "dimensions": {
+                "help": "Number of dimensions for the dynamic MDA (default: 2)",
+                "required": True,
+                "arg_name": "dimensions",
+                "type": int,
+                "default": 2,
+            },
+        },
+    },
+    "queue_mda": {
+        "description": "Transform a signal to use queue-based multi-dimensional arrays",
+        "function": transform_queue_mda,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "dimensions": {
+                "help": "Number of dimensions for the queue MDA (default: 1)",
+                "required": True,
+                "arg_name": "dimensions",
+                "type": int,
+                "default": 1,
+            },
+            "bounded": {
+                "help": "Create a bounded queue",
+                "required": False,
+                "arg_name": "bounded",
+                "action": "store_true",
+            },
+            "bound_size": {
+                "help": "Size limit for bounded queue",
+                "required": False,
+                "arg_name": "bound-size",
+                "type": int,
+            },
+        },
+    },
+    "associative_mda": {
+        "description": "Transform a signal to use associative array multi-dimensional arrays",
+        "function": transform_associative_mda,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "key_type": {
+                "help": "Type of key for associative array",
+                "required": True,
+                "arg_name": "key-type",
+                "choices": ["string", "int", "vector", "class", "wildcard"],
+            },
+            "dimensions": {
+                "help": "Number of associative array dimensions (default: 1)",
+                "required": False,
+                "arg_name": "dimensions",
+                "type": int,
+                "default": 1,
+            },
+        },
+    },
+    "mixed_mda": {
+        "description": "Transform a signal to use mixed multi-dimensional arrays",
+        "function": transform_mixed_mda,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "mda_spec": {
+                "help": "MDA dimension specs (e.g., fixed:7:0 assoc:string queue)",
+                "required": True,
+                "arg_name": "mda-spec",
+                "nargs": "+",  # Accept multiple args
+            },
+        },
+    },
 }
 
 
@@ -172,12 +261,36 @@ def setup_parser():
         for param_name, param_info in xform_info["args"].items():
             cmd_arg = param_info.get("arg_name", param_name)
             required = param_info.get("required", False)
-            subparser.add_argument(
-                f"--{cmd_arg}",
-                help=param_info["help"],
-                required=required,
-                dest=param_name,  # Use the internal parameter name as destination
-            )
+
+            # Basic argument properties
+            arg_props = {
+                "help": param_info["help"],
+                "required": required,
+                "dest": param_name,  # Use the internal parameter name as destination
+            }
+
+            # Add type if specified
+            if "type" in param_info:
+                arg_props["type"] = param_info["type"]
+
+            # Add default if specified
+            if "default" in param_info:
+                arg_props["default"] = param_info["default"]
+
+            # Add choices if specified
+            if "choices" in param_info:
+                arg_props["choices"] = param_info["choices"]
+
+            # Add nargs if specified
+            if "nargs" in param_info:
+                arg_props["nargs"] = param_info["nargs"]
+
+            # Handle store_true action
+            if "action" in param_info and param_info["action"] == "store_true":
+                arg_props["action"] = "store_true"
+
+            # Add the argument to the parser
+            subparser.add_argument(f"--{cmd_arg}", **arg_props)
 
     return parser
 
