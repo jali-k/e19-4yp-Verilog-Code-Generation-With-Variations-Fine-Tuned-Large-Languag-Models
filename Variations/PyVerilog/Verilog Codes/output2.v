@@ -1,4 +1,4 @@
-
+//Change the module name from `top` to `blinker_module`.
 module blinker_module #
 (
   parameter DATAWID = 32

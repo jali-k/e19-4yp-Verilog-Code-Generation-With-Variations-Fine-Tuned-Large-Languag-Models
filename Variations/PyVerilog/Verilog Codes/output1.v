@@ -1,4 +1,5 @@
 
+//Modify the variable type of `count` from `reg` to `wire` in the Verilog module.
 module top #
 (
   parameter DATAWID = 32

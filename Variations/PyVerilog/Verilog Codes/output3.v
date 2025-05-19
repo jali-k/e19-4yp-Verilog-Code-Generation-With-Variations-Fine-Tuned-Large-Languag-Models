@@ -1,4 +1,4 @@
-
+// Rename the output port from `led` to `led_out`.
 module top #
 (
   parameter DATAWID = 32
