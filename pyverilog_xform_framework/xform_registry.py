@@ -3,6 +3,8 @@ import os
 import argparse
 
 # Import the transformation functions directly
+from pyverilog_xform_framework.xform_array_base_type import transform_array_base_type
+from pyverilog_xform_framework.xform_associative_mda_key_type import transform_associative_mda_key_type
 from pyverilog_xform_framework.xform_reg_to_wire import transform_reg_to_wire
 from pyverilog_xform_framework.xform_module_name import transform_module_name
 from pyverilog_xform_framework.xform_rename_port import transform_rename_port
@@ -16,6 +18,7 @@ from pyverilog_xform_framework.xform_dynamic_mda import transform_dynamic_mda
 from pyverilog_xform_framework.xform_queue_mda import transform_queue_mda
 from pyverilog_xform_framework.xform_associative_mda import transform_associative_mda
 from pyverilog_xform_framework.xform_mixed_mda import transform_mixed_mda
+from pyverilog_xform_framework.xform_structure_type import transform_structure_type
 
 # Dictionary of all available transformations
 AVAILABLE_XFORMS = {
@@ -214,6 +217,62 @@ AVAILABLE_XFORMS = {
                 "required": True,
                 "arg_name": "mda-spec",
                 "nargs": "+",  # Accept multiple args
+            },
+        },
+    },
+   
+    "associative_mda_key_type": {
+        "description": "Transform a signal to use associative array with specific key types",
+        "function": transform_associative_mda_key_type,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "key_type": {
+                "help": "Type of key for associative array",
+                "required": True,
+                "arg_name": "key-type",
+                "choices": ["int", "integer", "longint", "shortint", "bit", "logic", 
+                          "bit-vector", "logic-vector", "reg", "byte", "string", 
+                          "class", "enum", "union", "struct", "wildcard"],
+            },
+        },
+    },
+    "array_base_type": {
+        "description": "Transform a signal to use a specific base type",
+        "function": transform_array_base_type,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "base_type": {
+                "help": "Base type for the array",
+                "required": True,
+                "arg_name": "base-type",
+                "choices": ["int", "integer", "longint", "shortint", "bit", "logic", 
+                           "reg", "byte", "string", "enum", "struct", "union"],
+            },
+        },
+    },
+    "structure_type": {
+        "description": "Transform a signal to use a specific structure type",
+        "function": transform_structure_type,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "struct_type": {
+                "help": "Type of structure to use",
+                "required": True,
+                "arg_name": "struct-type",
+                "choices": ["packed", "unpacked", "nested", "hybrid", "union", 
+                           "blasted", "native", "extended_class", "rand_members"],
             },
         },
     },

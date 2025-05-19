@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Transformation to modify a declaration to use dynamic multi-dimensional arrays.
+Transformation to modify a declaration to use a specific base type for an array.
 This follows the pattern of the existing framework, using PyVerilog AST for analysis
 and regex for the actual transformations.
 """
@@ -13,21 +13,21 @@ from pyverilog.vparser.parser import parse
 from pyverilog.vparser.ast import *
 
 
-class DynamicMDAVisitor:
+class ArrayBaseTypeVisitor:
     """
-    AST visitor that identifies array declarations to transform into dynamic MDAs.
+    AST visitor that identifies array declarations to change their base type.
     """
 
-    def __init__(self, signal_name, dimensions):
+    def __init__(self, signal_name, base_type):
         """
         Initialize the visitor.
 
         Args:
             signal_name (str): Name of the signal to modify
-            dimensions (int): Number of dimensions for the dynamic MDA
+            base_type (str): Base type for the array
         """
         self.signal_name = signal_name
-        self.dimensions = dimensions
+        self.base_type = base_type
         self.changes_made = []
         self.signal_found = False
         self.signal_type = None  # 'reg', 'wire', 'logic', etc.
@@ -44,7 +44,7 @@ class DynamicMDAVisitor:
                         # Found the signal
                         self.signal_found = True
 
-                        # Determine signal type
+                        # Determine signal type - this will be replaced
                         self.signal_type = type(item).__name__.lower()
 
                         # Store original width if it exists
@@ -70,8 +70,8 @@ class DynamicMDAVisitor:
                                     )
 
                         self.changes_made.append(
-                            "Changed '%s' to use %dD dynamic array"
-                            % (self.signal_name, self.dimensions)
+                            "Changed '%s' to use base type '%s'"
+                            % (self.signal_name, self.base_type)
                         )
 
             # Visit children
@@ -79,15 +79,15 @@ class DynamicMDAVisitor:
                 self.visit(c)
 
 
-def transform_dynamic_mda(input_file, output_file, signal_name, dimensions):
+def transform_array_base_type(input_file, output_file, signal_name, base_type):
     """
-    Transform a signal declaration to use dynamic multi-dimensional arrays.
+    Transform a signal declaration to use a specified base type.
 
     Args:
         input_file (str): Path to input Verilog file
         output_file (str): Path to output Verilog file
         signal_name (str): Name of the signal to modify
-        dimensions (int): Number of dimensions for the dynamic MDA
+        base_type (str): Base type for the array
 
     Returns:
         bool: True if successful, False otherwise
@@ -101,7 +101,7 @@ def transform_dynamic_mda(input_file, output_file, signal_name, dimensions):
         ast, directives = parse([input_file])
 
         # Create and apply the visitor
-        visitor = DynamicMDAVisitor(signal_name, dimensions)
+        visitor = ArrayBaseTypeVisitor(signal_name, base_type)
         visitor.visit(ast)
 
         # Check if the signal was found
@@ -114,42 +114,65 @@ def transform_dynamic_mda(input_file, output_file, signal_name, dimensions):
             print(change)
 
         # Get the extracted information from the visitor
-        signal_type = visitor.signal_type
+        original_signal_type = visitor.signal_type
         original_width = visitor.original_width
         original_array_dim = visitor.original_array_dim
 
-        # Create the dynamic MDA dimensions
-        dynamic_dims = "[]" * int(dimensions)
+        # Determine if we need a width specification based on the base type
+        needs_width = True
+        if base_type in [
+            "integer",
+            "int",
+            "shortint",
+            "longint",
+            "byte",
+            "string",
+            "enum",
+            "struct",
+            "union",
+            "class",
+        ]:
+            needs_width = False
 
-        # Create the pattern for replacement
+        # Create the replacement type string
+        if needs_width and original_width:
+            # Keep original width for bit/logic types
+            type_str = "%s %s" % (base_type, original_width)
+        elif base_type == "enum":
+            # For enum type, create a sample enum
+            type_str = "enum {RED, GREEN, BLUE}"
+        elif base_type == "struct":
+            # For struct type, create a sample packed structure
+            type_str = "struct packed {bit[7:0] x; bit[7:0] y;}"
+        elif base_type == "union":
+            # For union type, create a sample union
+            type_str = "union packed {bit[7:0] a; bit[15:0] b;}"
+        else:
+            # For other types without width
+            type_str = base_type
+
+        # Fix the issue with None values by checking before using re.escape
+        # Create the pattern for replacement based on what we have
         if original_width and original_array_dim:
             pattern = r"%s\s+%s\s+%s\s+%s;" % (
-                signal_type,
+                original_signal_type,
                 re.escape(original_width),
                 re.escape(signal_name),
                 re.escape(original_array_dim),
             )
-            replacement = "%s %s %s %s;" % (
-                signal_type,
-                original_width,
-                dynamic_dims,
-                signal_name,
-            )
+            replacement = "%s %s %s;" % (type_str, signal_name, original_array_dim)
         elif original_width:
-            pattern = r"%s\s+%s\s+%s\s+\[[^\]]+\];" % (
-                signal_type,
+            # If we only have width but no array dimension
+            pattern = r"%s\s+%s\s+%s;" % (
+                original_signal_type,
                 re.escape(original_width),
                 re.escape(signal_name),
             )
-            replacement = "%s %s %s %s;" % (
-                signal_type,
-                original_width,
-                dynamic_dims,
-                signal_name,
-            )
+            replacement = "%s %s;" % (type_str, signal_name)
         else:
-            pattern = r"%s\s+%s\s+\[[^\]]+\];" % (signal_type, re.escape(signal_name))
-            replacement = "%s %s %s;" % (signal_type, dynamic_dims, signal_name)
+            # Neither width nor array dimension
+            pattern = r"%s\s+%s;" % (original_signal_type, re.escape(signal_name))
+            replacement = "%s %s;" % (type_str, signal_name)
 
         # Perform the replacement
         modified_content = re.sub(pattern, replacement, content)
@@ -172,17 +195,29 @@ def transform_dynamic_mda(input_file, output_file, signal_name, dimensions):
 def main():
     """Main function to parse command line arguments and process the file."""
     parser = argparse.ArgumentParser(
-        description="Transform a signal to use dynamic multi-dimensional arrays"
+        description="Transform a signal to use a specified base type"
     )
     parser.add_argument("input_file", help="Input Verilog file")
     parser.add_argument("output_file", help="Output Verilog file")
     parser.add_argument("--signal", required=True, help="Name of the signal to modify")
     parser.add_argument(
-        "--dimensions",
-        type=int,
+        "--base-type",
         required=True,
-        default=2,
-        help="Number of dimensions for the dynamic MDA (default: 2)",
+        choices=[
+            "int",
+            "integer",
+            "longint",
+            "shortint",
+            "bit",
+            "logic",
+            "reg",
+            "byte",
+            "string",
+            "enum",
+            "struct",
+            "union",
+        ],
+        help="Base type for the array",
     )
 
     args = parser.parse_args()
@@ -193,8 +228,8 @@ def main():
         return 1
 
     # Process the file
-    success = transform_dynamic_mda(
-        args.input_file, args.output_file, args.signal, args.dimensions
+    success = transform_array_base_type(
+        args.input_file, args.output_file, args.signal, args.base_type
     )
 
     return 0 if success else 1
