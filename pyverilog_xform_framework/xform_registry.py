@@ -1,24 +1,30 @@
+#!/usr/bin/env python3
+"""
+Registry for all available transformations.
+"""
+
 import sys
 import os
 import argparse
 
 # Import the transformation functions directly
-from pyverilog_xform_framework.xform_array_base_type import transform_array_base_type
-from pyverilog_xform_framework.xform_associative_mda_key_type import transform_associative_mda_key_type
-from pyverilog_xform_framework.xform_reg_to_wire import transform_reg_to_wire
-from pyverilog_xform_framework.xform_module_name import transform_module_name
-from pyverilog_xform_framework.xform_rename_port import transform_rename_port
-from pyverilog_xform_framework.xform_change_reset_condition import transform_reset_condition
-from pyverilog_xform_framework.xform_change_signal_width import transform_signal_width
-from pyverilog_xform_framework.xform_add_enable_signal import transform_add_enable
+# Assuming the files are in the current directory, not in a package
+from xform_array_base_type import transform_array_base_type
+from xform_associative_mda_key_type import transform_associative_mda_key_type
+from xform_reg_to_wire import transform_reg_to_wire
+from xform_module_name import transform_module_name
+from xform_rename_port import transform_rename_port
+from xform_change_reset_condition import transform_reset_condition
+from xform_change_signal_width import transform_signal_width
+from xform_add_enable_signal import transform_add_enable
 
-# Import the new MDA transformations
-from pyverilog_xform_framework.xform_range_mda import transform_fixed_range_mda
-from pyverilog_xform_framework.xform_dynamic_mda import transform_dynamic_mda
-from pyverilog_xform_framework.xform_queue_mda import transform_queue_mda
-from pyverilog_xform_framework.xform_associative_mda import transform_associative_mda
-from pyverilog_xform_framework.xform_mixed_mda import transform_mixed_mda
-from pyverilog_xform_framework.xform_structure_type import transform_structure_type
+# Import the MDA transformations
+from xform_range_mda import transform_fixed_range_mda
+from xform_dynamic_mda import transform_dynamic_mda
+from xform_queue_mda import transform_queue_mda
+from xform_associative_mda import transform_associative_mda
+from xform_mixed_mda import transform_mixed_mda
+from xform_structure_type import transform_structure_type
 
 # Dictionary of all available transformations
 AVAILABLE_XFORMS = {
@@ -113,7 +119,7 @@ AVAILABLE_XFORMS = {
             },
         },
     },
-    # New MDA transformations
+    # MDA transformations
     "fixed_range_mda": {
         "description": "Transform a signal to use fixed-range multi-dimensional arrays",
         "function": transform_fixed_range_mda,
@@ -220,7 +226,6 @@ AVAILABLE_XFORMS = {
             },
         },
     },
-   
     "associative_mda_key_type": {
         "description": "Transform a signal to use associative array with specific key types",
         "function": transform_associative_mda_key_type,
@@ -234,9 +239,24 @@ AVAILABLE_XFORMS = {
                 "help": "Type of key for associative array",
                 "required": True,
                 "arg_name": "key-type",
-                "choices": ["int", "integer", "longint", "shortint", "bit", "logic", 
-                          "bit-vector", "logic-vector", "reg", "byte", "string", 
-                          "class", "enum", "union", "struct", "wildcard"],
+                "choices": [
+                    "int",
+                    "integer",
+                    "longint",
+                    "shortint",
+                    "bit",
+                    "logic",
+                    "bit-vector",
+                    "logic-vector",
+                    "reg",
+                    "byte",
+                    "string",
+                    "class",
+                    "enum",
+                    "union",
+                    "struct",
+                    "wildcard",
+                ],
             },
         },
     },
@@ -253,8 +273,20 @@ AVAILABLE_XFORMS = {
                 "help": "Base type for the array",
                 "required": True,
                 "arg_name": "base-type",
-                "choices": ["int", "integer", "longint", "shortint", "bit", "logic", 
-                           "reg", "byte", "string", "enum", "struct", "union"],
+                "choices": [
+                    "int",
+                    "integer",
+                    "longint",
+                    "shortint",
+                    "bit",
+                    "logic",
+                    "reg",
+                    "byte",
+                    "string",
+                    "enum",
+                    "struct",
+                    "union",
+                ],
             },
         },
     },
@@ -271,8 +303,72 @@ AVAILABLE_XFORMS = {
                 "help": "Type of structure to use",
                 "required": True,
                 "arg_name": "struct-type",
-                "choices": ["packed", "unpacked", "nested", "hybrid", "union", 
-                           "blasted", "native", "extended_class", "rand_members"],
+                "choices": [
+                    "packed",
+                    "unpacked",
+                    "nested",
+                    "hybrid",
+                    "union",
+                    "blasted",
+                    "native",
+                    "extended_class",
+                    "rand_members",
+                ],
+            },
+        },
+    },
+    "inside_op_array": {
+        "description": "Add test case for using arrays in inside operator",
+        "function": transform_array_inside_op,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "test_type": {
+                "help": "Type of test case to generate",
+                "required": False,
+                "arg_name": "test-type",
+                "choices": [
+                    "array_as_whole",
+                    "array_slice",
+                    "part_select",
+                    "array_select_mda",
+                    "constant_var_index",
+                    "xmr_index",
+                    "function_call_index",
+                ],
+                "default": "array_as_whole",
+            },
+        },
+    },
+    "inside_op_context": {
+        "description": "Add test case for inside operator in different contexts",
+        "function": transform_inside_op_context,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "context_type": {
+                "help": "Type of context to test",
+                "required": True,
+                "arg_name": "context",
+                "choices": [
+                    "if_statement",
+                    "case",
+                    "loop",
+                    "continuous_assign",
+                    "procedural_continuous_assign",
+                    "procedural_assign_initial_final",
+                    "variable_initialization",
+                    "always_comb",
+                    "initial_final_blocks",
+                    "module_highconn",
+                    "case_inside",
+                ],
             },
         },
     },
