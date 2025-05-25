@@ -9,6 +9,10 @@ import argparse
 
 # Import the transformation functions directly
 # Assuming the files are in the current directory, not in a package
+from xform_inside_op_xmr import transform_inside_op_xmr
+from xform_inside_op_array import transform_array_inside_op
+from xform_inside_op_context import transform_inside_op_context
+from xform_inside_op_scope import transform_inside_op_scope
 from xform_array_base_type import transform_array_base_type
 from xform_associative_mda_key_type import transform_associative_mda_key_type
 from xform_reg_to_wire import transform_reg_to_wire
@@ -368,6 +372,55 @@ AVAILABLE_XFORMS = {
                     "initial_final_blocks",
                     "module_highconn",
                     "case_inside",
+                ],
+            },
+        },
+    },
+    "inside_op_scope": {
+        "description": "Add test case for inside operator in different scopes",
+        "function": transform_inside_op_scope,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "scope_type": {
+                "help": "Type of scope to test",
+                "required": True,
+                "arg_name": "scope",
+                "choices": [
+                    "module",
+                    "interface",
+                    "package",
+                    "sv_class",
+                    "dollar_unit",
+                    "generate_block",
+                ],
+            },
+        },
+    },
+    "inside_op_xmr": {
+        "description": "Add test case for XMR with inside operator",
+        "function": transform_inside_op_xmr,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "xmr_type": {
+                "help": "Type of XMR to test",
+                "required": True,
+                "arg_name": "xmr-type",
+                "choices": [
+                    "module_xmr",
+                    "interface_xmr",
+                    "class_xmr",
+                    "virtual_interface_xmr",
+                    "structure_xmr",
+                    "package_xmr",
+                    "mix_xmr",
                 ],
             },
         },
