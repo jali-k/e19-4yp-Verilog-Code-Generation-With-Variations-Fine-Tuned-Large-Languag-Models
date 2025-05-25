@@ -9,6 +9,9 @@ import argparse
 
 # Import the transformation functions directly
 # Assuming the files are in the current directory, not in a package
+from xform_inside_op_debug import transform_inside_op_debug
+from xform_inside_op_misc import transform_inside_op_misc
+from xform_inside_op_negative import transform_inside_op_negative
 from xform_inside_op_xmr import transform_inside_op_xmr
 from xform_inside_op_array import transform_array_inside_op
 from xform_inside_op_context import transform_inside_op_context
@@ -475,6 +478,30 @@ AVAILABLE_XFORMS = {
                     "dpi_function",
                     "stress_large_array",
                     "class_static_array",
+                ],
+            },
+        },
+    },
+    "inside_op_debug": {
+        "description": "Add debug and tool-specific test cases for inside operator",
+        "function": transform_inside_op_debug,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "debug_type": {
+                "help": "Type of debug test to perform",
+                "required": True,
+                "arg_name": "debug-type",
+                "choices": [
+                    "value_annotation",
+                    "trace_driver_load",
+                    "scountdriver",
+                    "shdl_xmr_force",
+                    "ucli_trace",
+                    "ucli_vpi_walkers",
                 ],
             },
         },
