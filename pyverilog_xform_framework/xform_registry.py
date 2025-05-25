@@ -425,6 +425,60 @@ AVAILABLE_XFORMS = {
             },
         },
     },
+    "inside_op_negative": {
+        "description": "Add negative test cases for inside operator",
+        "function": transform_inside_op_negative,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "test_type": {
+                "help": "Type of negative test to perform",
+                "required": True,
+                "arg_name": "test-type",
+                "choices": ["out_of_index", "wildcard_index"],
+            },
+        },
+    },
+    "inside_op_misc": {
+        "description": "Add miscellaneous/edge case test cases for inside operator",
+        "function": transform_inside_op_misc,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "misc_type": {
+                "help": "Type of miscellaneous test to perform",
+                "required": True,
+                "arg_name": "misc-type",
+                "choices": [
+                    "x_z_values",
+                    "zero_select",
+                    "comparison_result",
+                    "unsized_literal",
+                    "open_range_error",
+                    "initial_block",
+                    "empty_vsa",
+                    "array_methods",
+                    "generate_loop",
+                    "case_expression",
+                    "always_comb",
+                    "array_method_clause",
+                    "function_returning_vsa",
+                    "while_loop_array_slice",
+                    "upward_xmr_array",
+                    "chained_function",
+                    "dpi_function",
+                    "stress_large_array",
+                    "class_static_array",
+                ],
+            },
+        },
+    },
 }
 
 
