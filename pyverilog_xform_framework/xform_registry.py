@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
 Registry for all available transformations.
-This implementation allows using common argument names (--from, --to) across transformations
-by using subcommands in argparse.
 """
 
 import sys
@@ -10,14 +8,30 @@ import os
 import argparse
 
 # Import the transformation functions directly
-from reg_to_wire_xform import transform_reg_to_wire
-from module_name_xform import transform_module_name
-from rename_port_xform import transform_rename_port
-from change_reset_condition_xform import transform_reset_condition
+# Assuming the files are in the current directory, not in a package
+from xform_inside_op_debug import transform_inside_op_debug
+from xform_inside_op_misc import transform_inside_op_misc
+from xform_inside_op_negative import transform_inside_op_negative
+from xform_inside_op_xmr import transform_inside_op_xmr
+from xform_inside_op_array import transform_array_inside_op
+from xform_inside_op_context import transform_inside_op_context
+from xform_inside_op_scope import transform_inside_op_scope
+from xform_array_base_type import transform_array_base_type
+from xform_associative_mda_key_type import transform_associative_mda_key_type
+from xform_reg_to_wire import transform_reg_to_wire
+from xform_module_name import transform_module_name
+from xform_rename_port import transform_rename_port
+from xform_change_reset_condition import transform_reset_condition
+from xform_change_signal_width import transform_signal_width
+from xform_add_enable_signal import transform_add_enable
 
-from change_signal_width_xform import transform_signal_width
-from add_enable_signal_xform import transform_add_enable
-# from rename_clock_xform import transform_rename_clock
+# Import the MDA transformations
+from xform_range_mda import transform_fixed_range_mda
+from xform_dynamic_mda import transform_dynamic_mda
+from xform_queue_mda import transform_queue_mda
+from xform_associative_mda import transform_associative_mda
+from xform_mixed_mda import transform_mixed_mda
+from xform_structure_type import transform_structure_type
 
 # Dictionary of all available transformations
 AVAILABLE_XFORMS = {
@@ -112,22 +126,386 @@ AVAILABLE_XFORMS = {
             },
         },
     },
-    # "rename_clock": {
-    #     "description": "Rename a clock signal in a Verilog module",
-    #     "function": transform_rename_clock,
-    #     "args": {
-    #         "from_name": {
-    #             "help": "Original clock signal name",
-    #             "required": True,
-    #             "arg_name": "from",
-    #         },
-    #         "to_name": {
-    #             "help": "New clock signal name",
-    #             "required": True,
-    #             "arg_name": "to",
-    #         },
-    #     },
-    # },
+    # MDA transformations
+    "fixed_range_mda": {
+        "description": "Transform a signal to use fixed-range multi-dimensional arrays",
+        "function": transform_fixed_range_mda,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "ranges": {
+                "help": "List of ranges for dimensions (e.g., 7:0 3:0 15:0)",
+                "required": True,
+                "arg_name": "ranges",
+                "nargs": "+",  # Accept multiple args
+            },
+        },
+    },
+    "dynamic_mda": {
+        "description": "Transform a signal to use dynamic multi-dimensional arrays",
+        "function": transform_dynamic_mda,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "dimensions": {
+                "help": "Number of dimensions for the dynamic MDA (default: 2)",
+                "required": True,
+                "arg_name": "dimensions",
+                "type": int,
+                "default": 2,
+            },
+        },
+    },
+    "queue_mda": {
+        "description": "Transform a signal to use queue-based multi-dimensional arrays",
+        "function": transform_queue_mda,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "dimensions": {
+                "help": "Number of dimensions for the queue MDA (default: 1)",
+                "required": True,
+                "arg_name": "dimensions",
+                "type": int,
+                "default": 1,
+            },
+            "bounded": {
+                "help": "Create a bounded queue",
+                "required": False,
+                "arg_name": "bounded",
+                "action": "store_true",
+            },
+            "bound_size": {
+                "help": "Size limit for bounded queue",
+                "required": False,
+                "arg_name": "bound-size",
+                "type": int,
+            },
+        },
+    },
+    "associative_mda": {
+        "description": "Transform a signal to use associative array multi-dimensional arrays",
+        "function": transform_associative_mda,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "key_type": {
+                "help": "Type of key for associative array",
+                "required": True,
+                "arg_name": "key-type",
+                "choices": ["string", "int", "vector", "class", "wildcard"],
+            },
+            "dimensions": {
+                "help": "Number of associative array dimensions (default: 1)",
+                "required": False,
+                "arg_name": "dimensions",
+                "type": int,
+                "default": 1,
+            },
+        },
+    },
+    "mixed_mda": {
+        "description": "Transform a signal to use mixed multi-dimensional arrays",
+        "function": transform_mixed_mda,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "mda_spec": {
+                "help": "MDA dimension specs (e.g., fixed:7:0 assoc:string queue)",
+                "required": True,
+                "arg_name": "mda-spec",
+                "nargs": "+",  # Accept multiple args
+            },
+        },
+    },
+    "associative_mda_key_type": {
+        "description": "Transform a signal to use associative array with specific key types",
+        "function": transform_associative_mda_key_type,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "key_type": {
+                "help": "Type of key for associative array",
+                "required": True,
+                "arg_name": "key-type",
+                "choices": [
+                    "int",
+                    "integer",
+                    "longint",
+                    "shortint",
+                    "bit",
+                    "logic",
+                    "bit-vector",
+                    "logic-vector",
+                    "reg",
+                    "byte",
+                    "string",
+                    "class",
+                    "enum",
+                    "union",
+                    "struct",
+                    "wildcard",
+                ],
+            },
+        },
+    },
+    "array_base_type": {
+        "description": "Transform a signal to use a specific base type",
+        "function": transform_array_base_type,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "base_type": {
+                "help": "Base type for the array",
+                "required": True,
+                "arg_name": "base-type",
+                "choices": [
+                    "int",
+                    "integer",
+                    "longint",
+                    "shortint",
+                    "bit",
+                    "logic",
+                    "reg",
+                    "byte",
+                    "string",
+                    "enum",
+                    "struct",
+                    "union",
+                ],
+            },
+        },
+    },
+    "structure_type": {
+        "description": "Transform a signal to use a specific structure type",
+        "function": transform_structure_type,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to modify",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "struct_type": {
+                "help": "Type of structure to use",
+                "required": True,
+                "arg_name": "struct-type",
+                "choices": [
+                    "packed",
+                    "unpacked",
+                    "nested",
+                    "hybrid",
+                    "union",
+                    "blasted",
+                    "native",
+                    "extended_class",
+                    "rand_members",
+                ],
+            },
+        },
+    },
+    "inside_op_array": {
+        "description": "Add test case for using arrays in inside operator",
+        "function": transform_array_inside_op,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "test_type": {
+                "help": "Type of test case to generate",
+                "required": False,
+                "arg_name": "test-type",
+                "choices": [
+                    "array_as_whole",
+                    "array_slice",
+                    "part_select",
+                    "array_select_mda",
+                    "constant_var_index",
+                    "xmr_index",
+                    "function_call_index",
+                ],
+                "default": "array_as_whole",
+            },
+        },
+    },
+    "inside_op_context": {
+        "description": "Add test case for inside operator in different contexts",
+        "function": transform_inside_op_context,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "context_type": {
+                "help": "Type of context to test",
+                "required": True,
+                "arg_name": "context",
+                "choices": [
+                    "if_statement",
+                    "case",
+                    "loop",
+                    "continuous_assign",
+                    "procedural_continuous_assign",
+                    "procedural_assign_initial_final",
+                    "variable_initialization",
+                    "always_comb",
+                    "initial_final_blocks",
+                    "module_highconn",
+                    "case_inside",
+                ],
+            },
+        },
+    },
+    "inside_op_scope": {
+        "description": "Add test case for inside operator in different scopes",
+        "function": transform_inside_op_scope,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "scope_type": {
+                "help": "Type of scope to test",
+                "required": True,
+                "arg_name": "scope",
+                "choices": [
+                    "module",
+                    "interface",
+                    "package",
+                    "sv_class",
+                    "dollar_unit",
+                    "generate_block",
+                ],
+            },
+        },
+    },
+    "inside_op_xmr": {
+        "description": "Add test case for XMR with inside operator",
+        "function": transform_inside_op_xmr,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "xmr_type": {
+                "help": "Type of XMR to test",
+                "required": True,
+                "arg_name": "xmr-type",
+                "choices": [
+                    "module_xmr",
+                    "interface_xmr",
+                    "class_xmr",
+                    "virtual_interface_xmr",
+                    "structure_xmr",
+                    "package_xmr",
+                    "mix_xmr",
+                ],
+            },
+        },
+    },
+    "inside_op_negative": {
+        "description": "Add negative test cases for inside operator",
+        "function": transform_inside_op_negative,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "test_type": {
+                "help": "Type of negative test to perform",
+                "required": True,
+                "arg_name": "test-type",
+                "choices": ["out_of_index", "wildcard_index"],
+            },
+        },
+    },
+    "inside_op_misc": {
+        "description": "Add miscellaneous/edge case test cases for inside operator",
+        "function": transform_inside_op_misc,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "misc_type": {
+                "help": "Type of miscellaneous test to perform",
+                "required": True,
+                "arg_name": "misc-type",
+                "choices": [
+                    "x_z_values",
+                    "zero_select",
+                    "comparison_result",
+                    "unsized_literal",
+                    "open_range_error",
+                    "initial_block",
+                    "empty_vsa",
+                    "array_methods",
+                    "generate_loop",
+                    "case_expression",
+                    "always_comb",
+                    "array_method_clause",
+                    "function_returning_vsa",
+                    "while_loop_array_slice",
+                    "upward_xmr_array",
+                    "chained_function",
+                    "dpi_function",
+                    "stress_large_array",
+                    "class_static_array",
+                ],
+            },
+        },
+    },
+    "inside_op_debug": {
+        "description": "Add debug and tool-specific test cases for inside operator",
+        "function": transform_inside_op_debug,
+        "args": {
+            "signal_name": {
+                "help": "Name of the signal to use in the test case",
+                "required": True,
+                "arg_name": "signal",
+            },
+            "debug_type": {
+                "help": "Type of debug test to perform",
+                "required": True,
+                "arg_name": "debug-type",
+                "choices": [
+                    "value_annotation",
+                    "trace_driver_load",
+                    "scountdriver",
+                    "shdl_xmr_force",
+                    "ucli_trace",
+                    "ucli_vpi_walkers",
+                ],
+            },
+        },
+    },
 }
 
 
@@ -172,12 +550,36 @@ def setup_parser():
         for param_name, param_info in xform_info["args"].items():
             cmd_arg = param_info.get("arg_name", param_name)
             required = param_info.get("required", False)
-            subparser.add_argument(
-                f"--{cmd_arg}",
-                help=param_info["help"],
-                required=required,
-                dest=param_name,  # Use the internal parameter name as destination
-            )
+
+            # Basic argument properties
+            arg_props = {
+                "help": param_info["help"],
+                "required": required,
+                "dest": param_name,  # Use the internal parameter name as destination
+            }
+
+            # Add type if specified
+            if "type" in param_info:
+                arg_props["type"] = param_info["type"]
+
+            # Add default if specified
+            if "default" in param_info:
+                arg_props["default"] = param_info["default"]
+
+            # Add choices if specified
+            if "choices" in param_info:
+                arg_props["choices"] = param_info["choices"]
+
+            # Add nargs if specified
+            if "nargs" in param_info:
+                arg_props["nargs"] = param_info["nargs"]
+
+            # Handle store_true action
+            if "action" in param_info and param_info["action"] == "store_true":
+                arg_props["action"] = "store_true"
+
+            # Add the argument to the parser
+            subparser.add_argument(f"--{cmd_arg}", **arg_props)
 
     return parser
 
