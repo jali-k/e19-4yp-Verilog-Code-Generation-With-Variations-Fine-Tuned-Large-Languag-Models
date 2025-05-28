@@ -9,7 +9,7 @@ title:
 
 [comment]: # "This is the standard layout for the project, but you can clean this and use your own template"
 
-# HDL Code Generation using LLMs
+# Verilog Code Generation with Variations Using Fine-Tuned Large Language Models
 
 #### Team
 
