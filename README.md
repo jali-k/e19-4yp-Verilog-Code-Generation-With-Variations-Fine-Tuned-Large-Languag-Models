@@ -1,6 +1,6 @@
 # Verilog Code Generation with Variations Using Fine-Tuned Large Language Models
 
-![Project Banner](./images/banner.png)
+![Project Banner](docs/images/banner.png)
 
 ## Table of Contents
 1. [Abstract](#abstract)
@@ -9,15 +9,11 @@
 4. [Experiment Setup and Implementation](#experiment-setup-and-implementation)
 5. [Results and Analysis](#results-and-analysis)
 6. [Conclusion](#conclusion)
-7. [Getting Started](#getting-started)
-8. [Contributing](#contributing)
-9. [Team](#team)
-10. [Supervisors](#supervisors)
-11. [License](#license)
-12. [Acknowledgments](#acknowledgments)
-13. [Publications](#publications)
-14. [Links](#links)
-15. [Notes](#notes)
+7. [Team](#team)
+8. [Supervisors](#supervisors)
+9. [Acknowledgments](#acknowledgments)
+10. [Publications](#publications)
+11. [Links](#links)
 
 ---
 
@@ -34,7 +30,7 @@ Our methodology automates Verilog code variation generation through a pipeline o
 We benchmark open-source LLMs (e.g., GPT, CodeGen, DeepSeek) to assess their ability to generate syntactically and functionally correct Verilog code and variations. Metrics include *Pass@k*, test case pass rate, and hardware compatibility, using benchmarks like *VerilogEval* and *HumanEval*.
 
 ### 2. Dataset Construction
-![Dataset Creation Workflow](./images/datasets.png)
+![Dataset Creation Workflow](docs/images/datasets.png)
 
 We construct five specialized datasets:
 - **Dataset 1**: Verilog base code + variation description → varied Verilog code.
@@ -51,7 +47,7 @@ Preprocessing involves two stages:
 - **Stage 2**: Aligning base codes with variations and formatting for LLM fine-tuning.
 
 ### 4. Model Adaptation Approaches
-![Fine-Tuning Techniques](./images/fine-tune-techniques.png)
+![Fine-Tuning Techniques](docs/images/fine-tune-techniques.png)
 
 #### a) PyVerilog-Based Adaptation
 - Uses Python as an intermediate representation, with Verilog generated via PyVerilog.
@@ -120,22 +116,6 @@ This section will be updated upon project completion. Expected outcomes include:
 - Recommendations for integrating the system into EDA workflows.
 - Future work: Expanding dataset size, supporting additional HDLs (e.g., VHDL), and integrating with commercial EDA tools.
 
-## Getting Started
-To get started with the project:
-1. Clone the repository (see [Setup Instructions](#setup-instructions)).
-2. Review the dataset structure in `data/`.
-3. Explore sample scripts in `scripts/` and model configurations in `models/`.
-4. Run `notebooks/explore_data.ipynb` for data analysis or `scripts/run_system.py` for a demo.
-
-## Contributing
-Contributions are welcome! To contribute:
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/your-feature`).
-3. Commit changes (`git commit -m "Add your feature"`).
-4. Push to the branch (`git push origin feature/your-feature`).
-5. Open a pull request with a detailed description.
-Please adhere to the [Code of Conduct](./CODE_OF_CONDUCT.md) and ensure code passes VCS/SpyGlass validation.
-
 ## Team
 | Name                 | ID       | Email                                    |
 |----------------------|----------|------------------------------------------|
@@ -149,9 +129,6 @@ Please adhere to the [Code of Conduct](./CODE_OF_CONDUCT.md) and ensure code pas
 | Dr. Isuru Nawinne   | [isurunawinne@eng.pdn.ac.lk](mailto:isurunawinne@eng.pdn.ac.lk) |
 | Prof. Roshan G. Ragel| [roshanr@eng.pdn.ac.lk](mailto:roshanr@eng.pdn.ac.lk) |
 | Dr. Damayanthi Herath| [damayanthiherath@eng.pdn.ac.lk](mailto:damayanthiherath@eng.pdn.ac.lk) |
-
-## License
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
 
 ## Acknowledgments
 - Synopsys Sri Lanka for project sponsorship and access to VCS/SpyGlass.
@@ -172,11 +149,3 @@ This section will be updated as publications are finalized. Expected deliverable
 - [Project Page](https://cepdnaclk.github.io/e19-4yp-Verilog-Code-Generation-With-Variations-Fine-Tuned-Large-Languag-Models/)
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
-
-## Notes
-- **Placeholders**: Replace `<repository_url>` in setup instructions with the actual repository URL (e.g., `https://github.com/cepdnaclk/e19-4yp-Verilog-Code-Generation-With-Variations-Fine-Tuned-Large-Languag-Models`).
-- **Assumptions**: Script names (e.g., `extract_github.py`, `train_pyverilog.py`) and directory structure are based on standard project organization. Update to match your implementation.
-- **Tool Installation**: Verilator, VCS, and VCS SpyGlass require specific environments and licenses. Refer to their official documentation for setup.
-- **License**: The MIT License is used as a default. Modify if your project requires a different license.
-- **Repository Maintenance**: Regularly update datasets in `data/` and reports in `reports/`. Use `notebooks/` for exploratory analysis.
-- **Contributing**: Follow the contribution guidelines in the [Contributing](#contributing) section to ensure code quality and compatibility.
