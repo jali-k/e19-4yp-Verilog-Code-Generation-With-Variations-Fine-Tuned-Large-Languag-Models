@@ -98,16 +98,6 @@ While recent research has explored improving the accuracy
 of Verilog generation from natural language descriptions, an
 underexplored but critical area is the generation of Verilog
 code variations, which is the key requirement of this research.
-This literature review investigates existing LLM-based HDL code
-generation studies, highlighting key challenges such as syntactic
-correctness, semantic accuracy, and functional verification. This
-review aims to establish a foundation for developing LLM-
-based automation techniques for Verilog variation generation by
-analyzing recent advancements, limitations, and research gaps
-while contributing to the growing body of research on LLM-
-driven electronic design automation (EDA), providing insights
-into future developments in automated Verilog code variation
-generation.
 
 ## Methodology
 
