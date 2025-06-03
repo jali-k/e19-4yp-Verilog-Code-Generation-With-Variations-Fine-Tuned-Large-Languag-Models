@@ -1,0 +1,301 @@
+- code: |
+    // Create a module with one input and one output that behaves like a wire
+    module wire_assign( input in, output out );
+        // assign out to in
+        assign out = in;
+    endmodule
+  prompt: Create a Verilog module named `wire_assign` with one input and one output
+    that directly connects the input to the output like a wire.
+- code: |
+    // Verilog code for Problem 4
+    module XOR_Gate(
+        input A, B,
+        output Y
+    );
+        assign Y = A ^ B;
+    endmodule
+  prompt: Create a 2-input XOR gate in Verilog.
+- code: |
+    module test;
+    wire a;
+    reg x, y, z;
+    assign #25 a = 1;
+    always begin
+        x = #10 a;
+    end
+    endmodule
+  prompt: Test timing control with continuous and procedural assignments
+- code: |
+    module full_adder(i1, i2, cin, sum, cout);
+    input i1, i2, cin;
+    output sum, cout;
+    assign sum = i1 ^ i2 ^ cin;
+    assign cout = (i1 & i2) | (cin & (i1 | i2));
+    endmodule
+  prompt: Implement a full adder with combinational logic
+- code: |
+    module testbench ();
+    generate data;
+    process data;
+    endmodule
+  prompt: Implement a basic testbench structure for generating and processing data
+- code: |
+    module tst_dff_pbeh();
+      reg di,clk; wire do;
+      dff_p d1(do,di,clk); // Instantiate DFF with path delay
+      initial begin clk=0; di=1'b0; #35 $stop; end // Initialize & stop
+      always #3 clk=~clk; // Generate clock (negedges at 6, 12, 18...)
+      always #5 di=~di; // Toggle data
+      initial $monitor($time,"clk=%b, di=%b, do=%b",clk,di,do);
+    endmodule
+  prompt: Create a testbench `tst_dff_pbeh` for the behavioral D flip-flop with specified
+    path delay (`dff_p`).
+- code: |
+    module ALU ( input [7:0] a, b, input pass, add,
+    output reg[7:0] alu_out );
+    // Simple combinational ALU
+    always @(a or b or pass or add)
+    if (pass) alu_out = a;       // Pass input 'a'
+    else if (add) alu_out = a + b; // Add inputs 'a' and 'b'
+    else alu_out = 0;           // Default output is 0
+    endmodule
+  prompt: Create a simple combinational 8-bit ALU that can pass input 'a' or add inputs
+    'a' and 'b'.
+- code: |
+    module AndOr (output X, Y, input A, B, C);
+    assign #10 X = A & B;
+    assign #10 Y = B | C;
+    endmodule
+  prompt: Implement a combinational logic module with AND and OR operations
+- code: |
+    module IR ( input [7:0] data_in, input load, clk,
+    output reg [7:0] data_out );
+    // Simple register (Instruction Register) loaded on posedge clk when load is high
+    always @( posedge clk )
+    if ( load ) data_out <= data_in;
+    endmodule
+  prompt: Create a simple 8-bit register (Instruction Register - IR) with a synchronous
+    load enable.
+- code: |
+    module Problem8(input [3:0] a, b, output [3:0] diff);
+      assign diff = a - b;
+    endmodule
+  prompt: Subtract two 4-bit numbers 'a' and 'b', and output their difference 'diff'
+- code: |
+    module tst_alu4();
+      reg [3:0]a,b; reg[1:0] f; reg cci; wire[3:0]d; wire co;
+      alu_4 aa(d,co,a,b,f,cci); // Instantiate ALU
+      initial begin cci=1'b0; f=2'b00; a=4'h0; b=4'h0; #30 $stop; end // Initialize & stop
+      always begin // Apply stimulus with #3 delay
+      end
+      initial $monitor($time, " cci = %b , a= %h ,b = %h ,f = %b ,d =%h ,co= %b ",cci ,a,b,f,d,co); // Use %h
+    endmodule
+  prompt: Create a testbench `tst_alu4` for the dataflow ALU with multiple specified
+    path delays (`alu_4`).
+- code: |
+    module DataComponent (DataIn, DataOut, ControlSignals);
+    input [7:0] DataIn;
+    output [7:0] DataOut;
+    input ControlSignals;
+    endmodule
+  prompt: Define a template for a data component with 8-bit input and output controlled
+    by signals
+- code: |
+    module Problem1(input [3:0] a, b, output [3:0] sum);
+      assign sum = a + b;
+    endmodule
+  prompt: Add two 4-bit numbers 'a' and 'b', and output their sum 'sum'
+- code: |
+    // Verilog code for Problem 5
+    module Half_Adder(
+        input A, B,
+        output Sum, Carry
+    );
+        assign Sum = A ^ B;
+        assign Carry = A & B;
+    endmodule
+  prompt: Create a Half Adder in Verilog.
+- code: |
+    module tst_alu1();
+      reg [3:0]a,b; reg[1:0] f; reg cci; wire[3:0]d; wire co;
+      alu_1 aa(d,co,a,b,f,cci); // Instantiate ALU
+      initial begin cci=1'b0; f=2'b00; a=4'h0; b=4'h0; #30 $stop; end // Initialize & stop
+      always begin // Apply stimulus
+      end
+      initial $monitor($time, " cci = %b , a= %h ,b = %h ,f = %b ,d =%h ,co= %b ",cci ,a,b,f,d,co); // Use %h
+    endmodule
+  prompt: Create a testbench `tst_alu1` for the dataflow ALU with specified path delay
+    (`alu_1`).
+- code: |
+    module sw2led2 (
+    input wire [7:0] sw ,
+    output wire [7:0] ld
+    ) ;
+    assign ld = sw;
+    endmodule
+  prompt: Define a module `sw2led2` connecting 8 input switches (`sw`) to 8 output
+    LEDs (`ld`) using Verilog-2001 port style and a single assign statement.
+- code: |
+    module orfr_tst; // Testbench for OR gate with force/release
+      reg b,c; wire a;
+      initial begin b=1'b0; c=1'b0; #20 $stop; end // Initialize inputs
+      always #3 c = ~c; // Toggle input 'c' every 3 time units
+      or_fr_rl dd(a,b,c); // Instantiate the module containing force/release
+    endmodule
+  prompt: Create a testbench `orfr_tst` for the OR gate module (`or_fr_rl`) which
+    contains internal `force`/`release` statements.
+- code: |
+    module ALU (output[31:0] Result, input[31:0] ArgA, ArgB, input Clk);
+    specify
+        specparam tRise = 5, tFall = 4;
+        (Clk *> Result) = (tRise, tFall);
+    endspecify
+    endmodule
+  prompt: Implement an ALU module with specified timing parameters
+- code: |
+    module show_aa(ao,ai); // NOT gate with delay 2
+      output ao; input ai; wire ao, ai;
+      not #2 (ao,ai);
+    endmodule
+  prompt: Implement a simple NOT gate module (`show_aa`) with a delay of 2 time units.
+- code: |
+    module dff_inst(D, Clock, Resetn, Q);
+    input D, Clock, Resetn;
+    output Q;
+    lpm_ff flipflop(.data(D), .aclr(Resetn), .clock(Clock), .q(Q));
+    defparam flipflop.lpm_width = 1;
+    endmodule
+  prompt: Implement a D flip-flop using an LPM flip-flop component with asynchronous
+    clear
+- code: |
+    module latch (input d, c, output reg q, q_b );
+    always begin
+    wait ( c );
+    end
+    endmodule
+  prompt: Create a behavioral D latch using a `wait(c)` statement for level sensitivity.
+- code: |
+    module example4(x1, x2, x3, x4, f, g, h);
+    input x1, x2, x3, x4;
+    output f, g, h;
+    assign g = (x1 & x3) | (x2 & x4);
+    assign h = (x1 | x3) & (x2 | x4);
+    assign f = g | h;
+    endmodule
+  prompt: Implement a combinational circuit with inputs x1, x2, x3, x4 and outputs
+    f, g, h using assign statements
+- code: |
+    module par(in, parity, all_ones);
+    input [7:0] in;
+    output parity, all_ones;
+    assign parity = ^in;
+    assign all_ones = &in;
+    endmodule
+  prompt: Create a module to compute parity and all-ones check
+- code: |
+    module FourFlopsStructL #(parameter DClk = 2, DBuf = 1)
+    (output[3:0] Q, input[3:0] D, input Ena, Clk);
+    wire[3:0] QWire;
+    localparam DTot = DBuf + DClk;
+    DFF DReg[3:0] (.Q(QWire), .D(D), .Clk(Clk));
+    assign #DTot Q = (Ena==1'b1)? QWire : 'bz;
+    endmodule
+  prompt: Implement a 4-bit register with enable and lumped delay using structural
+    modeling
+- code: |
+    module Anding (input a, b, output y);
+    and (y, a, b);
+    endmodule
+  prompt: Implement a simple AND gate using a primitive
+- code: |
+    module mos_strength (a, c, zn, zp);
+    input a, c;
+    output zn, zp;
+    nmos (zn, a, c); // NMOS passes 'a' when 'c' is 1 (outputs St0 or Z)
+    pmos (zp, a, c); // PMOS passes 'a' when 'c' is 0 (outputs St1 or Z)
+    endmodule
+  prompt: Model basic NMOS and PMOS transistors to show their inherent output strength
+    characteristics (Strong 0 for NMOS, Strong 1 for PMOS).
+- code: |
+    module gade(a,a1,b,c,b1,c1);
+    input b,c,b1,c1;
+    output a,a1;
+    // Instantiate OR gate with inertial delay 3
+    or #3 gg1(a1,c1,b1);
+    // Instantiate AND gate with rise=2, fall=1 inertial delay
+    and #(2,1) gg2(a,c,b);
+    endmodule
+  prompt: Instantiate OR and AND gates with specified inertial gate delays (`#3` and
+    `#(2,1)`).
+- code: |
+    module tstha_9();
+      reg a,b; wire s,ca;
+      ha_9 hh(s,ca,a,b); // Instantiate HA with rise/fall path delays
+      initial begin a=0;b=0; end
+      always begin #5 a=1;b=0; #5 a=0;b=1; #5 a=1;b=1; #5 a=0;b=0; end
+      initial $monitor($time , " a = %b , b = %b ,out carry = %b , outsum = %b ",a,b,ca,s);
+      initial #30 $stop;
+    endmodule
+  prompt: Create a testbench `tstha_9` for the half adder with specified rise/fall
+    path delays (`ha_9`).
+- code: |
+    module example3(Data, Clock, Reset, RegSum, Sum);
+    input Clock, Reset;
+    input [3:0] Data;
+    output [3:0] Sum, RegSum;
+    wire [3:0] Sum, RegSum;
+    reg4 R1 (Sum, Clock, Reset, RegSum);
+    assign Sum = Data + RegSum;
+    endmodule
+  prompt: Implement a module that accumulates input data using a 4-bit register
+- code: |
+    module SchedDelayA;
+    reg a, b;
+    initial
+    begin
+    end
+    always @(b) a = b;
+    always @(a) b <= a;
+    endmodule
+  prompt: Implement a module to test scheduling with non-blocking and blocking assignments
+- code: |
+    module netdelay1(x,y);
+    input x;
+    output y;
+    wire #(2,1) nn; // Declare wire 'nn' with rise=2, fall=1 delay
+    not (nn,x); // Assign NOT(x) to 'nn' (takes effect after rise/fall delay)
+    assign y=nn; // Assign 'nn' to 'y' (direct assignment)
+    endmodule
+  prompt: Demonstrate net delay declaration with rise/fall times (`wire
+- code: |
+    module func1(x1, x2, x3, f);
+    input x1, x2, x3;
+    output f;
+    assign f = (~x1 & ~x2 & x3) | (~x1 & x2 & ~x3) | (x1 & ~x2 & x3) | (x1 & x2 & ~x3);
+    endmodule
+  prompt: Implement a combinational circuit with specific minterms for inputs x1,
+    x2, x3 and output f
+- code: |
+    module t_Clock_Prog ();
+    wire clock;
+
+    initial #100 $finish;
+    Clock_Prog M1 (clk);
+    endmodule
+  prompt: Testbench for Clock_Prog that simulates the generated clock signal for a
+    limited simulation time.
+- code: |
+    module ha_1(s,ca,a,b); // Half Adder with gate delays
+      input a,b; output s,ca;
+      xor #(1,2) (s,a,b);
+      and #(3,4) (ca,a,b);
+    endmodule
+  prompt: Implement a structural half adder (`ha_1`) with specified gate delays.
+- code: |
+    // Create a module with one input and one output that behaves like a wire
+    module wire_assign( input in, output out );
+        // assign out to in
+        assign out = in;
+    endmodule
+  prompt: Create a Verilog module named `wire_assign` with one input and one output
+    that directly connects the input to the output like a wire.
