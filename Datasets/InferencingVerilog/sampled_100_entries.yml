@@ -1,0 +1,1513 @@
+- code: |
+    // Create a module with one input and one output that behaves like a wire
+    module wire_assign( input in, output out );
+        // assign out to in
+        assign out = in;
+    endmodule
+  prompt: Create a Verilog module named `wire_assign` with one input and one output
+    that directly connects the input to the output like a wire.
+- code: |
+    module ha_8(s,ca,a,b); // Half Adder with specparam path delays
+      input a,b; output s,ca;
+      specify
+        specparam dl1 = 1; // Define specify parameter for s delay
+        specparam dl2 = dl1 + 1; // Define specify parameter for ca delay based on dl1
+        // Assign path delays using specparams
+        (a, b *> s) = dl1;
+        (a, b *> ca) = dl2;
+      endspecify
+      xor (s,a,b);
+      and (ca,a,b);
+    endmodule
+  prompt: Implement a structural half adder specifying pin-to-pin path delays using
+    `specparam` within a `specify` block.
+- code: |
+    `timescale 1ns/100ps
+    module ShiftRegister8 (input sl, sr, clk, input [7:0] ParIn, input [1:0] m, output reg [7:0] ParOut);
+    always @(negedge clk) begin
+        case (m)
+            0: ParOut <= ParOut;
+            1: ParOut <= {sl, ParOut[7:1]};
+            2: ParOut <= {ParOut[6:0], sr};
+            3: ParOut <= ParIn;
+            default: ParOut <= 8'bX;
+        endcase
+    end
+    endmodule
+  prompt: Implement an 8-bit shift register with multiple modes and negative-edge
+    clock
+- code: |
+    // Verilog code for Problem 4
+    module XOR_Gate(
+        input A, B,
+        output Y
+    );
+        assign Y = A ^ B;
+    endmodule
+  prompt: Create a 2-input XOR gate in Verilog.
+- code: |
+    module example7_4(D, Clock, Q1, Q2);
+    input D, Clock;
+    output Q1, Q2;
+    reg Q1, Q2;
+    always @(posedge Clock)
+    begin
+        Q1 <= D;
+        Q2 <= Q1;
+    end
+    endmodule
+  prompt: Implement a module with two D flip-flops in series using non-blocking assignments
+- code: |
+    module FA;
+    endmodule
+
+    module Ripple_Add;
+        FA fa0();
+        FA fa1();
+        FA fa2();
+        FA fa3();
+    endmodule
+  prompt: '2. A Cbit ripple carry adder (Ripple-Add) contains four 1-bit full adders
+    (FA).
+
+    a. Define the module FA. Do not define the internals or the terminal list.
+
+    b. Define the module Ripple-Add. Do not define the internals or the terminal list.
+    Instantiate four full adders of the type FA in the module Ripple-Add and call
+    them fa0, fa1, fa2, and fa3.
+
+    '
+- code: |
+    module tst_or_gate();
+    reg[3:0]a;
+    reg en;
+    wire b;
+    or_gate gg(b,a,en);
+    initial
+    begin
+    a = 4'h0; // Initialize input
+    en = 1'b0; // Initialize enable
+    end
+    initial begin // Stimulus generation
+    end
+    initial $monitor("t=%0d, en = %b, a = %h, b = %b",$time,en,a,b); // Use %h for hex 'a'
+    initial #30 $stop; // Stop simulation
+    endmodule
+  prompt: Create a testbench `tst_or_gate` for the behavioral OR gate with disable
+    (`or_gate`).
+- code: |
+    module tst_nor3NMOS();
+      reg in1,in2,in3; wire b;
+      nor3NMOS nn(in1,in2,in3,b); // Instantiate NMOS NOR
+      initial begin // Initialize inputs
+        in1=1'b0; in2=1'b0; in3=1'b0; // Corrected: was 1'b1
+      end
+      // Toggle inputs at different rates
+      always #2 in1=~in1;
+      always #3 in2=~in2;
+      always #5 in3=~in3;
+      initial $monitor($time , "in1 = %b , in2 = %b , in3 = %b , output = %b ",in1,in2,in3,b); // Removed newline
+      initial #24 $stop; // Stop simulation
+    endmodule
+  prompt: Create a testbench `tst_nor3NMOS` for the 3-input NMOS NOR gate module (`nor3NMOS`).
+- code: |
+    module nor3NMOS(in1,in2,in3,b); // 3-input NMOS NOR
+      output b;
+      input in1,in2,in3;
+      supply0 a; // Ground
+      wire b; // Output wire (should be just output b;)
+      // Parallel NMOS transistors connect output to ground
+      nmos (b, a, in1);
+      nmos (b, a, in2);
+      nmos (b, a, in3);
+      pullup (b); // Pullup device on the output
+    endmodule
+  prompt: Implement a 3-input NMOS NOR gate structurally using parallel `nmos` primitives
+    and a `pullup` device.
+- code: |
+    module test;
+    wire a;
+    reg x, y, z;
+    assign #25 a = 1;
+    always begin
+        x = #10 a;
+    end
+    endmodule
+  prompt: Test timing control with continuous and procedural assignments
+- code: |
+    module test_k;
+    wire q, clock, j, k, preset, clear;
+    reg j, k;
+    jkEdgeFF jk(q, clock, j, k, preset, clear);
+    initial
+    begin
+    reset_ff;
+    j = 1;
+    k = 0;
+    end
+    m555 timer(clock);
+    endmodule
+  prompt: Create a testbench for a JK edge-triggered flip-flop
+- prompt: Create a testbench for the majority function FSM to stimulate the inputs
+    `D_in`, `clk`, and `rst` based on the given waveform. Do not modify the provided
+    code.
+- code: |
+    module clock_gen_forever; // Renamed module for clarity
+      reg clk, en;
+      // Generate clock using forever loop, controlled by 'en'
+      always @(posedge en) // Start clock generation on posedge en
+        forever #2 clk = ~clk; // Toggle clock every 2 time units forever
+      initial
+      begin
+        clk = 1'b0; // Initialize clock
+        en = 1'b0; // Start disabled
+      end
+      initial $monitor("clk=%b, t=%0d, en=%b ", clk,$time,en);
+    endmodule
+  prompt: Demonstrate using a `forever` loop triggered by `posedge en` to generate
+    a continuous clock signal.
+- code: |
+    module contres(o,i1,i2);
+    input i1,i2;
+    output o;
+    // Drive wire 'o' from two buffers with specified output strengths
+    buf(pull1, weak0) g1(o,i1); // Drives pull '1', weak '0'
+    buf(pull1, weak0) g2(o,i2); // Drives pull '1', weak '0'
+    // Resolution: 1,1->1; 1,0->1; 0,1->1; 0,0->0; 1,Z->1; 0,Z->X; Z,Z->Z
+    // Effective behavior is OR due to pull1 dominance over weak0
+    endmodule
+  prompt: Demonstrate contention resolution on a `wire` net driven by two buffers
+    both having (pull1, weak0) strength, effectively creating wired-OR logic.
+- code: |
+    module full_adder(i1, i2, cin, sum, cout);
+    input i1, i2, cin;
+    output sum, cout;
+    assign sum = i1 ^ i2 ^ cin;
+    assign cout = (i1 & i2) | (cin & (i1 | i2));
+    endmodule
+  prompt: Implement a full adder with combinational logic
+- code: |
+    module test_multiplier;
+    reg clk=0, start, error; // Added clk initialization
+    wire [7:0] databus;
+    wire lsb_out, msb_out, done;
+    reg [7:0] mem1[0:2], mem2[0:2]; // Memory for operands
+    reg [7:0] im_data; // Data to drive onto bus
+    reg [7:0] opnd1, opnd2; // Operands
+    reg [15:0] expected_result, multiplier_result; // Results
+    integer indx; // Loop index
+    // Instantiate the Multiplier Unit Under Test
+    Multiplier uut ( clk, start, databus, lsb_out, msb_out, done );
+    // --- Placeholder blocks referenced by Figure numbers ---
+    initial begin: Apply_Data /* ... Figure 8.11 ... */ end
+    initial begin: Apply_Start /* ... Figure 8.12 ... */ end
+    initial begin: Expected_Result /* ... Figure 8.13 ... */ end
+    always @(posedge clk)
+    begin: Actual_Result /* ... Figure 8.14 ... */ end
+    always @(posedge clk)
+    begin: Compare_Results /* ... Figure 8.15 ... */ end
+    // --- Clock generation ---
+    always #50 clk = ~clk;
+    // --- Data bus driving ---
+    assign databus = im_data; // Drive internal data onto bus
+    endmodule
+  prompt: Outline a testbench structure for the `Multiplier` module (Block 173), including
+    DUT instantiation, stimulus generation placeholders, result checking placeholders,
+    clock generation, and data bus assignment.
+- code: |
+    module testbench ();
+    generate data;
+    process data;
+    endmodule
+  prompt: Implement a basic testbench structure for generating and processing data
+- code: |
+    module tst_dff_pbeh();
+      reg di,clk; wire do;
+      dff_p d1(do,di,clk); // Instantiate DFF with path delay
+      initial begin clk=0; di=1'b0; #35 $stop; end // Initialize & stop
+      always #3 clk=~clk; // Generate clock (negedges at 6, 12, 18...)
+      always #5 di=~di; // Toggle data
+      initial $monitor($time,"clk=%b, di=%b, do=%b",clk,di,do);
+    endmodule
+  prompt: Create a testbench `tst_dff_pbeh` for the behavioral D flip-flop with specified
+    path delay (`dff_p`).
+- code: |
+    module Prob_6_7_Moore (Detect_Moore, D_in, clk, rst);
+    // Moore nonresetting sequence detector
+    output Detect_Moore;
+    input D_in, clk, rst;
+    parameter S_0 = 0, S_1 = 1, S_2 = 2, S_3 = 3, S_4 = 4;
+    parameter S_5 = 5, S_6 = 6, S_7 = 7, S_8 = 8;
+    reg [3: 0] state_Moore, next_state;
+    wire Detect_Moore = ((state_Moore == S_4) || (state_Moore == S_8));
+    always @ (posedge clk) if (rst) state_Moore <= S_0; else state_Moore <= next_state;
+    always @ (state_Moore, D_in) begin
+    next_state = S_0;
+    case (state_Moore)
+    S_0: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_5;
+    S_1: if (D_in) next_state = S_2; else if (D_in == 0) next_state = S_5;
+    S_2: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_5;
+    S_3: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_4;
+    S_4: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_6;
+    S_5: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_6;
+    S_6: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_7;
+    S_7: if (D_in) next_state = S_8; else if (D_in == 0) next_state = S_7;
+    S_8: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_6;
+    default: next_state = S_0;
+    endcase
+    end
+    endmodule
+  prompt: Moore non-resetting sequence detector for Problem 6-7.
+- code: |
+    module tst_dec2_4beh();
+    wire [3:0]o;
+    reg[1:0] i;
+    //reg en; // Enable not used in dec2_4beh
+    dec2_4beh dec(o,i);
+    initial
+    begin
+    i =2'b00;
+    end
+    initial $monitor ($time , " output o = %b , input i = %b " , o ,i);
+    initial #14 $stop; // Stop simulation
+    endmodule
+  prompt: Create a testbench `tst_dec2_4beh` for the behavioral 2-to-4 decoder (`dec2_4beh`).
+- code: |
+    module ALU ( input [7:0] a, b, input pass, add,
+    output reg[7:0] alu_out );
+    // Simple combinational ALU
+    always @(a or b or pass or add)
+    if (pass) alu_out = a;       // Pass input 'a'
+    else if (add) alu_out = a + b; // Add inputs 'a' and 'b'
+    else alu_out = 0;           // Default output is 0
+    endmodule
+  prompt: Create a simple combinational 8-bit ALU that can pass input 'a' or add inputs
+    'a' and 'b'.
+- code: |
+    module AndOr (output X, Y, input A, B, C);
+    assign #10 X = A & B;
+    assign #10 Y = B | C;
+    endmodule
+  prompt: Implement a combinational logic module with AND and OR operations
+- code: |
+    module tst_ctr_wt;
+    reg clk,En;
+    reg[3:0]N;
+    wire[3:0]a;
+    ctr_wt c1(a,clk,N,En);
+    initial
+    begin
+    clk=0; N=4'b1111; // Set limit to 15
+    En=1'b0; // Start disabled
+    end
+    always
+    initial #35 $stop; // Stop simulation
+    initial $monitor($time,"clk=%b, En=%b, N=%d, a=%d",clk,En,N,a); // Corrected format specifiers
+    endmodule
+  prompt: Create a testbench `tst_ctr_wt` for the counter module that uses a `wait`
+    statement (`ctr_wt`).
+- code: |
+    module pulses; // Incorrect pulse generation attempt
+      reg [8:0] I;
+      reg a,b;
+      initial
+        while (I<100) begin // Loop based on integer I
+          b = I[1]; // Assign bit 1 of I to b (Corrected indexing)
+          I = I + 1; // Increment I
+        end
+      initial I=0; // Initialize I
+      initial #100 $stop; // Stop simulation
+    endmodule
+  prompt: Demonstrate an attempt (likely incorrect) to generate pulses based on bits
+    of an incrementing integer `I` within a `while` loop.
+- code: |
+    module mealy(Clock, Resetn, w, z);
+    input Clock, Resetn, w;
+    output z;
+    reg y, Y, z;
+    parameter A = 0, B = 1;
+    always @(w or y)
+        case (y)
+            A: if (w)
+                begin
+                    z = 0;
+                    Y = B;
+                end
+            else
+                begin
+                    z = 0;
+                    Y = A;
+                end
+            B: if (w)
+                begin
+                    z = 1;
+                    Y = B;
+                end
+            else
+                begin
+                    z = 0;
+                    Y = A;
+                end
+        endcase
+    always @(negedge Resetn or posedge Clock)
+        if (Resetn == 0) y <= A;
+        else y <= Y;
+    endmodule
+  prompt: Implement a Mealy FSM with two states
+- code: |
+    module IR ( input [7:0] data_in, input load, clk,
+    output reg [7:0] data_out );
+    // Simple register (Instruction Register) loaded on posedge clk when load is high
+    always @( posedge clk )
+    if ( load ) data_out <= data_in;
+    endmodule
+  prompt: Create a simple 8-bit register (Instruction Register - IR) with a synchronous
+    load enable.
+- code: |
+    module reg4(D, Clock, Resetn, Q);
+    input [3:0] D;
+    input Clock, Resetn;
+    output [3:0] Q;
+    reg [3:0] Q;
+    always @(posedge Clock or negedge Resetn)
+        if (Resetn == 0)
+            Q <= 4'b0000;
+        else
+            Q <= D;
+    endmodule
+  prompt: Implement a 4-bit register with asynchronous active-low reset
+- code: |
+    module Problem8(input [3:0] a, b, output [3:0] diff);
+      assign diff = a - b;
+    endmodule
+  prompt: Subtract two 4-bit numbers 'a' and 'b', and output their difference 'diff'
+- code: |
+    module tst_alu4();
+      reg [3:0]a,b; reg[1:0] f; reg cci; wire[3:0]d; wire co;
+      alu_4 aa(d,co,a,b,f,cci); // Instantiate ALU
+      initial begin cci=1'b0; f=2'b00; a=4'h0; b=4'h0; #30 $stop; end // Initialize & stop
+      always begin // Apply stimulus with #3 delay
+      end
+      initial $monitor($time, " cci = %b , a= %h ,b = %h ,f = %b ,d =%h ,co= %b ",cci ,a,b,f,d,co); // Use %h
+    endmodule
+  prompt: Create a testbench `tst_alu4` for the dataflow ALU with multiple specified
+    path delays (`alu_4`).
+- code: |
+    module aoi2(g,a,b,c,d);
+    output g;
+    input a,b,c,d;
+    wire e,f,g1; // Intermediate signals
+    // Dataflow assignments for AND, OR, and NOT operations
+    assign e = a && b;
+    assign f = c && d;
+    assign g1 = e || f;
+    assign g = ~g1; // Final AOI output
+    endmodule
+  prompt: Implement an AOI gate `aoi2` using multiple dataflow `assign` statements.
+- code: |
+    module maj3 (a, b, c, y);
+    input a, b, c;
+    output y;
+    wire im1, im2, im3;
+    and #(2, 4)
+        (im1, a, b),
+        (im2, b, c),
+        (im3, c, a);
+    or #(3, 5) (y, im1, im2, im3);
+    endmodule
+  prompt: Implement a 3-input majority circuit with gate delays
+- code: |
+    module tst_wand1; //testbench
+    reg i1,i2;
+    wire o; // Added wire declaration
+    wand1 ww(i1,i2,o);
+    initial
+    begin
+    i1=0; i2=0; // Drv1=pull0, Drv2=pull0 -> o = pull0 (wand rule)
+    end
+    initial $monitor($time,"i1=%b,i2=%b,o=%b",i1,i2,o);
+    initial #8 $stop; // Added stop
+    endmodule
+  prompt: Create a testbench `tst_wand1` for the `wand` net type demonstration module
+    (`wand1`, Block 52).
+- code: |
+    module DataComponent (DataIn, DataOut, ControlSignals);
+    input [7:0] DataIn;
+    output [7:0] DataOut;
+    input ControlSignals;
+    endmodule
+  prompt: Define a template for a data component with 8-bit input and output controlled
+    by signals
+- code: |
+    module mux21b (
+    input wire a ,
+    input wire b ,
+    input wire s ,
+    output reg y // Output must be reg for procedural assignment
+    );
+    always @(*) // Combinational sensitivity
+    if(s == 0)
+    y = a; // Select a if s=0
+    else
+    y = b; // Select b if s=1
+    endmodule
+  prompt: Implement a 2-to-1 multiplexer using a combinational always block and an
+    if-else statement.
+- code: |
+    module Problem1(input [3:0] a, b, output [3:0] sum);
+      assign sum = a + b;
+    endmodule
+  prompt: Add two 4-bit numbers 'a' and 'b', and output their sum 'sum'
+- code: |
+    `timescale 1ns/100ps
+    module ALU8 (input [7:0] left, right, input [1:0] mode, output reg [7:0] ALUout);
+    always @(left, right, mode) begin
+        case (mode)
+            0: ALUout = left + right;
+            1: ALUout = left - right;
+            2: ALUout = left & right;
+            3: ALUout = left | right;
+            default: ALUout = 8'bX;
+        endcase
+    end
+    endmodule
+  prompt: Implement an 8-bit ALU with addition, subtraction, AND, and OR operations
+- code: |
+    module mux4to1(w0, w1, w2, w3, S, f);
+    input w0, w1, w2, w3;
+    input [1:0] S;
+    output f;
+    reg f;
+    always @(w0 or w1 or w2 or w3 or S)
+        if (S == 2'b00)
+            f = w0;
+        else if (S == 2'b01)
+            f = w1;
+        else if (S == 2'b10)
+            f = w2;
+        else if (S == 2'b11)
+            f = w3;
+    endmodule
+  prompt: Implement a 4-to-1 multiplexer using behavioral modeling with if-else statements
+- code: |
+    module alu(s, A, B, F);
+    input [2:0] s;
+    input [3:0] A, B;
+    output [3:0] F;
+    reg [3:0] F;
+    always @(s or A or B)
+        case (s)
+            0: F = 4'b0000;
+            1: F = B - A;
+            2: F = A - B;
+            3: F = A + B;
+            4: F = A ^ B;
+            5: F = A | B;
+            6: F = A & B;
+            7: F = 4'b1111;
+        endcase
+    endmodule
+  prompt: Implement an ALU with various operations based on select input
+- code: |
+    module mux24b(
+    input wire [3:0] a,
+    input wire [3:0] b,
+    input wire s,
+    output reg [3:0] y
+    );
+    always @(*)
+    if(s == 0)
+    y = a;
+    else
+    y = b;
+    endmodule
+  prompt: Implement a 4-bit 2-to-1 multiplexer using a combinational always block
+    with an if/else statement.
+- code: |
+    // Verilog code for Problem 5
+    module Half_Adder(
+        input A, B,
+        output Sum, Carry
+    );
+        assign Sum = A ^ B;
+        assign Carry = A & B;
+    endmodule
+  prompt: Create a Half Adder in Verilog.
+- code: |
+    module mux41b (
+    input wire [3:0] c ,
+    input wire [1:0] s ,
+    output wire z
+    );
+    assign z = ~s[1] & ~s[0] & c[0] // Select c[0] when s=00
+    | ~s[1] & s[0] & c[1] // Select c[1] when s=01
+    | s[1] & ~s[0] & c[2] // Select c[2] when s=10
+    | s[1] & s[0] & c[3]; // Select c[3] when s=11
+    endmodule
+  prompt: Implement a 4-to-1 multiplexer using a single Boolean expression in a continuous
+    assign statement.
+- code: |
+    module Johnson_Counter (count, enable, clock, reset);
+    output [3: 0] count;
+    input enable;
+    input clock, reset;
+    reg [3: 0] count;
+    always @ (posedge clock, posedge reset)
+    if (reset == 1) count <= 0;
+    else if (enable)
+    case (count)
+    4'b0000,
+    4'b0001,
+    4'b0011,
+    4'b0111: count <= {count[2: 0], 1'b1};
+    4'b1111,
+    4'b1110,
+    4'b1100,
+    4'b1000: count <= {count[2: 0], 1'b0};
+    default: count <= 0;
+    endcase
+    endmodule
+
+    module t_Johnson_Counter ();
+    wire [3: 0] count;
+    reg enable;
+    reg clock, reset;
+    Johnson_Counter M0 (count, enable, clock, reset);
+    initial #500 $finish;
+    initial begin clock = 0; forever #5 clock = ~clock; end
+    initial fork
+    join
+    endmodule
+  prompt: 'This is a 4-bit Johnson counter module with enable and reset functionality.
+
+    The counter cycles through a sequence of states when enabled, depending on the
+    current state of `count`.
+
+    The testbench verifies the reset behavior and the enable functionality by changing
+    the `reset` and `enable` signals.
+
+    '
+- code: |
+    module tst_alu1();
+      reg [3:0]a,b; reg[1:0] f; reg cci; wire[3:0]d; wire co;
+      alu_1 aa(d,co,a,b,f,cci); // Instantiate ALU
+      initial begin cci=1'b0; f=2'b00; a=4'h0; b=4'h0; #30 $stop; end // Initialize & stop
+      always begin // Apply stimulus
+      end
+      initial $monitor($time, " cci = %b , a= %h ,b = %h ,f = %b ,d =%h ,co= %b ",cci ,a,b,f,d,co); // Use %h
+    endmodule
+  prompt: Create a testbench `tst_alu1` for the dataflow ALU with specified path delay
+    (`alu_1`).
+- code: |
+    `timescale 1ns/100ps
+    module maj3_p (input a, b, c, output y);
+    wire im1, im2, im3;
+    parameter
+        tplh1=2, tphl1=4,
+        tplh2=3, tphl2=5;
+    and #(tplh1, tphl1)
+        (im1, a, b),
+        (im2, b, c),
+        (im3, c, a);
+    or #(tplh2, tphl2) (y, im1, im2, im3);
+    endmodule
+  prompt: Implement a 3-input majority circuit with parameterized delays
+- code: |
+    module sw2led2 (
+    input wire [7:0] sw ,
+    output wire [7:0] ld
+    ) ;
+    assign ld = sw;
+    endmodule
+  prompt: Define a module `sw2led2` connecting 8 input switches (`sw`) to 8 output
+    LEDs (`ld`) using Verilog-2001 port style and a single assign statement.
+- code: |
+    module counter (
+        input wire clk, rst,
+        output reg [3:0] count
+    );
+    always @(posedge clk or posedge rst) begin
+        if (rst) count <= 4'b0000;
+        else count <= count + 1;
+    end
+    endmodule
+  prompt: Write a Verilog module for a 4-bit binary counter with asynchronous reset.
+- code: |
+    module mltp_a(a1,a0,b1,b0,c1,c2,c3,c4); // PLA based 2x2 multiplier
+      input a1,a0,b1,b0; output c1,c2,c3,c4;
+      // Declare storage for AND plane and OR plane
+      reg[1:4] mand[1:9]; // AND plane inputs (4 bits wide, 9 product terms)
+      reg[1:9] mor[1:4]; // OR plane inputs (9 bits wide, 4 outputs)
+      reg p1,p2,p3,p4,p5,p6,p7,p8,p9; // Product terms
+      reg c1,c2,c3,c4; // Outputs must be reg for procedural assignment
+      initial begin
+        // Define AND plane connections (input -> product term)
+        mand[1]=4'b1010; mand[2]=4'b0110; mand[3]=4'b1110; mand[4]=4'b1001;
+        mand[5]=4'b0101; mand[6]=4'b1101; mand[7]=4'b1011; mand[8]=4'b0111;
+        mand[9]=4'b1111;
+        // Define OR plane connections (product term -> output)
+        // Format: 9 bits for p1-p9 connections for each output c1-c4
+        mor[1]=9'b101000101; // Connections for c1
+        mor[2]=9'b011101110; // Connections for c2
+        mor[3]=9'b000011010; // Connections for c3
+        mor[4]=9'b000000001; // Connections for c4
+        // Instantiate PLA using system tasks
+        $async$and$array(mand, {b1,b0,a1,a0}, {p1,p2,p3,p4,p5,p6,p7,p8,p9}); // Corrected input order?
+        $async$or$array(mor, {p1,p2,p3,p4,p5,p6,p7,p8,p9}, {c4,c3,c2,c1}); // Corrected output order?
+      end
+    endmodule
+  prompt: Implement a 2x2 bit multiplier using Verilog PLA system tasks (`$async$and$array`,
+    `$async$or$array`) with hardcoded AND/OR plane definitions.
+- code: |
+    module orfr_tst; // Testbench for OR gate with force/release
+      reg b,c; wire a;
+      initial begin b=1'b0; c=1'b0; #20 $stop; end // Initialize inputs
+      always #3 c = ~c; // Toggle input 'c' every 3 time units
+      or_fr_rl dd(a,b,c); // Instantiate the module containing force/release
+    endmodule
+  prompt: Create a testbench `orfr_tst` for the OR gate module (`or_fr_rl`) which
+    contains internal `force`/`release` statements.
+- code: |
+    module ALU (output[31:0] Result, input[31:0] ArgA, ArgB, input Clk);
+    specify
+        specparam tRise = 5, tFall = 4;
+        (Clk *> Result) = (tRise, tFall);
+    endspecify
+    endmodule
+  prompt: Implement an ALU module with specified timing parameters
+- code: |
+    module d_ff (input d, clk, s, r, output reg q, q_b );
+    always @( s ) begin : force_a_1
+    if ( s )
+    begin
+    end else begin
+    deassign q;
+    deassign q_b;
+    end
+    end
+    always @( r ) begin : force_a_0
+    if( r )
+    begin
+    end else begin
+    deassign q;
+    deassign q_b;
+    end
+    end
+    always @( posedge clk ) begin : clocked
+    end
+    endmodule
+  prompt: Create a D flip-flop with asynchronous set/reset using `assign`/`deassign`
+    and a separate clocked process.
+- code: |
+    module ttst_ttrimux2_1(); // Assuming this tests a tristate 2-to-1 mux called ttrimux2_1
+    reg e;
+    reg [1:0]i; // Should be reg i0, i1; or reg [0:0] i0, i1; or just input wires if MUX takes separate inputs
+    reg s;
+    wire out; // Added wire declaration
+    // ttrimux2_1 mm(out,e,i,s); // Instantiation requires correct MUX definition
+    initial
+    begin
+    e =0; i = 2'b00; s = 1'b0; // Added initial 's' value
+    end
+    always
+    begin
+    end
+    initial $monitor($time ," enable e = %b , s= %b , input i = %b ,output out = %b ",e ,s,i,out);
+    initial #48 $stop;
+    endmodule
+  prompt: Create a testbench `ttst_ttrimux2_1` for a tristate 2-to-1 multiplexer (module
+    definition `ttrimux2_1` not provided).
+- code: |
+    module dffalter_tst(); // Testbench, likely for a DFF named dffalter
+    reg di,clk,clr,pr;
+    wire q, qb; // Added qb
+    // dffalter dff(q,qb,di,clk,clr,pr); // Assumed instantiation of DUT
+    initial
+    begin
+    clr=1'b1;pr=1'b0;clk=1'b0;di=1'b0; // Start with clear asserted
+    end
+    always
+    begin
+    clr=1'b0; // Deassert clear
+    end
+    always # 4 di =~di; // Toggle data
+    always #16 pr=1'b1; // Assert preset
+    always #20 pr =1'b0; // Deassert preset
+    initial $monitor("t=%0d, clk=%b, clr=%b, pr=%b, di=%b, q=%b ", $time,clk,clr,pr,di,q);
+    initial #46 $stop; // Stop simulation
+    endmodule
+  prompt: Create a testbench applying stimulus for a D flip-flop with asynchronous
+    preset and clear (module `dffalter` definition not provided).
+- code: |
+    module show_aa(ao,ai); // NOT gate with delay 2
+      output ao; input ai; wire ao, ai;
+      not #2 (ao,ai);
+    endmodule
+  prompt: Implement a simple NOT gate module (`show_aa`) with a delay of 2 time units.
+- code: |
+    module Universal_Shift_Reg (Data_Out, MSB_Out, LSB_Out, Data_In,
+    MSB_In, LSB_In, s1, s0, clk, rst);
+    output [3: 0] Data_Out;
+    output MSB_Out, LSB_Out;
+    input [3: 0] Data_In;
+    input MSB_In, LSB_In;
+    reg [3: 0] Data_Out; // 10-12-2004
+    input s1, s0, clk, rst;
+    assign MSB_Out = Data_Out[3];
+    assign LSB_Out = Data_Out[0];
+    always @ (posedge clk) begin
+    if (rst) Data_Out <= 0;
+    else case ({s1, s0})
+    0: Data_Out <= Data_Out; // Idle
+    1: Data_Out <= {MSB_In, Data_Out[3:1]}; // Shift right
+    2: Data_Out <= {Data_Out[2:0], LSB_In}; // Shift Left
+    3: Data_Out <= Data_In; // Parallel Load
+    endcase
+    end
+    endmodule
+    /*
+    Test Plan
+    Verify initial reset
+    Verify idle
+    Verify shift right
+    Verify shift left
+    Verify parallel load
+    Verify reset-on-the-fly
+    */
+    module t_Universal_Shift_Reg();
+    wire [3: 0] Data_Out;
+    reg [3: 0] Data_In;
+    wire MSB_Out, LSB_Out;
+    reg MSB_In, LSB_In;
+    reg s1, s0, rst;
+    defparam M2.half_cycle = 5;
+
+    Universal_Shift_Reg M1 (Data_Out, MSB_Out, LSB_Out, Data_In, MSB_In, LSB_In, s1,
+    s0, clk, rst);
+    Clock_Gen M2(clk);
+
+    initial #1000 $finish;
+    initial fork
+    begin #5 rst = 1; #20 rst = 0;end
+    begin #120 rst = 1; #20 rst = 0;end
+    begin #260 rst = 1; #20 rst = 0;end
+    begin #380 rst = 1; #20 rst = 0;end
+    join
+    initial fork
+    join
+    begin // Verify left shift
+    join
+    begin // Verify load
+    join
+    begin // reset
+    join
+
+    join
+    endmodule
+  prompt: 'Test Plan for the Universal Shift Register:
+
+    1. Verify that the module correctly handles initial reset.
+
+    2. Test that the idle condition (when both s1 and s0 are 0) keeps the Data_Out
+    unchanged.
+
+    3. Verify the shift right functionality (when s1 = 0 and s0 = 1) by shifting the
+    MSB into the data.
+
+    4. Verify the shift left functionality (when s1 = 1 and s0 = 0) by shifting the
+    LSB into the data.
+
+    5. Verify that parallel load works as expected (when s1 = 1 and s0 = 1), loading
+    Data_In directly into Data_Out.
+
+    6. Test the reset-on-the-fly functionality, ensuring that the register can be
+    reset during operation.
+
+    '
+- code: |
+    module hex7seg_le (
+    input wire [3:0] x ,
+    output wire [6:0] a_to_g // Outputs for segments a,b,c,d,e,f,g
+    );
+    // Logic equations for each segment (active high assumed)
+    assign a_to_g[6] = ~x[3] & ~x[2] & ~x[1] & x[0] // a (segment index 6)
+    | ~x[3] & x[2] & ~x[1] & ~x[0]
+    | x[3] & x[2] & ~x[1] & x[0]
+    | x[3] & ~x[2] & x[1] & x[0];
+    assign a_to_g[5] = x[2] & x[1] & ~x[0] // b (segment index 5)
+    | x[3] & x[1] & x[0]
+    | ~x[3] & x[2] & ~x[1] & x[0]
+    | x[3] & x[2] & ~x[1] & ~x[0];
+    assign a_to_g[4] = ~x[3] & ~x[2] & x[1] & ~x[0] // c (segment index 4)
+    | x[3] & x[2] & x[1]
+    | x[3] & x[2] & ~x[0];
+    assign a_to_g[3] = ~x[3] & ~x[2] & ~x[1] & x[0] // d (segment index 3)
+    | ~x[3] & x[2] & ~x[1] & ~x[0]
+    | x[3] & ~x[2] & x[1] & ~x[0]
+    | x[2] & x[1] & x[0];
+    assign a_to_g[2] = ~x[3] & x[0] // e (segment index 2)
+    | ~x[3] & x[2] & ~x[1]
+    | ~x[2] & ~x[1] & x[0];
+    assign a_to_g[1] = ~x[3] & ~x[2] & x[0] // f (segment index 1)
+    | ~x[3] & ~x[2] & x[1]
+    | ~x[3] & x[1] & x[0]
+    | x[3] & x[2] & ~x[1] & x[0];
+    assign a_to_g[0] = ~x[3] & ~x[2] & ~x[1] // g (segment index 0)
+    | x[3] & x[2] & ~x[1] & ~x[0]
+    | ~x[3] & x[2] & x[1] & x[0];
+    endmodule
+  prompt: Implement a Hex-to-7-segment display decoder using direct Boolean logic
+    equations in assign statements.
+- code: |
+    module tst_updcounter();//TEST_BENCH
+    reg clk,u_d;
+    reg[3:0]N;
+    wire[3:0]a;
+    updcounter c2(a,clk,N,u_d);
+    initial
+    begin
+    N = 4'b0111; // Set limit N=7
+    u_d = 1'b1; // Start counting up (Corrected: was 1'b0)
+    clk = 0;
+    end
+    always #2 clk=~clk; // Generate clock
+    always #34 u_d=~u_d; // Change direction every 34 time units
+    initial $monitor
+    ($time,"clk=%b, N=%d, u_d=%b, a=%d",clk,N,u_d,a); // Display values
+    initial #64 $stop; // Stop simulation
+    endmodule
+  prompt: Create a testbench `tst_updcounter` for the behavioral up/down counter module
+    (`updcounter`).
+- code: |
+    module tb_TOP1;
+      reg CLK, RST_X;
+      TOP1 uut(.CLK(CLK), .RST_X(RST_X));
+
+      initial begin
+        CLK = 0;
+        forever #5 CLK = ~CLK;
+      end
+
+      initial begin
+        RST_X = 0; #10;
+        RST_X = 1;
+      end
+    endmodule
+  prompt: Create a testbench to verify the counter behavior implemented using a function.
+- code: |
+    module dff_inst(D, Clock, Resetn, Q);
+    input D, Clock, Resetn;
+    output Q;
+    lpm_ff flipflop(.data(D), .aclr(Resetn), .clock(Clock), .q(Q));
+    defparam flipflop.lpm_width = 1;
+    endmodule
+  prompt: Implement a D flip-flop using an LPM flip-flop component with asynchronous
+    clear
+- code: |
+    module latch (input d, c, output reg q, q_b );
+    always begin
+    wait ( c );
+    end
+    endmodule
+  prompt: Create a behavioral D latch using a `wait(c)` statement for level sensitivity.
+- code: |
+    module example4(x1, x2, x3, x4, f, g, h);
+    input x1, x2, x3, x4;
+    output f, g, h;
+    assign g = (x1 & x3) | (x2 & x4);
+    assign h = (x1 | x3) & (x2 | x4);
+    assign f = g | h;
+    endmodule
+  prompt: Implement a combinational circuit with inputs x1, x2, x3, x4 and outputs
+    f, g, h using assign statements
+- code: |
+    module Chap1Counter (Clk, Reset, Count);
+    input Clk, Reset;
+    output [3:0] Count;
+    reg [3:0] Count;
+    always @(posedge Clk) begin
+        if(Reset) Count = 0;
+        else Count = Count + 1;
+    end
+    endmodule
+  prompt: Implement a 4-bit up counter with synchronous reset
+- code: |
+    module tst_nm_in();
+      reg in; wire out;
+      NMOSinv nmv(out,in); // Instantiate NMOS inverter
+      initial
+        in =1'b1; // Start with input high -> output low
+      always
+      initial $monitor($time , " in = %b, output = %b ",in,out);
+      initial #15 $stop; // Stop simulation
+    endmodule
+  prompt: Create a testbench `tst_nm_in` for the NMOS inverter module (`NMOSinv`).
+- code: |
+    module par(in, parity, all_ones);
+    input [7:0] in;
+    output parity, all_ones;
+    assign parity = ^in;
+    assign all_ones = &in;
+    endmodule
+  prompt: Create a module to compute parity and all-ones check
+- code: |
+    module nil;
+    reg a, b;
+    initial
+    begin
+    a = 1'b0;
+    b = 1'b0;
+    $display ("t=%0t display: a = %b, b = %b", $time, a, b); // Added time
+    end
+    initial
+    $monitor("t=%0t monitor: a = %b, b = %b", $time, a, b);
+    // Monitor triggers at t=0, t=2, t=5, t=6
+    endmodule
+  prompt: Demonstrate the difference between `$display` (executes once) and `$monitor`
+    (executes whenever arguments change) in an initial block.
+- code: |
+    module FourFlopsStructL #(parameter DClk = 2, DBuf = 1)
+    (output[3:0] Q, input[3:0] D, input Ena, Clk);
+    wire[3:0] QWire;
+    localparam DTot = DBuf + DClk;
+    DFF DReg[3:0] (.Q(QWire), .D(D), .Clk(Clk));
+    assign #DTot Q = (Ena==1'b1)? QWire : 'bz;
+    endmodule
+  prompt: Implement a 4-bit register with enable and lumped delay using structural
+    modeling
+- code: |
+    module Anding (input a, b, output y);
+    and (y, a, b);
+    endmodule
+  prompt: Implement a simple AND gate using a primitive
+- code: |
+    module mos_strength (a, c, zn, zp);
+    input a, c;
+    output zn, zp;
+    nmos (zn, a, c); // NMOS passes 'a' when 'c' is 1 (outputs St0 or Z)
+    pmos (zp, a, c); // PMOS passes 'a' when 'c' is 0 (outputs St1 or Z)
+    endmodule
+  prompt: Model basic NMOS and PMOS transistors to show their inherent output strength
+    characteristics (Strong 0 for NMOS, Strong 1 for PMOS).
+- code: |
+    module RAM (output[7:0] Obus, input[7:0] Ibus, input[3:0] Adr, input Clk, Read);
+    reg[7:0] Storage[15:0];
+    reg[7:0] ObusReg;
+    assign #1 Obus = ObusReg;
+    always @(posedge Clk)
+    if (Read==1'b0)
+        Storage[Adr] <= Ibus;
+    else
+        ObusReg <= Storage[Adr];
+    endmodule
+  prompt: Implement an 8-bit RAM with 16 locations for read and write operations
+- code: |
+    module tst_dff_p_b();
+      reg di,clk; wire do;
+      dff_p d1(do,di,clk); // Instantiate the DFF
+      initial begin clk=0; di=1'b0; #35 $stop; end // Initialize & stop
+      always #3 clk=~clk; // Generate clock
+      always #5 di=~di; // Toggle data
+      initial $display ("%m: Top-level testbench module"); // Display testbench name
+      initial $monitor($time," clk=%b, di=%b, do=%b",clk,di,do);
+    endmodule
+  prompt: Create a testbench `tst_dff_p_b` for the `dff_p` module, demonstrating the
+    use of `$display("%m")` in both the testbench and the DUT to show hierarchical
+    names.
+- code: |
+    module comp
+    (input wire [N-1:0] x,
+    input wire [N-1:0] y,
+    output reg gt, // Greater than
+    output reg eq, // Equal
+    output reg lt // Less than
+    );
+    always @(*) // Combinational logic
+    begin
+    // Default outputs to 0
+    gt = 1'b0;
+    eq = 1'b0;
+    lt = 1'b0;
+    // Set flags based on comparison results
+    if(x > y)
+    gt = 1'b1;
+    if(x == y)
+    eq = 1'b1;
+    if(x < y)
+    lt = 1'b1;
+    end
+    endmodule
+  prompt: Implement a generic N-bit magnitude comparator (parameter N, default 8)
+    behaviorally, outputting gt, eq, lt flags.
+- code: |
+    module gade(a,a1,b,c,b1,c1);
+    input b,c,b1,c1;
+    output a,a1;
+    // Instantiate OR gate with inertial delay 3
+    or #3 gg1(a1,c1,b1);
+    // Instantiate AND gate with rise=2, fall=1 inertial delay
+    and #(2,1) gg2(a,c,b);
+    endmodule
+  prompt: Instantiate OR and AND gates with specified inertial gate delays (`#3` and
+    `#(2,1)`).
+- code: |
+    module dff_aa(q,qb,di,clk,clr,pr); // Behavioral DFF with async controls and conditional path delay
+      output q,qb; input di,clk,clr,pr;
+      reg q;
+      assign qb=~q;
+      specify
+        // Conditional path delay: clk->q edge-sensitive path active only if clr and pr are low
+        if (!clr && !pr) (posedge clk *> (q:di)) = 1;
+      endspecify
+      // Behavioral description with async reset/preset priority
+      always @(posedge clk or posedge clr or posedge pr) // Added async sensitivity
+        if(clr) q <= 1'b0; // Use non-blocking <=
+        else if(pr) q <= 1'b1;
+        else q <= di;
+    endmodule
+  prompt: Implement a behavioral D flip-flop with asynchronous preset/clear, specifying
+    a conditional clock-to-output path delay active only when preset/clear are inactive
+    using `if` within `specify`.
+- code: |
+    module tstha_9();
+      reg a,b; wire s,ca;
+      ha_9 hh(s,ca,a,b); // Instantiate HA with rise/fall path delays
+      initial begin a=0;b=0; end
+      always begin #5 a=1;b=0; #5 a=0;b=1; #5 a=1;b=1; #5 a=0;b=0; end
+      initial $monitor($time , " a = %b , b = %b ,out carry = %b , outsum = %b ",a,b,ca,s);
+      initial #30 $stop;
+    endmodule
+  prompt: Create a testbench `tstha_9` for the half adder with specified rise/fall
+    path delays (`ha_9`).
+- code: |
+    module example7_5(x1, x2, x3, Clock, f, g);
+    input x1, x2, x3, Clock;
+    output f, g;
+    reg f, g;
+    always @(posedge Clock)
+    begin
+        f = x1 & x2;
+        g = f | x3;
+    end
+    endmodule
+  prompt: Implement a sequential circuit with combinational logic
+- code: |
+    module example5(x1, x2, x3, f);
+    input x1, x2, x3;
+    output f;
+    reg f;
+    always @(x1 or x2 or x3)
+        if (x2 == 1)
+            f = x1;
+        else
+            f = x3;
+    endmodule
+  prompt: Implement a behavioral model with inputs x1, x2, x3 and output f that selects
+    x1 if x2=1 else x3
+- code: |
+    module example3(Data, Clock, Reset, RegSum, Sum);
+    input Clock, Reset;
+    input [3:0] Data;
+    output [3:0] Sum, RegSum;
+    wire [3:0] Sum, RegSum;
+    reg4 R1 (Sum, Clock, Reset, RegSum);
+    assign Sum = Data + RegSum;
+    endmodule
+  prompt: Implement a module that accumulates input data using a 4-bit register
+- code: |
+    module addern(carryin, X, Y, S, carryout);
+    parameter n = 16;
+    input carryin;
+    input [n-1:0] X, Y;
+    output [n-1:0] S;
+    output carryout;
+    reg [n-1:0] S;
+    reg [n:0] C;
+    reg carryout;
+    integer k;
+    always @(X or Y or carryin)
+    begin
+        C[0] = carryin;
+        for (k = 0; k <= n-1; k = k + 1)
+        begin
+            S[k] = X[k] ^ Y[k] ^ C[k];
+            C[k+1] = (X[k] & Y[k]) | (C[k] & X[k]) | (C[k] & Y[k]);
+        end
+        carryout = C[n];
+    end
+    endmodule
+  prompt: Implement a parameterized n-bit ripple-carry adder using behavioral modeling
+- code: |
+    module mixed_sim;
+    reg dcontrol, x, y;
+    reg [31:0] data;
+    wire [31:0] bus;
+    assign bus = dcontrol ? data : 'bz;
+    always @x
+    y = ~x;
+    initial
+    begin
+    $monitor("time=%d dcontrol=%d data=%d x=%d y=%d bus=%d",
+             $time, dcontrol, data, x, y, bus);
+    dcontrol = 0;
+    end
+    endmodule
+  prompt: Create a mixed-style simulation module with tri-state bus
+- code: |
+    module aoi_gate(o,a1,a2,b1,b2);
+    input a1,a2,b1,b2;// a1,a2,b1,b2 form the input
+    //ports of the module
+    output o;//o is the single output port of the module
+    wire o1,o2;//o1 and o2 are intermediate signals
+    //within the module
+    and g1(o1,a1,a2); //The AND gate primitive has two
+    and g2(o2,b1,b2);// instantiations with assigned
+    //names g1 & g2.
+    nor g3(o,o1,o2);//The nor gate has one instantiation
+    //with assigned name g3.
+    endmodule
+  prompt: Implement an AOI gate structurally using Verilog `and` and `nor` gate primitives.
+- code: |
+    module aoibeh2(o,a,b); // Mixed structural/behavioral AOI
+    output o;
+    input[1:0]a,b;
+    wire a1,b1; // Outputs of AND gates
+    reg o; // Behavioral output must be reg
+    // Structural AND gates using primitives
+    and g1(a1,a[1],a[0]), g2(b1,b[1],b[0]);
+    // Behavioral NOR logic sensitive to AND outputs
+    always@(a1 or b1)
+    o = ~(a1 || b1);
+    endmodule
+  prompt: Implement an AOI gate using structural `and` primitives and a behavioral
+    `always` block for the final NOR operation.
+- code: |
+    module Prob_6_7_Mealy (Detect_Mealy, D_in, clk, rst);
+    // Mealy nonresetting sequence detector
+    output Detect_Mealy;
+    input D_in, clk, rst;
+    parameter S_0 = 0, S_1 = 1, S_2 = 2, S_3 = 3;
+    parameter S_5 = 5, S_6 = 6, S_7 = 7;
+    reg [2: 0] state_Mealy, next_state;
+    wire Detect_Mealy = (((state_Mealy == S_3)&&(D_in == 0))
+    || ((state_Mealy == S_7)&&(D_in ==1)));
+    always @ (posedge clk) if (rst) state_Mealy <= S_0; else state_Mealy <= next_state;
+    always @ (state_Mealy, D_in) begin
+    next_state = S_0;
+    case (state_Mealy)
+    S_0: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_5;
+    S_1: if (D_in) next_state = S_2; else if (D_in == 0) next_state = S_5;
+    S_2: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_5;
+    S_3: if (D_in) next_state = S_3; else if (D_in == 0) next_state = S_5;
+    S_5: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_6;
+    S_6: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_7;
+    S_7: if (D_in) next_state = S_1; else if (D_in == 0) next_state = S_7;
+    default: next_state = S_0;
+    endcase
+    end
+    endmodule
+  prompt: Mealy non-resetting sequence detector for Problem 6-7.
+- code: |
+    module SchedDelayA;
+    reg a, b;
+    initial
+    begin
+    end
+    always @(b) a = b;
+    always @(a) b <= a;
+    endmodule
+  prompt: Implement a module to test scheduling with non-blocking and blocking assignments
+- code: |
+    module tst_dffbehen;//test-bench
+    reg di,en;
+    wire do;
+    dffen d1(do,di,en); // Instantiate the D latch
+    initial
+    begin
+    en=0; // Latch initially disabled (opaque)
+    di=1'b0; // Initial data
+    end
+    always #7 en =~en; // Toggle enable every 7 time units
+    always #4 di=~di; // Toggle data every 4 time units
+    initial
+    $monitor($time,"en=%b, di=%b, do=%b",en,di,do);
+    initial #50 $stop; // Stop simulation
+    endmodule
+  prompt: Create a testbench `tst_dffbehen` for the behavioral D latch module (`dffen`).
+- code: |
+    module netdelay1(x,y);
+    input x;
+    output y;
+    wire #(2,1) nn; // Declare wire 'nn' with rise=2, fall=1 delay
+    not (nn,x); // Assign NOT(x) to 'nn' (takes effect after rise/fall delay)
+    assign y=nn; // Assign 'nn' to 'y' (direct assignment)
+    endmodule
+  prompt: Demonstrate net delay declaration with rise/fall times (`wire
+- code: |
+    module muxdff(D0, D1, Sel, Clock, Q);
+    input D0, D1, Sel, Clock;
+    output Q;
+    reg Q;
+    always @(posedge Clock)
+        if (!Sel)
+            Q <= D0;
+        else
+            Q <= D1;
+    endmodule
+  prompt: Implement a D flip-flop with 2-to-1 multiplexer input
+- code: |
+    module dff_with_reset(data, clock, r, out);
+    input clock, r, data;
+    output out;
+    reg out;
+    always @(posedge clock or posedge r)
+    begin
+    if (r)
+    out = 0;
+    else
+    out = data;
+    end
+    endmodule
+  prompt: Create a D flip-flop with asynchronous reset
+- code: |
+    module shift_reg( input [3:0] d_in, input clk, sr, sl, ld, rst,
+    input [1:0] s_cnt, output reg [3:0] q);
+    reg [3:0] int_q;
+    always @( d_in, q, s_cnt, sr, sl, ld ) begin: combinational
+    if( ld )
+    int_q = d_in;
+    else if( sr )
+    int_q = q >> s_cnt;
+    else if( sl )
+    int_q = q << s_cnt;
+    else int_q = q;
+    end
+    always @( posedge clk ) begin: register
+    if (rst) q <= 0;
+    else q <= int_q;
+    end
+    endmodule
+  prompt: Create a 4-bit barrel shifter/register with parallel load, synchronous reset,
+    and variable shift amount (`s_cnt`).
+- code: |
+    module tst_mup; // Testbench for Microprocessor
+    reg clk,en,int; // Clock, Enable, Interrupt inputs
+    // Assuming mup_opr is the microprocessor module instance
+    // mup_opr rr(clk,int,en); // Instantiation needed
+    initial
+    begin
+    int=1'b0;clk=1'b0;en=1'b0; // Initialize
+    end
+    always #2 clk=~clk; // Generate clock
+    // Monitor clock, time, inputs, and internal MUP registers (pc, ir, dcop)
+    initial $monitor("clk=%b, t=%0d, en=%b, int=%b, rr.pc=%0d, rr.ir=%0h, rr.dcop=%0d", clk,$time,en,int,rr.pc,rr.ir,rr.dcop); // Corrected format specifiers
+    // mup_opr rr(clk,int,en); // Instantiate DUT
+    initial #40 $stop; // Stop simulation
+    endmodule
+  prompt: Create a testbench `tst_mup` applying stimulus (enable, interrupt) and monitoring
+    internal state variables (`rr.pc`, `rr.ir`, `rr.dcop`) of a microprocessor DUT
+    (`mup_opr`).
+- code: |
+    module func1(x1, x2, x3, f);
+    input x1, x2, x3;
+    output f;
+    assign f = (~x1 & ~x2 & x3) | (~x1 & x2 & ~x3) | (x1 & ~x2 & x3) | (x1 & x2 & ~x3);
+    endmodule
+  prompt: Implement a combinational circuit with specific minterms for inputs x1,
+    x2, x3 and output f
+- code: |
+    module EventCtlPart (output xPart, yPart, input a, b, c);
+    reg xReg, yReg;
+    assign xPart = xReg;
+    assign yPart = yReg;
+    always @(a, b)
+    begin: PartList
+        xReg <= a & b & c;
+        yReg <= (b | c) ^ a;
+    end
+    endmodule
+  prompt: Implement a module with combinational logic using a named always block
+- code: |
+    module dff(do,di,clk); // Behavioral D Flip-Flop
+    output do;
+    input di,clk;
+    reg do; // Output must be reg for procedural assignment
+    initial
+    do=1'b0; // Initialize output
+    // Assign input 'di' to output 'do' on negative clock edge
+    always@(negedge clk) do = di; // Use non-blocking <= for sequential logic
+    endmodule
+  prompt: Implement a simple behavioral D flip-flop triggered on the negative clock
+    edge using an `always` block.
+- code: |
+    module t_Clock_Prog ();
+    wire clock;
+
+    initial #100 $finish;
+    Clock_Prog M1 (clk);
+    endmodule
+  prompt: Testbench for Clock_Prog that simulates the generated clock signal for a
+    limited simulation time.
+- code: |
+    module tst_CMOSsw1();
+      reg in,con; wire out;
+      CMOSsw1 cmsw(out,in,con); // Instantiate CMOS switch
+      initial begin in=1'b0; con=1'b1; end // Start enabled
+      always #5 in =~in; // Toggle data
+      always #3 con=~con; // Toggle control
+      initial $monitor($time , "in = %b , con = %b , output = %b " ,in,con,out);
+      initial #20 $stop; // Stop simulation
+    endmodule
+  prompt: Create a testbench `tst_CMOSsw1` for the CMOS switch implemented with the
+    `cmos` primitive (`CMOSsw1`).
+- code: |
+    module ha_1(s,ca,a,b); // Half Adder with gate delays
+      input a,b; output s,ca;
+      xor #(1,2) (s,a,b);
+      and #(3,4) (ca,a,b);
+    endmodule
+  prompt: Implement a structural half adder (`ha_1`) with specified gate delays.
+- code: |
+    module encoder (BCD_in, Excess_3_out);
+    input [3:0] BCD_in;
+    output [3:0] Excess_3_out;
+    assign Excess_3_out = BCD_in + 3;
+    endmodule
+
+    module t_encoder();
+    reg [3:0] BCD_in;
+    wire [3:0] Excess_3_out;
+    encoder M0(BCD_in, Excess_3_out);
+    initial
+    $monitor($time,,"BCD = %b, Excess-3 Code = %b", BCD_in, Excess_3_out);
+
+    initial begin
+    end
+    initial begin //Simulation Test Pattern
+    end
+    endmodule
+  prompt: Write a Verilog module that converts a 4-bit BCD input into Excess-3 code
+    using a single continuous assignment, and test it with BCD inputs from 0 to 9.
+- code: |
+    module JerkyComparator (output[1:0] AdjustFreq, input ClockIn, PLLClock, Reset);
+    reg[1:0] Adjr;
+    assign AdjustFreq = Adjr;
+    reg[1:0] HiCount;
+    always @(ClockIn, Reset)
+    if (Reset==1'b1)
+    begin
+        Adjr = 2'b01;
+        HiCount = 2'b0;
+    end
+    else if (PLLClock==1'b1)
+        HiCount = HiCount + 2'b01;
+    else begin
+        case (HiCount)
+            2'b00: Adjr = 2'b11;
+            2'b01: Adjr = 2'b01;
+            default: Adjr = 2'b00;
+        endcase
+        HiCount = 2'b0;
+    end
+    endmodule
+  prompt: Implement a comparator for frequency adjustment based on clock inputs
+- code: |
+    module gates4_top (
+    input wire [3:0] sw ,
+    output wire [2:0] ld
+    );
+    gates4 U1 // Assuming 'gates4' provides and4_, or4_, xor4_ outputs from input 'x'
+    (
+    .x(sw),
+    .and4_(ld[2]),
+    .or4_(ld[1]),
+    .xor4_(ld[0])
+    );
+    endmodule
+  prompt: Create a top-level module `gates4_top` instantiating a 4-input gate module
+    (`gates4`) to connect switches (`sw`) to LEDs (`ld`).
+- code: |
+    // Create a module with one input and one output that behaves like a wire
+    module wire_assign( input in, output out );
+        // assign out to in
+        assign out = in;
+    endmodule
+  prompt: Create a Verilog module named `wire_assign` with one input and one output
+    that directly connects the input to the output like a wire.
+- code: |
+    module test_carry;
+    reg a, b, c;
+    integer i;
+    wire cout;
+    carry c1(cout, c, a, b);
+    initial
+    begin
+    $monitor("time=%d a=%b b=%b c=%b---------cout=%b", $time, a, b, c, cout);
+    for (i = 0; i < 9; i = i + 1)
+    begin
+    {a, b, c} = i;
+    end
+    a = 'bx;
+    b = 'bx;
+    end
+    endmodule
+  prompt: Create a testbench for a carry module
+- code: |
+    module tstdlatch; //test-bench
+    reg d,en;
+    wire q,qb;
+    // dlatch ff(en,d,q,qb); // Assuming instantiation of a D latch module
+    initial
+    begin
+    d = 1'b0;
+    en = 1'b0; // Latch disabled
+    end
+    always #4 en =~en; // Enable toggles every 4 time units
+    always #8 d=~d; // Data toggles every 8 time units
+    initial $monitor($time," en = %b , d = %b , q = %b , qb = %b " , en,d,q,qb);
+    initial #40 $stop;
+    endmodule
+  prompt: Create a testbench `tstdlatch` for a D latch module (definition `dlatch`
+    not provided).
+- code: |
+    module control_unit (flush_P0_P1, Ld_P1, Ld_P0, Ld_R0, Ld, En, clock, rst);
+    output reg flush_P0_P1, Ld_P1, Ld_P0, Ld_R0;
+    input Ld, En, clock, rst;
+    reg [1: 0] state, next_state;
+    parameter S_idle = 0, S_1 = 1, S_full = 2, S_wait = 3;
+    always @ (posedge clock) if (rst) state <= S_idle;
+    else state <= next_state;
+    always @ (state, Ld, En) begin
+    flush_P0_P1 = 0;
+    Ld_P1 = 0;
+    Ld_P0 = 0;
+    Ld_R0 = 0;
+    next_state = S_idle;
+    case (state)
+    S_idle: if (En)
+    begin next_state = S_1; Ld_P1 = 1; Ld_P0 = 1; end
+    else flush_P0_P1 = 1;
+
+    S_1: begin next_state = S_full; Ld_P1 = 1; Ld_P0 = 1; end
+    S_full: if (Ld == 1) begin
+    Ld_R0 = 1;
+    case (En)
+    0: begin next_state = S_idle; flush_P0_P1 = 1; end
+    1: begin next_state = S_1; Ld_P1 = 1; Ld_P0 = 1; end
+    endcase
+    end
+    else next_state = S_wait;
+    S_wait: if (Ld == 1) begin
+    Ld_R0 = 1;
+    case (En)
+    0: begin next_state = S_idle; flush_P0_P1 = 1; end
+    1: begin next_state = S_1; Ld_P1 = 1; Ld_P0 = 1; end
+    endcase
+    end
+    else next_state = S_wait;
+    endcase
+    end
+    endmodule
+  prompt: Control unit that uses a state machine to manage pipeline operations and
+    transitions based on load and enable signals, including a flush operation and
+    loading actions.
