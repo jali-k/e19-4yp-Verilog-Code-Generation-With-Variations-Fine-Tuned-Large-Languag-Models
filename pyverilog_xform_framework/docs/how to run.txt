@@ -16,7 +16,7 @@ EXAMPLE:
 EXAMPLE:
 
 1. Change the name of the module in the verilog file
-    'python module_name_xform.py simple_counter.v sample_counter_changed.v --from simple_counter --to advanced_counter'
+    'python xform_module_name.py simple_counter.v sample_counter_changed.v --from simple_counter --to advanced_counter'
 
 2. change register to wire
     'python reg_to_wire.py simple_counter.v simple_counter_wire.v --variable count'
