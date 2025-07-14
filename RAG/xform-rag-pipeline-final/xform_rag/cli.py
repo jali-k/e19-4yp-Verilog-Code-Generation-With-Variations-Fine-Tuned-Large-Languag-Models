@@ -133,6 +133,44 @@ Examples:
             help="Show what would be removed without actually removing",
         )
 
+        # ========== EVALUATION COMMANDS ==========
+
+        # Evaluate command
+        eval_parser = subparsers.add_parser(
+            "evaluate", help="Evaluate generated transformations"
+        )
+        eval_parser.add_argument(
+            "request", nargs="?", help="Generate and evaluate a single transformation"
+        )
+        eval_parser.add_argument(
+            "--batch",
+            action="store_true",
+            help="Evaluate all files in generated directory",
+        )
+        eval_parser.add_argument(
+            "--test-suite",
+            choices=["basic", "comprehensive"],
+            help="Run comprehensive evaluation with test suite",
+        )
+        eval_parser.add_argument(
+            "--pass-at-k",
+            nargs="+",
+            type=int,
+            help="Run Pass@k evaluation with specified k values",
+        )
+        eval_parser.add_argument("--eval-name", help="Name for this evaluation")
+
+        # Evaluation history command
+        eval_history_parser = subparsers.add_parser(
+            "eval-history", help="Show evaluation history and statistics"
+        )
+        eval_history_parser.add_argument(
+            "--limit", type=int, default=10, help="Number of recent evaluations to show"
+        )
+        eval_history_parser.add_argument(
+            "--format", choices=["table", "json"], default="table", help="Output format"
+        )
+
         return parser
 
     def run(self, args=None):
@@ -224,6 +262,8 @@ Examples:
             "validate": self._handle_validate,
             "test": self._handle_test,
             "cleanup": self._handle_cleanup,
+            "evaluate": self._handle_evaluate,
+            "eval-history": self._handle_eval_history,
         }
 
         handler = handlers.get(args.command)
@@ -375,6 +415,178 @@ Examples:
 
         removed = pipeline.file_manager.cleanup_old_files(args.days)
         print(f"🧹 Removed {removed} old files")
+        return 0
+
+    def _handle_evaluate(self, pipeline: "XformRAGPipeline", args) -> int:
+        """Handle evaluate command"""
+
+        # Single request evaluation
+        if args.request:
+            print(f"🔍 Generating and evaluating: {args.request}")
+
+            result = pipeline.generate_and_evaluate_xform(args.request)
+
+            if "error" in result["generation"]:
+                print(f"❌ Generation failed: {result['generation']['error']}")
+                return 1
+
+            evaluation = result["evaluation"]
+            status = "✅ PASS" if evaluation["passed"] else "❌ FAIL"
+
+            print(f"{status} Overall Score: {evaluation['overall_score']:.3f}")
+            print(f"📄 Generated: {result['generation']['filename']}")
+
+            if evaluation["errors"]:
+                print(f"❌ Errors: {len(evaluation['errors'])}")
+                for error in evaluation["errors"][:3]:  # Show first 3
+                    print(f"   • {error}")
+
+            if evaluation["warnings"]:
+                print(f"⚠️ Warnings: {len(evaluation['warnings'])}")
+                for warning in evaluation["warnings"][:3]:  # Show first 3
+                    print(f"   • {warning}")
+
+            return 0
+
+        # Test suite evaluation
+        elif args.test_suite:
+            print(f"🧪 Running {args.test_suite} test suite evaluation")
+
+            result = pipeline.run_comprehensive_evaluation(
+                test_suite=args.test_suite, prompt_strategies=["rich"]
+            )
+
+            print(f"✅ Evaluation complete!")
+            print(
+                f"📊 Success Rate: {result['success_rate']:.2%} ({result['successful_tasks']}/{result['total_tasks']})"
+            )
+            print(
+                f"📈 Average Score: {result['metric_averages'].get('overall', 0.0):.3f}"
+            )
+            print(f"📁 Results: {result['results_file']}")
+            print(f"📝 Report: {result['report_file']}")
+
+            # Show complexity breakdown
+            if result.get("complexity_breakdown"):
+                print(f"\n📋 Complexity Breakdown:")
+                for complexity, stats in result["complexity_breakdown"].items():
+                    print(
+                        f"   {complexity}: {stats['success_rate']:.2%} ({stats['successful_tasks']}/{stats['total_tasks']})"
+                    )
+
+            return 0
+
+        # Pass@k evaluation
+        elif args.pass_at_k:
+            if not args.request:
+                print("❌ Pass@k evaluation requires a request")
+                return 1
+
+            print(f"🎯 Running Pass@{max(args.pass_at_k)} evaluation: {args.request}")
+
+            result = pipeline.evaluate_pass_at_k(
+                user_request=args.request, k_values=args.pass_at_k
+            )
+
+            print(f"🎯 Pass@k Results:")
+            for k in args.pass_at_k:
+                score = result["pass_at_k_scores"][k]
+                print(f"   Pass@{k}: {score:.2%}")
+
+            print(f"📊 Best Score: {result['best_score']:.3f}")
+            print(f"📊 Average Score: {result['average_score']:.3f}")
+            print(f"✅ Successful Attempts: {result['successful_attempts']}")
+
+            return 0
+
+        # Batch evaluation of existing generations
+        elif args.batch:
+            print("🔍 Evaluating all generated files...")
+
+            files = pipeline.file_manager.list_generated_files()
+            if not files:
+                print("❌ No generated files found to evaluate")
+                return 1
+
+            # Create batch from existing files
+            generations = []
+            for file_info in files:
+                file_path = pipeline.config.output_dir / file_info["filename"]
+                try:
+                    with open(file_path, "r") as f:
+                        code = f.read()
+
+                    # Try to get user request from metadata
+                    user_request = "Unknown request"
+                    if file_info.get("has_metadata"):
+                        metadata = file_info.get("metadata", {})
+                        user_request = metadata.get("user_request", user_request)
+
+                    generations.append(
+                        {
+                            "user_request": user_request,
+                            "code": code,
+                            "filename": file_info["filename"],
+                            "metadata": file_info.get("metadata", {}),
+                        }
+                    )
+
+                except Exception as e:
+                    print(f"⚠️ Could not read {file_info['filename']}: {e}")
+
+            if not generations:
+                print("❌ No readable generated files found")
+                return 1
+
+            result = pipeline.evaluation_manager.evaluate_batch_generations(
+                generations, args.eval_name
+            )
+
+            print(f"✅ Batch evaluation complete!")
+            print(
+                f"📊 Success Rate: {result['success_rate']:.2%} ({result['successful_tasks']}/{result['total_tasks']})"
+            )
+            print(f"📁 Results: {result['results_file']}")
+            print(f"📝 Report: {result['report_file']}")
+
+            return 0
+
+        else:
+            print("❌ Please specify --request, --test-suite, --pass-at-k, or --batch")
+            return 1
+
+    def _handle_eval_history(self, pipeline: "XformRAGPipeline", args) -> int:
+        """Handle eval-history command"""
+        summary = pipeline.get_evaluation_summary()
+
+        if "message" in summary:
+            print(f"ℹ️ {summary['message']}")
+            return 0
+
+        if args.format == "json":
+            print(json.dumps(summary, indent=2))
+            return 0
+
+        # Table format
+        print("📊 Evaluation History Summary")
+        print("=" * 50)
+        print(f"Total Evaluations: {summary['total_evaluations']}")
+        print(f"Average Success Rate: {summary['average_success_rate']:.2%}")
+        print(f"Average Score: {summary['average_score']:.3f}")
+        print(f"Evaluation Directory: {summary['evaluation_directory']}")
+
+        print(f"\n📋 Recent Evaluations:")
+        print(f"{'Name':<30} {'Date':<20} {'Success Rate':<15} {'Avg Score':<10}")
+        print("-" * 75)
+
+        for eval_info in summary["recent_evaluations"]:
+            name = eval_info["evaluation_name"][:28]
+            timestamp = eval_info["timestamp"][:18]
+            success_rate = f"{eval_info['success_rate']:.1%}"
+            avg_score = f"{eval_info['average_score']:.3f}"
+
+            print(f"{name:<30} {timestamp:<20} {success_rate:<15} {avg_score:<10}")
+
         return 0
 
 

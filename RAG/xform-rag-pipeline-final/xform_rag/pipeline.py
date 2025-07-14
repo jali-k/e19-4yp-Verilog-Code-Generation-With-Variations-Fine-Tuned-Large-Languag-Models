@@ -13,6 +13,7 @@ from .vector_store import VectorStoreManager
 from .document_processor import DocumentProcessor
 from .code_generator import CodeGenerator
 from .file_manager import FileManager
+from .evaluation_manager import EvaluationManager
 
 
 class XformRAGPipeline:
@@ -38,6 +39,7 @@ class XformRAGPipeline:
         self.document_processor = DocumentProcessor(self.config)
         self.code_generator = CodeGenerator(self.config)
         self.file_manager = FileManager(self.config)
+        self.evaluation_manager = EvaluationManager(self.config)
 
         self.logger.info("Xform RAG Pipeline initialized successfully!")
 
@@ -311,6 +313,227 @@ def main():
 if __name__ == "__main__":
     sys.exit(main())
 '''
+
+    def generate_and_evaluate_xform(
+        self, user_request: str, save_result: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Generate and evaluate a transformation with automatic scoring
+
+        Args:
+            user_request: Description of the desired transformation
+            save_result: Whether to save the generated transformation
+
+        Returns:
+            Dictionary containing both generation and evaluation results
+        """
+        # Generate the transformation
+        generation_result = self.generate_xform(user_request)
+
+        if "error" in generation_result:
+            return {
+                "generation": generation_result,
+                "evaluation": {
+                    "error": "Cannot evaluate failed generation",
+                    "overall_score": 0.0,
+                    "passed": False,
+                },
+            }
+
+        # Evaluate the generated code
+        evaluation_result = self.evaluation_manager.evaluate_single_generation(
+            user_request=user_request,
+            generated_code=generation_result["code"],
+            generation_metadata={
+                "filename": generation_result["filename"],
+                "source_documents": generation_result.get("source_documents", []),
+                "registry_entry": generation_result.get("registry_entry", ""),
+            },
+        )
+
+        # Save if requested and evaluation passed
+        if save_result and evaluation_result["passed"]:
+            self.save_generated_xform(generation_result)
+
+        return {"generation": generation_result, "evaluation": evaluation_result}
+
+    def batch_generate_and_evaluate(
+        self,
+        requests: List[str],
+        evaluation_name: str = None,
+        save_successful: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Generate and evaluate multiple transformations in batch
+
+        Args:
+            requests: List of transformation requests
+            evaluation_name: Name for this evaluation batch
+            save_successful: Whether to save successful generations
+
+        Returns:
+            Dictionary with batch results and evaluation summary
+        """
+        self.logger.info(
+            f"Starting batch generation and evaluation of {len(requests)} requests"
+        )
+
+        # Generate all transformations
+        generations = []
+        for i, request in enumerate(requests, 1):
+            self.logger.info(f"Generating {i}/{len(requests)}: {request[:50]}...")
+
+            try:
+                result = self.generate_xform(request)
+                if "error" not in result:
+                    generations.append(
+                        {
+                            "user_request": request,
+                            "code": result["code"],
+                            "filename": result["filename"],
+                            "source_documents": result.get("source_documents", []),
+                            "registry_entry": result.get("registry_entry", ""),
+                            "metadata": {"generation_order": i},
+                        }
+                    )
+                else:
+                    generations.append(
+                        {
+                            "user_request": request,
+                            "code": f"# Generation failed: {result['error']}",
+                            "filename": f"failed_{i}.py",
+                            "metadata": {
+                                "generation_error": result["error"],
+                                "generation_order": i,
+                            },
+                        }
+                    )
+
+            except Exception as e:
+                self.logger.error(f"Batch item {i} failed: {e}")
+                generations.append(
+                    {
+                        "user_request": request,
+                        "code": f"# Exception during generation: {e}",
+                        "filename": f"exception_{i}.py",
+                        "metadata": {
+                            "generation_exception": str(e),
+                            "generation_order": i,
+                        },
+                    }
+                )
+
+        # Evaluate the batch
+        evaluation_result = self.evaluation_manager.evaluate_batch_generations(
+            generations, evaluation_name
+        )
+
+        # Save successful generations if requested
+        if save_successful:
+            saved_count = 0
+            for gen in generations:
+                if "generation_error" not in gen.get("metadata", {}):
+                    # Convert to format expected by file manager
+                    save_result = {
+                        "filename": gen["filename"],
+                        "code": gen["code"],
+                        "user_request": gen["user_request"],
+                        "registry_entry": gen.get("registry_entry", ""),
+                        "source_documents": gen.get("source_documents", []),
+                    }
+                    if self.save_generated_xform(save_result):
+                        saved_count += 1
+
+            evaluation_result["saved_generations"] = saved_count
+
+        return evaluation_result
+
+    def run_comprehensive_evaluation(
+        self, test_suite: str = "basic", prompt_strategies: List[str] = ["rich"]
+    ) -> Dict[str, Any]:
+        """
+        Run comprehensive evaluation using predefined test suites
+
+        Args:
+            test_suite: "basic" or "comprehensive"
+            prompt_strategies: List of prompt strategies to test
+
+        Returns:
+            Dictionary with evaluation results
+        """
+
+        def code_generator_func(task_spec, strategy):
+            """Function that generates code for a given task and strategy"""
+            return self.generate_xform(task_spec.description)["code"]
+
+        return self.evaluation_manager.run_comprehensive_evaluation(
+            code_generator_func=code_generator_func,
+            test_suite=test_suite,
+            prompt_strategies=prompt_strategies,
+        )
+
+    def evaluate_pass_at_k(
+        self,
+        user_request: str,
+        k_values: List[int] = [1, 3, 5, 10],
+        temperature: float = 0.7,
+    ) -> Dict[str, Any]:
+        """
+        Generate multiple attempts and evaluate with Pass@k metrics
+
+        Args:
+            user_request: The transformation request
+            k_values: Values of k to calculate Pass@k for
+            temperature: Temperature for diverse generation
+
+        Returns:
+            Dictionary with Pass@k results
+        """
+        max_k = max(k_values)
+        generated_codes = []
+
+        self.logger.info(f"Generating {max_k} attempts for Pass@k evaluation")
+
+        # Generate multiple attempts (simplified - in practice you'd vary parameters)
+        for attempt in range(max_k):
+            try:
+                result = self.generate_xform(user_request)
+                if "error" not in result:
+                    generated_codes.append(result["code"])
+                else:
+                    generated_codes.append(
+                        f"# Attempt {attempt + 1} failed: {result['error']}"
+                    )
+            except Exception as e:
+                generated_codes.append(f"# Attempt {attempt + 1} exception: {e}")
+
+        # Evaluate with Pass@k
+        return self.evaluation_manager.evaluate_pass_at_k(
+            user_request=user_request,
+            generated_codes=generated_codes,
+            k_values=k_values,
+            metadata={"temperature": temperature, "model": self.config.model_name},
+        )
+
+    def get_evaluation_summary(self) -> Dict[str, Any]:
+        """Get summary of recent evaluations"""
+        history = self.evaluation_manager.get_evaluation_history(limit=10)
+
+        if not history:
+            return {"message": "No evaluations found"}
+
+        # Calculate summary statistics
+        total_evaluations = len(history)
+        avg_success_rate = sum(h["success_rate"] for h in history) / total_evaluations
+        avg_score = sum(h["average_score"] for h in history) / total_evaluations
+
+        return {
+            "total_evaluations": total_evaluations,
+            "average_success_rate": avg_success_rate,
+            "average_score": avg_score,
+            "recent_evaluations": history[:5],  # Most recent 5
+            "evaluation_directory": str(self.evaluation_manager.eval_output_dir),
+        }
 
     def __repr__(self) -> str:
         """String representation of the pipeline"""

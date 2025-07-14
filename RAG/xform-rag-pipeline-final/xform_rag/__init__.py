@@ -21,6 +21,12 @@ from .code_generator import CodeGenerator
 from .file_manager import FileManager
 from .cli import CLI
 
+# Evaluation system exports
+from .task_specs import TaskSpec, TaskSpecBuilder, TestFileGenerator
+from .scorer import XformScorer, ScoreBreakdown, PassAtKCalculator
+from .evaluator import XformEvaluator, EvaluationResult, BatchEvaluationResult
+from .evaluation_manager import EvaluationManager
+
 
 # Convenience functions
 def create_pipeline(
@@ -109,6 +115,17 @@ __all__ = [
     "CodeGenerator",
     "FileManager",
     "CLI",
+    # Evaluation system
+    "TaskSpec",
+    "TaskSpecBuilder",
+    "TestFileGenerator",
+    "XformScorer",
+    "ScoreBreakdown",
+    "PassAtKCalculator",
+    "XformEvaluator",
+    "EvaluationResult",
+    "BatchEvaluationResult",
+    "EvaluationManager",
     # Convenience functions
     "create_pipeline",
     "quick_generate",
