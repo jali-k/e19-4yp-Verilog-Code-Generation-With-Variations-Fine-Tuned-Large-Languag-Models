@@ -113,8 +113,8 @@ class CodeGenerator:
         self.logger.info(f"Generating xform for request: {user_request}")
 
         try:
-            # Query the RAG system
-            result = self.qa_chain({"query": user_request})
+            # Query the RAG system using the newer invoke method
+            result = self.qa_chain.invoke({"query": user_request})
 
             # Parse the response
             parsed_result = self._parse_llm_response(result["result"])
@@ -147,16 +147,20 @@ class CodeGenerator:
             r'"([^"]+)":\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL
         )
 
-        # Fallback: if no code blocks found, try to extract code differently
-        if not code_match:
-            # Look for shebang line as start of code
+        # Determine the generated code
+        if code_match:
+            generated_code = code_match.group(1)
+        else:
+            # Fallback: look for shebang line as start of code
             shebang_match = re.search(
-                r"#!/usr/bin/env python3.*?(?=```|\Z)", response_text, re.DOTALL
+                r"(#!/usr/bin/env python3.*?)(?=```|\Z)", response_text, re.DOTALL
             )
             if shebang_match:
-                code_match = shebang_match
+                generated_code = shebang_match.group(1)
+            else:
+                # Use the whole response as fallback
+                generated_code = response_text
 
-        generated_code = code_match.group(1) if code_match else response_text
         registry_entry = registry_match.group(0) if registry_match else ""
 
         # Clean up the code

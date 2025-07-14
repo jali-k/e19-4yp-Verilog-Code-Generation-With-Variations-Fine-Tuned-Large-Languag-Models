@@ -14,7 +14,10 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 try:
     from langchain_ollama import OllamaLLM as Ollama
 except ImportError:
-    from langchain_community.llms import Ollama
+    try:
+        from langchain_community.llms import Ollama
+    except ImportError:
+        from langchain.llms import Ollama
 
 from .config import RAGConfig
 

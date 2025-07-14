@@ -7,14 +7,21 @@ Handles Chroma vector database operations
 import logging
 import shutil
 from typing import List
-from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
 
 # Import with fallback for different versions
 try:
+    from langchain_chroma import Chroma
+except ImportError:
+    from langchain_community.vectorstores import Chroma
+
+try:
     from langchain_huggingface import HuggingFaceEmbeddings
 except ImportError:
-    from langchain_community.embeddings import HuggingFaceEmbeddings
+    try:
+        from langchain_community.embeddings import HuggingFaceEmbeddings
+    except ImportError:
+        from langchain.embeddings import HuggingFaceEmbeddings
 
 from .config import RAGConfig
 from .document_processor import DocumentProcessor
