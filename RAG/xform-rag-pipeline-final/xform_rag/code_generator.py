@@ -61,6 +61,8 @@ class CodeGenerator:
         6. USE regex for actual code transformations
         7. HANDLE all errors and edge cases
         8. RETURN proper success/failure booleans
+        9. NO TODO COMMENTS - implement everything completely
+        10. NO PLACEHOLDER CODE - all logic must be functional
 
         MANDATORY CODE STRUCTURE (DO NOT DEVIATE):
         ```python
@@ -87,6 +89,30 @@ class CodeGenerator:
                 \"\"\"Visit AST nodes and identify targets\"\"\"
                 if isinstance(node, Node):
                     # IMPLEMENT: Specific node type checking and processing
+                    # For wire-to-reg transformations:
+                    if isinstance(node, Decl):
+                        for item in node.list:
+                            if isinstance(item, Wire):
+                                wire_name = item.name
+                                width = ""
+                                if item.width:
+                                    msb = item.width.msb.value if hasattr(item.width.msb, 'value') else str(item.width.msb)
+                                    lsb = item.width.lsb.value if hasattr(item.width.lsb, 'value') else str(item.width.lsb)
+                                    width = f"[{{msb}}:{{lsb}}] "
+                                self.target_elements.append({{"name": wire_name, "width": width}})
+                                self.changes_made.append(f"Found wire '{{wire_name}}' to transform")
+                    
+                    # For signal renaming:
+                    elif isinstance(node, Identifier) and self.target_param:
+                        if node.name == self.target_param:
+                            self.target_elements.append({{"type": "identifier", "name": node.name}})
+                            self.changes_made.append(f"Found signal '{{node.name}}' to rename")
+                    
+                    # For module transformations:
+                    elif isinstance(node, ModuleDef):
+                        self.target_elements.append({{"type": "module", "name": node.name}})
+                        self.changes_made.append(f"Found module '{{node.name}}'")
+                    
                     # STORE: Information about changes needed
                     
                     # ALWAYS: Visit children
@@ -125,6 +151,23 @@ class CodeGenerator:
                 # APPLY transformations using regex
                 modified_content = content
                 # IMPLEMENT: Specific regex transformations based on visitor findings
+                for element in visitor.target_elements:
+                    if element.get("type") == "wire" or "name" in element:
+                        name = element["name"]
+                        width = element.get("width", "")
+                        
+                        # Transform wire to reg
+                        if width:
+                            pattern = rf"\\bwire\\s+{{re.escape(width)}}{{re.escape(name)}}\\b"
+                            replacement = f"reg {{width}}{{name}}"
+                        else:
+                            pattern = rf"\\bwire\\s+{{re.escape(name)}}\\b"
+                            replacement = f"reg {{name}}"
+                        
+                        modified_content = re.sub(pattern, replacement, modified_content)
+                        print(f"Applied transformation to '{{name}}'")
+                
+                # SPECIFIC transformations based on user request
                 
                 # WRITE output file
                 with open(output_file, "w") as f:
@@ -232,6 +275,55 @@ class CodeGenerator:
 
     def _fix_common_issues(self, code: str) -> str:
         """Fix common issues in generated code"""
+        # Remove TODO comments and replace with actual implementation
+        if "# TODO:" in code:
+            self.logger.warning("Found TODO comments in generated code, attempting to fix")
+            
+            # Replace specific TODO patterns with actual implementation
+            code = re.sub(
+                r'# TODO: Implement specific node processing logic.*?(?=\n.*?# )',
+                '''# Look for wire declarations
+            if isinstance(node, Decl):
+                for item in node.list:
+                    if isinstance(item, Wire):
+                        wire_name = item.name
+                        width = ""
+                        if item.width:
+                            msb = item.width.msb.value if hasattr(item.width.msb, 'value') else str(item.width.msb)
+                            lsb = item.width.lsb.value if hasattr(item.width.lsb, 'value') else str(item.width.lsb)
+                            width = f"[{msb}:{lsb}] "
+                        self.target_elements.append({"name": wire_name, "width": width})
+                        self.changes_made.append(f"Found wire '{wire_name}' to transform")
+            
+            # ''',
+                code,
+                flags=re.DOTALL
+            )
+            
+            # Replace regex transformation TODO
+            code = re.sub(
+                r'# TODO: Implement specific regex transformations.*?(?=\n\n|\n        # )',
+                '''# Transform each identified element
+        for element in visitor.target_elements:
+            name = element["name"]
+            width = element.get("width", "")
+            
+            # Transform wire to reg
+            if width:
+                pattern = rf"\\bwire\\s+{re.escape(width)}{re.escape(name)}\\b"
+                replacement = f"reg {width}{name}"
+            else:
+                pattern = rf"\\bwire\\s+{re.escape(name)}\\b"
+                replacement = f"reg {name}"
+            
+            modified_content = re.sub(pattern, replacement, modified_content)
+            print(f"Converted '{name}' from wire to reg")
+        
+        ''',
+                code,
+                flags=re.DOTALL
+            )
+        
         # Ensure proper imports are present
         required_imports = [
             "import sys",
