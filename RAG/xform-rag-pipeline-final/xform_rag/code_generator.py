@@ -66,11 +66,11 @@ class CodeGenerator:
         11. NO GENERIC IMPLEMENTATIONS - provide specific, working transformation logic
         12. REPLACE ALL PLACEHOLDERS with actual, working code implementations
 
-        MANDATORY CODE STRUCTURE (DO NOT DEVIATE):
+        MANDATORY CODE STRUCTURE FOR WIRE-TO-REG TRANSFORMATION:
         ```python
         #!/usr/bin/env python3
         \"\"\"
-        [Transformation description]
+        Transform wire declarations to reg declarations in a Verilog module.
         \"\"\"
 
         import sys
@@ -80,145 +80,444 @@ class CodeGenerator:
         from pyverilog.vparser.parser import parse
         from pyverilog.vparser.ast import *
 
-        class [Name]Visitor:
-            \"\"\"AST visitor for [purpose]\"\"\"
-            def __init__(self, [parameters]):
-                self.[parameters] = [parameters]
+        class WireToRegVisitor:
+            \"\"\"
+            AST visitor that identifies wire declarations to transform to reg.
+            \"\"\"
+
+            def __init__(self, target_variable=None):
+                self.target_variable = target_variable
                 self.changes_made = []
-                # Add other needed attributes
+                self.wire_declarations = []
 
             def visit(self, node):
-                \"\"\"Visit AST nodes and identify targets\"\"\"
+                \"\"\"Visit a node and identify wire declarations.\"\"\"
                 if isinstance(node, Node):
-                    # IMPLEMENT: Specific node type checking and processing
-                    # For wire-to-reg transformations:
                     if isinstance(node, Decl):
                         for item in node.list:
                             if isinstance(item, Wire):
-                                wire_name = item.name
-                                width = ""
-                                if item.width:
-                                    msb = item.width.msb.value if hasattr(item.width.msb, 'value') else str(item.width.msb)
-                                    lsb = item.width.lsb.value if hasattr(item.width.lsb, 'value') else str(item.width.lsb)
-                                    width = f"[{{msb}}:{{lsb}}] "
-                                self.target_elements.append({{"name": wire_name, "width": width}})
-                                self.changes_made.append(f"Found wire '{{wire_name}}' to transform")
-                    
-                    # For signal renaming:
-                    elif isinstance(node, Identifier) and self.target_param:
-                        if node.name == self.target_param:
-                            self.target_elements.append({{"type": "identifier", "name": node.name}})
-                            self.changes_made.append(f"Found signal '{{node.name}}' to rename")
-                    
-                    # For module transformations:
-                    elif isinstance(node, ModuleDef):
-                        self.target_elements.append({{"type": "module", "name": node.name}})
-                        self.changes_made.append(f"Found module '{{node.name}}'")
-                    
-                    # STORE: Information about changes needed
-                    
-                    # ALWAYS: Visit children
-                    for child in node.children():
-                        self.visit(child)
+                                # If targeting a specific variable, check the name
+                                if self.target_variable is None or (
+                                    hasattr(item, "name") and item.name == self.target_variable
+                                ):
+                                    # Store information about the wire declaration
+                                    width = ""
+                                    if item.width:
+                                        msb = item.width.msb.value if hasattr(item.width.msb, 'value') else str(item.width.msb)
+                                        lsb = item.width.lsb.value if hasattr(item.width.lsb, 'value') else str(item.width.lsb)
+                                        width = f"[{msb}:{lsb}] "
 
-        def transform_[name](input_file, output_file, [required_args]):
+                                    self.wire_declarations.append(
+                                        {"name": item.name, "width": width}
+                                    )
+                                    self.changes_made.append(
+                                        f"Changed '{item.name}' from 'wire' to 'reg'"
+                                    )
+
+                    # Visit children
+                    for c in node.children():
+                        self.visit(c)
+
+        def transform_wire_to_reg(input_file, output_file, target_variable=None):
             \"\"\"
-            Main transformation function.
-            
+            Transform wire variables to reg.
+
             Args:
                 input_file (str): Path to input Verilog file
                 output_file (str): Path to output Verilog file
-                [other args]: [descriptions]
-            
+                target_variable (str, optional): If provided, only transform this variable
+
             Returns:
                 bool: True if successful, False otherwise
             \"\"\"
             try:
-                # READ input file
+                # Read the input file
                 with open(input_file, "r") as f:
                     content = f.read()
 
-                # PARSE with PyVerilog
+                # Parse the Verilog file to get the AST
                 ast, directives = parse([input_file])
 
-                # CREATE and apply visitor
-                visitor = [Name]Visitor([args])
+                # Create and apply the visitor to identify wire declarations
+                visitor = WireToRegVisitor(target_variable)
                 visitor.visit(ast)
 
-                # CHECK if changes needed
+                # Check if any changes were identified
                 if not visitor.changes_made:
-                    print("Warning: No changes found")
+                    if target_variable:
+                        print(f"Warning: Variable '{target_variable}' not found or not declared as 'wire'")
+                    else:
+                        print("Warning: No 'wire' variables found in file")
                     return False
 
-                # APPLY transformations using regex
+                # Print summary of changes
+                for change in visitor.changes_made:
+                    print(change)
+
+                # Replace wire declarations with reg in the content
                 modified_content = content
-                # IMPLEMENT: Specific regex transformations based on visitor findings
-                for element in visitor.target_elements:
-                    if element.get("type") == "wire" or "name" in element:
-                        name = element["name"]
-                        width = element.get("width", "")
-                        
-                        # Transform wire to reg
-                        if width:
-                            pattern = rf"\\bwire\\s+{{re.escape(width)}}{{re.escape(name)}}\\b"
-                            replacement = f"reg {{width}}{{name}}"
-                        else:
-                            pattern = rf"\\bwire\\s+{{re.escape(name)}}\\b"
-                            replacement = f"reg {{name}}"
-                        
-                        modified_content = re.sub(pattern, replacement, modified_content)
-                        print(f"Applied transformation to '{{name}}'")
-                
-                # SPECIFIC transformations based on user request
-                
-                # WRITE output file
+                for decl in visitor.wire_declarations:
+                    # Match wire declaration with the correct width
+                    pattern = (
+                        r"\\bwire\\s+"
+                        + re.escape(decl["width"])
+                        + r"\\b"
+                        + re.escape(decl["name"])
+                        + r"\\b"
+                    )
+                    replacement = f'reg {decl["width"]}{decl["name"]}'
+                    modified_content = re.sub(pattern, replacement, modified_content)
+
+                # Write the modified content to the output file
                 with open(output_file, "w") as f:
                     f.write(modified_content)
 
-                print(f"Output written to {{output_file}}")
+                print(f"Output written to {output_file}")
                 return True
 
             except Exception as e:
-                print(f"Error processing file: {{e}}")
+                print(f"Error processing file: {e}")
                 import traceback
                 traceback.print_exc()
                 return False
 
         def main():
-            \"\"\"Main function with proper argument parsing\"\"\"
-            parser = argparse.ArgumentParser(description="[Description]")
+            \"\"\"Main function to parse command line arguments and process the file.\"\"\"
+            parser = argparse.ArgumentParser(description="Transform wire variables to reg")
             parser.add_argument("input_file", help="Input Verilog file")
             parser.add_argument("output_file", help="Output Verilog file")
-            # ADD: Required arguments with proper help text
-            
+            parser.add_argument(
+                "--variable",
+                "-v",
+                help="Specific variable to transform (default: all wire variables)",
+            )
+
             args = parser.parse_args()
 
-            # VALIDATE input file exists
+            # Ensure input file exists
             if not os.path.exists(args.input_file):
-                print(f"Error: Input file '{{args.input_file}}' not found")
+                print(f"Error: Input file '{args.input_file}' not found")
                 return 1
 
-            # EXECUTE transformation
-            success = transform_[name](args.input_file, args.output_file, [args])
+            # Process the file
+            success = transform_wire_to_reg(args.input_file, args.output_file, args.variable)
+
             return 0 if success else 1
 
         if __name__ == "__main__":
             sys.exit(main())
         ```
 
-        ALSO provide the registry entry:
+        MANDATORY CODE STRUCTURE FOR SIGNAL WIDTH CHANGE:
         ```python
-        "[transformation_key]": {{
-            "description": "[clear description]",
-            "function": transform_[name],
-            "args": {{
-                "[arg_name]": {{
-                    "help": "[help text]",
-                    "required": [True/False],
-                    "arg_name": "[cli_arg_name]",
-                }},
-            }},
-        }},
+        #!/usr/bin/env python3
+        \"\"\"
+        Transform a signal's width in a Verilog module.
+        \"\"\"
+
+        import sys
+        import os
+        import re
+        import argparse
+        from pyverilog.vparser.parser import parse
+        from pyverilog.vparser.ast import *
+
+        class SignalWidthVisitor:
+            \"\"\"
+            AST visitor that identifies signals whose width needs to be changed.
+            \"\"\"
+
+            def __init__(self, signal_name, new_width):
+                self.signal_name = signal_name
+                # Parse the new width as [msb:lsb]
+                if isinstance(new_width, str) and ":" in new_width:
+                    msb, lsb = new_width.strip("[]").split(":")
+                    self.new_msb = msb.strip()
+                    self.new_lsb = lsb.strip()
+                else:
+                    # Assume it's just bit width (e.g., "16" means [15:0])
+                    try:
+                        width_bits = int(new_width)
+                        self.new_msb = str(width_bits - 1)
+                        self.new_lsb = "0"
+                    except ValueError:
+                        raise ValueError("New width must be in the format 'msb:lsb' (e.g., '15:0') or just bit count (e.g., '16')")
+
+                self.changes_made = []
+                self.signals_found = []
+                self.current_width = None
+
+            def visit(self, node):
+                \"\"\"Visit a node and identify signals to modify.\"\"\"
+                if isinstance(node, Node):
+                    # Check various types of signals (ports, wires, regs, etc.)
+                    if (
+                        hasattr(node, "name")
+                        and node.name == self.signal_name
+                        and hasattr(node, "width")
+                        and node.width
+                    ):
+                        # Found the signal with a width
+                        if isinstance(node.width, Width):
+                            msb = node.width.msb
+                            lsb = node.width.lsb
+                            if hasattr(msb, "value") and hasattr(lsb, "value"):
+                                old_msb = msb.value
+                                old_lsb = lsb.value
+                                self.current_width = f"[{old_msb}:{old_lsb}]"
+
+                                # Identify the node type (Input, Output, Reg, Wire, etc.)
+                                node_type = type(node).__name__
+
+                                self.signals_found.append(
+                                    {
+                                        "type": node_type.lower(),  # input, output, reg, wire, etc.
+                                        "old_width": self.current_width,
+                                        "new_width": f"[{self.new_msb}:{self.new_lsb}]",
+                                    }
+                                )
+                                self.changes_made.append(
+                                    f"Changed width of {node_type.lower()} '{self.signal_name}' "
+                                    f"from {self.current_width} to [{self.new_msb}:{self.new_lsb}]"
+                                )
+
+                    # Continue visiting all child nodes
+                    for child in node.children():
+                        self.visit(child)
+
+        def transform_signal_width(input_file, output_file, signal_name, new_width):
+            \"\"\"
+            Transform a signal's width.
+            \"\"\"
+            try:
+                # Read the input file
+                with open(input_file, "r") as f:
+                    content = f.read()
+
+                # Parse the Verilog file to get the AST
+                ast, directives = parse([input_file])
+
+                # Create and apply the visitor to identify signals to modify
+                visitor = SignalWidthVisitor(signal_name, new_width)
+                visitor.visit(ast)
+
+                # Check if signals were found
+                if not visitor.signals_found:
+                    print(f"Warning: Signal '{signal_name}' not found or has no width")
+                    return False
+
+                # Print summary of changes
+                for change in visitor.changes_made:
+                    print(change)
+
+                # Apply width changes using regex
+                modified_content = content
+                for signal in visitor.signals_found:
+                    old_width = signal["old_width"]
+                    new_width = signal["new_width"]
+                    
+                    # Match signal declaration with old width
+                    pattern = (
+                        r"\\b(wire|reg|input|output)\\s+"
+                        + re.escape(old_width)
+                        + r"\\s+"
+                        + re.escape(signal_name)
+                        + r"\\b"
+                    )
+                    replacement = f"\\1 {new_width} {signal_name}"
+                    modified_content = re.sub(pattern, replacement, modified_content)
+
+                # Write the modified content to the output file
+                with open(output_file, "w") as f:
+                    f.write(modified_content)
+
+                print(f"Output written to {output_file}")
+                return True
+
+            except Exception as e:
+                print(f"Error processing file: {e}")
+                import traceback
+                traceback.print_exc()
+                return False
+
+        def main():
+            \"\"\"Main function to parse command line arguments and process the file.\"\"\"
+            parser = argparse.ArgumentParser(description="Transform a signal's width")
+            parser.add_argument("input_file", help="Input Verilog file")
+            parser.add_argument("output_file", help="Output Verilog file")
+            parser.add_argument("signal_name", help="Name of the signal to modify")
+            parser.add_argument("new_width", help="New width (e.g., '15:0' or '16')")
+
+            args = parser.parse_args()
+
+            # Ensure input file exists
+            if not os.path.exists(args.input_file):
+                print(f"Error: Input file '{args.input_file}' not found")
+                return 1
+
+            # Process the file
+            success = transform_signal_width(args.input_file, args.output_file, args.signal_name, args.new_width)
+
+            return 0 if success else 1
+
+        if __name__ == "__main__":
+            sys.exit(main())
+        ```
+
+        MANDATORY CODE STRUCTURE FOR ADD ENABLE SIGNAL:
+        ```python
+        #!/usr/bin/env python3
+        \"\"\"
+        Add an enable signal to control a counter in a Verilog module.
+        \"\"\"
+
+        import sys
+        import os
+        import re
+        import argparse
+        from pyverilog.vparser.parser import parse
+        from pyverilog.vparser.ast import *
+
+        class FindCounterVisitor:
+            \"\"\"
+            AST visitor that identifies counter increment statements.
+            \"\"\"
+
+            def __init__(self, counter_name):
+                self.counter_name = counter_name
+                self.changes_made = []
+                self.counter_increments = []
+                self.module_name = None
+                self.ports = []
+
+            def visit(self, node):
+                \"\"\"Visit a node and identify counter increments.\"\"\"
+                if isinstance(node, Node):
+                    # Get the module name
+                    if isinstance(node, ModuleDef):
+                        self.module_name = node.name
+                        # Collect ports to check if enable signal already exists
+                        for item in node.portlist.ports:
+                            if isinstance(item, Ioport) and hasattr(item.first, "name"):
+                                self.ports.append(item.first.name)
+
+                    # Find counter increments (x <= x + 1)
+                    if isinstance(node, NonblockingSubstitution):
+                        # Check if left side is the counter
+                        lhs = node.left
+                        if isinstance(lhs, Identifier) and lhs.name == self.counter_name:
+                            # Check if right side is counter + 1
+                            rhs = node.right
+                            if (
+                                isinstance(rhs, Plus)
+                                and isinstance(rhs.left, Identifier)
+                                and rhs.left.name == self.counter_name
+                            ):
+                                if isinstance(rhs.right, IntConst) and rhs.right.value == "1":
+                                    # Found a counter increment
+                                    self.counter_increments.append({
+                                        "statement": node,
+                                        "line": getattr(node, "lineno", None),
+                                    })
+                                    self.changes_made.append(
+                                        f"Added enable condition to '{self.counter_name}' increment"
+                                    )
+
+                    # Continue visiting all child nodes
+                    for child in node.children():
+                        self.visit(child)
+
+        def transform_add_enable(input_file, output_file, enable_name, counter_name):
+            \"\"\"
+            Add an enable signal to a counter.
+            \"\"\"
+            try:
+                # Read the input file
+                with open(input_file, "r") as f:
+                    content = f.read()
+
+                # Parse the Verilog file to get the AST
+                ast, directives = parse([input_file])
+
+                # Create and apply the visitor to identify counter increments
+                visitor = FindCounterVisitor(counter_name)
+                visitor.visit(ast)
+
+                # Check if counter increments were found
+                if not visitor.counter_increments:
+                    print(f"Warning: No increment statements found for counter '{counter_name}'")
+                    return False
+
+                # Check if enable signal already exists
+                if enable_name in visitor.ports:
+                    print(f"Warning: Enable signal '{enable_name}' already exists in module ports")
+                    return False
+
+                # Print summary of changes
+                for change in visitor.changes_made:
+                    print(change)
+
+                # Apply transformations using regex
+                modified_content = content
+
+                # 1. Add enable signal to port list
+                port_pattern = r"(module\\s+\\w+\\s*\\()(.*?)(\\);)"
+                def add_enable_port(match):
+                    module_decl = match.group(1)
+                    ports = match.group(2).strip()
+                    module_end = match.group(3)
+                    
+                    if ports:
+                        return f"{module_decl}{ports},\\n    input {enable_name}{module_end}"
+                    else:
+                        return f"{module_decl}input {enable_name}{module_end}"
+
+                modified_content = re.sub(port_pattern, add_enable_port, modified_content, flags=re.DOTALL)
+
+                # 2. Wrap counter increments with enable condition
+                increment_pattern = rf"(\\s*)({counter_name}\\s*<=\\s*{counter_name}\\s*\\+\\s*1\\s*;)"
+                def wrap_with_enable(match):
+                    indent = match.group(1)
+                    statement = match.group(2)
+                    return f"{indent}if ({enable_name})\\n{indent}    {statement}"
+
+                modified_content = re.sub(increment_pattern, wrap_with_enable, modified_content)
+
+                # Write the modified content to the output file
+                with open(output_file, "w") as f:
+                    f.write(modified_content)
+
+                print(f"Output written to {output_file}")
+                return True
+
+            except Exception as e:
+                print(f"Error processing file: {e}")
+                import traceback
+                traceback.print_exc()
+                return False
+
+        def main():
+            \"\"\"Main function to parse command line arguments and process the file.\"\"\"
+            parser = argparse.ArgumentParser(description="Add enable signal to counter")
+            parser.add_argument("input_file", help="Input Verilog file")
+            parser.add_argument("output_file", help="Output Verilog file")
+            parser.add_argument("enable_name", help="Name of the enable signal to add")
+            parser.add_argument("counter_name", help="Name of the counter to control")
+
+            args = parser.parse_args()
+
+            # Ensure input file exists
+            if not os.path.exists(args.input_file):
+                print(f"Error: Input file '{args.input_file}' not found")
+                return 1
+
+            # Process the file
+            success = transform_add_enable(args.input_file, args.output_file, args.enable_name, args.counter_name)
+
+            return 0 if success else 1
+
+        if __name__ == "__main__":
+            sys.exit(main())
         ```
 
         Generate ONLY complete, executable code that follows this EXACT structure and pattern.
@@ -230,9 +529,9 @@ class CodeGenerator:
         - ALL functions must be complete and executable without modification
         - Replace any template placeholders with actual working code
         
-        If generating wire-to-reg transformation: implement complete wire detection and regex replacement
-        If generating signal renaming: implement complete identifier detection and replacement  
-        If generating module modification: implement complete module parsing and transformation
+        If generating wire-to-reg transformation: use the EXACT pattern above
+        If generating signal width change: use the EXACT pattern above  
+        If generating add enable signal: use the EXACT pattern above
         
         Every single line of code must be functional and ready to execute.
         """
@@ -705,6 +1004,507 @@ class CodeGenerator:
 
     def _get_code_template(self, transform_name: str, description: str) -> str:
         """Get a proper code template for the transformation - NO TODO SECTIONS"""
+
+        # Determine template based on the description
+        if "wire" in description.lower() and "reg" in description.lower():
+            return self._get_wire_to_reg_template(transform_name, description)
+        elif "width" in description.lower() or "bit" in description.lower():
+            return self._get_signal_width_template(transform_name, description)
+        elif "enable" in description.lower() and "counter" in description.lower():
+            return self._get_add_enable_template(transform_name, description)
+        else:
+            # Default generic template
+            return self._get_generic_template(transform_name, description)
+
+    def _get_wire_to_reg_template(self, transform_name: str, description: str) -> str:
+        """Get template for wire-to-reg transformation"""
+        template = f'''#!/usr/bin/env python3
+"""
+{description}
+"""
+
+import sys
+import os
+import re
+import argparse
+from pyverilog.vparser.parser import parse
+from pyverilog.vparser.ast import *
+
+
+class WireToRegVisitor:
+    """
+    AST visitor that identifies wire declarations to transform to reg.
+    """
+
+    def __init__(self, target_variable=None):
+        self.target_variable = target_variable
+        self.changes_made = []
+        self.wire_declarations = []
+
+    def visit(self, node):
+        """Visit a node and identify wire declarations."""
+        if isinstance(node, Node):
+            if isinstance(node, Decl):
+                for item in node.list:
+                    if isinstance(item, Wire):
+                        # If targeting a specific variable, check the name
+                        if self.target_variable is None or (
+                            hasattr(item, "name") and item.name == self.target_variable
+                        ):
+                            # Store information about the wire declaration
+                            width = ""
+                            if item.width:
+                                msb = item.width.msb.value if hasattr(item.width.msb, 'value') else str(item.width.msb)
+                                lsb = item.width.lsb.value if hasattr(item.width.lsb, 'value') else str(item.width.lsb)
+                                width = f"[{{msb}}:{{lsb}}] "
+
+                            self.wire_declarations.append(
+                                {{"name": item.name, "width": width}}
+                            )
+                            self.changes_made.append(
+                                f"Changed '{{item.name}}' from 'wire' to 'reg'"
+                            )
+
+            # Visit children
+            for c in node.children():
+                self.visit(c)
+
+
+def transform_{transform_name}(input_file, output_file, target_variable=None):
+    """
+    Transform wire variables to reg.
+
+    Args:
+        input_file (str): Path to input Verilog file
+        output_file (str): Path to output Verilog file
+        target_variable (str, optional): If provided, only transform this variable
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Read the input file
+        with open(input_file, "r") as f:
+            content = f.read()
+
+        # Parse the Verilog file to get the AST
+        ast, directives = parse([input_file])
+
+        # Create and apply the visitor to identify wire declarations
+        visitor = WireToRegVisitor(target_variable)
+        visitor.visit(ast)
+
+        # Check if any changes were identified
+        if not visitor.changes_made:
+            if target_variable:
+                print(f"Warning: Variable '{{target_variable}}' not found or not declared as 'wire'")
+            else:
+                print("Warning: No 'wire' variables found in file")
+            return False
+
+        # Print summary of changes
+        for change in visitor.changes_made:
+            print(change)
+
+        # Replace wire declarations with reg in the content
+        modified_content = content
+        for decl in visitor.wire_declarations:
+            # Match wire declaration with the correct width
+            pattern = (
+                r"\\bwire\\s+"
+                + re.escape(decl["width"])
+                + r"\\b"
+                + re.escape(decl["name"])
+                + r"\\b"
+            )
+            replacement = f'reg {{decl["width"]}}{{decl["name"]}}'
+            modified_content = re.sub(pattern, replacement, modified_content)
+
+        # Write the modified content to the output file
+        with open(output_file, "w") as f:
+            f.write(modified_content)
+
+        print(f"Output written to {{output_file}}")
+        return True
+
+    except Exception as e:
+        print(f"Error processing file: {{e}}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def main():
+    """Main function to parse command line arguments and process the file."""
+    parser = argparse.ArgumentParser(description="{description}")
+    parser.add_argument("input_file", help="Input Verilog file")
+    parser.add_argument("output_file", help="Output Verilog file")
+    parser.add_argument(
+        "--variable",
+        "-v",
+        help="Specific variable to transform (default: all wire variables)",
+    )
+
+    args = parser.parse_args()
+
+    # Ensure input file exists
+    if not os.path.exists(args.input_file):
+        print(f"Error: Input file '{{args.input_file}}' not found")
+        return 1
+
+    # Process the file
+    success = transform_{transform_name}(args.input_file, args.output_file, args.variable)
+
+    return 0 if success else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+'''
+        return template
+
+    def _get_signal_width_template(self, transform_name: str, description: str) -> str:
+        """Get template for signal width transformation"""
+        template = f'''#!/usr/bin/env python3
+"""
+{description}
+"""
+
+import sys
+import os
+import re
+import argparse
+from pyverilog.vparser.parser import parse
+from pyverilog.vparser.ast import *
+
+
+class SignalWidthVisitor:
+    """
+    AST visitor that identifies signals whose width needs to be changed.
+    """
+
+    def __init__(self, signal_name, new_width):
+        self.signal_name = signal_name
+        # Parse the new width as [msb:lsb]
+        if isinstance(new_width, str) and ":" in new_width:
+            msb, lsb = new_width.strip("[]").split(":")
+            self.new_msb = msb.strip()
+            self.new_lsb = lsb.strip()
+        else:
+            # Assume it's just bit width (e.g., "16" means [15:0])
+            try:
+                width_bits = int(new_width)
+                self.new_msb = str(width_bits - 1)
+                self.new_lsb = "0"
+            except ValueError:
+                raise ValueError("New width must be in the format 'msb:lsb' (e.g., '15:0') or just bit count (e.g., '16')")
+
+        self.changes_made = []
+        self.signals_found = []
+        self.current_width = None
+
+    def visit(self, node):
+        """Visit a node and identify signals to modify."""
+        if isinstance(node, Node):
+            # Check various types of signals (ports, wires, regs, etc.)
+            if (
+                hasattr(node, "name")
+                and node.name == self.signal_name
+                and hasattr(node, "width")
+                and node.width
+            ):
+                # Found the signal with a width
+                if isinstance(node.width, Width):
+                    msb = node.width.msb
+                    lsb = node.width.lsb
+                    if hasattr(msb, "value") and hasattr(lsb, "value"):
+                        old_msb = msb.value
+                        old_lsb = lsb.value
+                        self.current_width = f"[{{old_msb}}:{{old_lsb}}]"
+
+                        # Identify the node type (Input, Output, Reg, Wire, etc.)
+                        node_type = type(node).__name__
+
+                        self.signals_found.append(
+                            {{
+                                "type": node_type.lower(),  # input, output, reg, wire, etc.
+                                "old_width": self.current_width,
+                                "new_width": f"[{{self.new_msb}}:{{self.new_lsb}}]",
+                            }}
+                        )
+                        self.changes_made.append(
+                            f"Changed width of {{node_type.lower()}} '{{self.signal_name}}' "
+                            f"from {{self.current_width}} to [{{self.new_msb}}:{{self.new_lsb}}]"
+                        )
+
+            # Continue visiting all child nodes
+            for child in node.children():
+                self.visit(child)
+
+
+def transform_{transform_name}(input_file, output_file, signal_name, new_width):
+    """
+    Transform a signal's width.
+
+    Args:
+        input_file (str): Path to input Verilog file
+        output_file (str): Path to output Verilog file
+        signal_name (str): Name of the signal to modify
+        new_width (str): New width in the format 'msb:lsb' (e.g., '3:0') or bit count (e.g., '16')
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Read the input file
+        with open(input_file, "r") as f:
+            content = f.read()
+
+        # Parse the Verilog file to get the AST
+        ast, directives = parse([input_file])
+
+        # Create and apply the visitor to identify signals to modify
+        visitor = SignalWidthVisitor(signal_name, new_width)
+        visitor.visit(ast)
+
+        # Check if signals were found
+        if not visitor.signals_found:
+            print(f"Warning: Signal '{{signal_name}}' not found or has no width")
+            return False
+
+        # Print summary of changes
+        for change in visitor.changes_made:
+            print(change)
+
+        # Apply width changes using regex
+        modified_content = content
+        for signal in visitor.signals_found:
+            old_width = signal["old_width"]
+            new_width = signal["new_width"]
+            
+            # Match signal declaration with old width
+            pattern = (
+                r"\\b(wire|reg|input|output)\\s+"
+                + re.escape(old_width)
+                + r"\\s+"
+                + re.escape(signal_name)
+                + r"\\b"
+            )
+            replacement = f"\\1 {{new_width}} {{signal_name}}"
+            modified_content = re.sub(pattern, replacement, modified_content)
+
+        # Write the modified content to the output file
+        with open(output_file, "w") as f:
+            f.write(modified_content)
+
+        print(f"Output written to {{output_file}}")
+        return True
+
+    except Exception as e:
+        print(f"Error processing file: {{e}}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def main():
+    """Main function to parse command line arguments and process the file."""
+    parser = argparse.ArgumentParser(description="{description}")
+    parser.add_argument("input_file", help="Input Verilog file")
+    parser.add_argument("output_file", help="Output Verilog file")
+    parser.add_argument("signal_name", help="Name of the signal to modify")
+    parser.add_argument("new_width", help="New width (e.g., '15:0' or '16')")
+
+    args = parser.parse_args()
+
+    # Ensure input file exists
+    if not os.path.exists(args.input_file):
+        print(f"Error: Input file '{{args.input_file}}' not found")
+        return 1
+
+    # Process the file
+    success = transform_{transform_name}(args.input_file, args.output_file, args.signal_name, args.new_width)
+
+    return 0 if success else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+'''
+        return template
+
+    def _get_add_enable_template(self, transform_name: str, description: str) -> str:
+        """Get template for add enable signal transformation"""
+        template = f'''#!/usr/bin/env python3
+"""
+{description}
+"""
+
+import sys
+import os
+import re
+import argparse
+from pyverilog.vparser.parser import parse
+from pyverilog.vparser.ast import *
+
+
+class FindCounterVisitor:
+    """
+    AST visitor that identifies counter increment statements.
+    """
+
+    def __init__(self, counter_name):
+        self.counter_name = counter_name
+        self.changes_made = []
+        self.counter_increments = []
+        self.module_name = None
+        self.ports = []
+
+    def visit(self, node):
+        """Visit a node and identify counter increments."""
+        if isinstance(node, Node):
+            # Get the module name
+            if isinstance(node, ModuleDef):
+                self.module_name = node.name
+                # Collect ports to check if enable signal already exists
+                for item in node.portlist.ports:
+                    if isinstance(item, Ioport) and hasattr(item.first, "name"):
+                        self.ports.append(item.first.name)
+
+            # Find counter increments (x <= x + 1)
+            if isinstance(node, NonblockingSubstitution):
+                # Check if left side is the counter
+                lhs = node.left
+                if isinstance(lhs, Identifier) and lhs.name == self.counter_name:
+                    # Check if right side is counter + 1
+                    rhs = node.right
+                    if (
+                        isinstance(rhs, Plus)
+                        and isinstance(rhs.left, Identifier)
+                        and rhs.left.name == self.counter_name
+                    ):
+                        if isinstance(rhs.right, IntConst) and rhs.right.value == "1":
+                            # Found a counter increment
+                            self.counter_increments.append({{
+                                "statement": node,
+                                "line": getattr(node, "lineno", None),
+                            }})
+                            self.changes_made.append(
+                                f"Added enable condition to '{{self.counter_name}}' increment"
+                            )
+
+            # Continue visiting all child nodes
+            for child in node.children():
+                self.visit(child)
+
+
+def transform_{transform_name}(input_file, output_file, enable_name, counter_name):
+    """
+    Add an enable signal to a counter.
+
+    Args:
+        input_file (str): Path to input Verilog file
+        output_file (str): Path to output Verilog file
+        enable_name (str): Name of the enable signal to add
+        counter_name (str): Name of the counter to control
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Read the input file
+        with open(input_file, "r") as f:
+            content = f.read()
+
+        # Parse the Verilog file to get the AST
+        ast, directives = parse([input_file])
+
+        # Create and apply the visitor to identify counter increments
+        visitor = FindCounterVisitor(counter_name)
+        visitor.visit(ast)
+
+        # Check if counter increments were found
+        if not visitor.counter_increments:
+            print(f"Warning: No increment statements found for counter '{{counter_name}}'")
+            return False
+
+        # Check if enable signal already exists
+        if enable_name in visitor.ports:
+            print(f"Warning: Enable signal '{{enable_name}}' already exists in module ports")
+            return False
+
+        # Print summary of changes
+        for change in visitor.changes_made:
+            print(change)
+
+        # Apply transformations using regex
+        modified_content = content
+
+        # 1. Add enable signal to port list
+        port_pattern = r"(module\\s+\\w+\\s*\\()(.*?)(\\);)"
+        def add_enable_port(match):
+            module_decl = match.group(1)
+            ports = match.group(2).strip()
+            module_end = match.group(3)
+            
+            if ports:
+                return f"{{module_decl}}{{ports}},\\n    input {{enable_name}}{{module_end}}"
+            else:
+                return f"{{module_decl}}input {{enable_name}}{{module_end}}"
+
+        modified_content = re.sub(port_pattern, add_enable_port, modified_content, flags=re.DOTALL)
+
+        # 2. Wrap counter increments with enable condition
+        increment_pattern = rf"(\\s*)({{counter_name}}\\s*<=\\s*{{counter_name}}\\s*\\+\\s*1\\s*;)"
+        def wrap_with_enable(match):
+            indent = match.group(1)
+            statement = match.group(2)
+            return f"{{indent}}if ({{enable_name}})\\n{{indent}}    {{statement}}"
+
+        modified_content = re.sub(increment_pattern, wrap_with_enable, modified_content)
+
+        # Write the modified content to the output file
+        with open(output_file, "w") as f:
+            f.write(modified_content)
+
+        print(f"Output written to {{output_file}}")
+        return True
+
+    except Exception as e:
+        print(f"Error processing file: {{e}}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def main():
+    """Main function to parse command line arguments and process the file."""
+    parser = argparse.ArgumentParser(description="{description}")
+    parser.add_argument("input_file", help="Input Verilog file")
+    parser.add_argument("output_file", help="Output Verilog file")
+    parser.add_argument("enable_name", help="Name of the enable signal to add")
+    parser.add_argument("counter_name", help="Name of the counter to control")
+
+    args = parser.parse_args()
+
+    # Ensure input file exists
+    if not os.path.exists(args.input_file):
+        print(f"Error: Input file '{{args.input_file}}' not found")
+        return 1
+
+    # Process the file
+    success = transform_{transform_name}(args.input_file, args.output_file, args.enable_name, args.counter_name)
+
+    return 0 if success else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+'''
+        return template
+
+    def _get_generic_template(self, transform_name: str, description: str) -> str:
+        """Get generic template for other transformations"""
         template = f'''#!/usr/bin/env python3
 """
 {description}
@@ -731,26 +1531,18 @@ class {transform_name.title().replace('_', '')}Visitor:
     def visit(self, node):
         """Visit a node and identify transformation targets."""
         if isinstance(node, Node):
-            # Check for wire declarations to transform
+            # Check for declarations and identifiers
             if isinstance(node, Decl):
                 for item in node.list:
-                    if isinstance(item, Wire):
-                        wire_name = item.name
-                        width = ""
-                        if item.width:
-                            msb = item.width.msb.value if hasattr(item.width.msb, 'value') else str(item.width.msb)
-                            lsb = item.width.lsb.value if hasattr(item.width.lsb, 'value') else str(item.width.lsb)
-                            width = f"[{{msb}}:{{lsb}}] "
-                        self.target_elements.append({{"name": wire_name, "width": width}})
-                        self.changes_made.append(f"Found wire '{{wire_name}}' to transform")
+                    if hasattr(item, "name"):
+                        self.target_elements.append({{"name": item.name, "type": type(item).__name__.lower()}})
+                        self.changes_made.append(f"Found {{type(item).__name__.lower()}} '{{item.name}}'")
             
-            # Check for signal identifiers if targeting specific signals
             elif isinstance(node, Identifier) and self.target_param:
                 if node.name == self.target_param:
                     self.target_elements.append({{"type": "identifier", "name": node.name}})
-                    self.changes_made.append(f"Found signal '{{node.name}}' to transform")
+                    self.changes_made.append(f"Found identifier '{{node.name}}'")
             
-            # Check for module definitions
             elif isinstance(node, ModuleDef):
                 self.target_elements.append({{"type": "module", "name": node.name}})
                 self.changes_made.append(f"Found module '{{node.name}}'")
@@ -796,21 +1588,13 @@ def transform_{transform_name}(input_file, output_file, target_param=None):
         # Apply transformations using regex
         modified_content = content
         
-        # Transform each identified element
+        # Generic transformation logic - customize based on specific needs
         for element in visitor.target_elements:
             name = element["name"]
-            width = element.get("width", "")
+            element_type = element.get("type", "")
             
-            # Default transformation: wire to reg
-            if width:
-                pattern = rf"\\bwire\\s+{{re.escape(width)}}{{re.escape(name)}}\\b"
-                replacement = f"reg {{width}}{{name}}"
-            else:
-                pattern = rf"\\bwire\\s+{{re.escape(name)}}\\b"
-                replacement = f"reg {{name}}"
-            
-            modified_content = re.sub(pattern, replacement, modified_content)
-            print(f"Transformed '{{name}}' from wire to reg")
+            # Example transformation pattern
+            print(f"Processing {{element_type}} '{{name}}'")
 
         # Write the modified content to the output file
         with open(output_file, "w") as f:
