@@ -44,155 +44,165 @@ class CodeGenerator:
 
     def _create_prompt_template(self) -> PromptTemplate:
         """Create a balanced, flexible prompt template for any xform generation"""
-        template_text = """
-        You are an expert Verilog transformation code generator. You must create COMPLETE, EXECUTABLE Python scripts that transform Verilog code using PyVerilog AST parsing and regex-based modifications.
+        template_text = """You are an expert Verilog transformation code generator. You must create COMPLETE, EXECUTABLE Python scripts that transform Verilog code using PyVerilog AST parsing and regex-based modifications.
 
-        CONTEXT: Here are examples of existing working transformations:
-        {context}
+CONTEXT: Here are examples of existing working transformations:
+{context}
 
-        USER REQUEST: {question}
+USER REQUEST: {question}
 
-        CRITICAL REQUIREMENTS - FOLLOW EXACTLY:
-        1. START with proper shebang: #!/usr/bin/env python3
-        2. CREATE a visitor class that inherits from no base class (plain Python class)
-        3. IMPLEMENT a complete transform function with signature: transform_[name](input_file, output_file, ...)
-        4. INCLUDE complete main() function with argparse
-        5. USE PyVerilog AST for ANALYSIS ONLY - identify what to change
-        6. USE regex for ACTUAL TRANSFORMATIONS - modify the text directly
-        7. HANDLE all errors with try/except blocks
-        8. RETURN True/False for success/failure
-        9. ABSOLUTELY NO TODO COMMENTS - implement everything completely
-        10. NO PLACEHOLDER CODE - all logic must be functional
+CRITICAL REQUIREMENTS - FOLLOW EXACTLY:
+1. START with proper shebang: #!/usr/bin/env python3
+2. CREATE a visitor class that inherits from no base class (plain Python class)
+3. IMPLEMENT a complete transform function with signature: transform_FUNCTION_NAME(input_file, output_file, ...)
+4. INCLUDE complete main() function with argparse
+5. USE PyVerilog AST for ANALYSIS ONLY - identify what to change
+6. USE regex for ACTUAL TRANSFORMATIONS - modify the text directly
+7. HANDLE all errors with try/except blocks
+8. RETURN True/False for success/failure
+9. ABSOLUTELY NO TODO COMMENTS - implement everything completely
+10. NO PLACEHOLDER CODE - all logic must be functional
 
-        MANDATORY STRUCTURE PATTERN:
-        ```python
-        #!/usr/bin/env python3
-        \"\"\"
-        [Brief description of what this transformation does]
-        \"\"\"
+MANDATORY STRUCTURE PATTERN:
+```python
+#!/usr/bin/env python3
+\"\"\"
+Brief description of what this transformation does
+\"\"\"
 
-        import sys
-        import os
-        import re
-        import argparse
-        from pyverilog.vparser.parser import parse
-        from pyverilog.vparser.ast import *
+import sys
+import os
+import re
+import argparse
+from pyverilog.vparser.parser import parse
+from pyverilog.vparser.ast import *
 
-        class [TransformationName]Visitor:
-            \"\"\"AST visitor that identifies elements to transform.\"\"\"
+class TransformationVisitor:
+    \"\"\"AST visitor that identifies elements to transform.\"\"\"
 
-            def __init__(self, [required_params]):
-                self.[required_params] = [required_params]
-                self.changes_made = []
-                self.target_elements = []
+    def __init__(self, target_param=None):
+        self.target_param = target_param
+        self.changes_made = []
+        self.target_elements = []
 
-            def visit(self, node):
-                \"\"\"Visit AST nodes and identify transformation targets.\"\"\"
-                if isinstance(node, Node):
-                    # ANALYZE what needs to be transformed based on user request
-                    # Examples:
-                    # - For wire/reg changes: check isinstance(node, Decl) and item types
-                    # - For signal renaming: check isinstance(node, Identifier) 
-                    # - For module changes: check isinstance(node, ModuleDef)
-                    # - For port changes: check isinstance(node, Ioport)
-                    # - For width changes: check node.width attributes
-                    # - For counter/enable: check isinstance(node, NonblockingSubstitution)
-                    
-                    # STORE information about what was found
-                    # Always append to self.target_elements and self.changes_made
-                    
-                    # ALWAYS visit children
-                    for child in node.children():
-                        self.visit(child)
-
-        def transform_[name](input_file, output_file, [required_params]):
-            \"\"\"
-            Main transformation function.
+    def visit(self, node):
+        \"\"\"Visit AST nodes and identify transformation targets.\"\"\"
+        if isinstance(node, Node):
+            # ANALYZE what needs to be transformed based on user request
+            # Examples:
+            # - For wire/reg changes: check isinstance(node, Decl) and item types
+            # - For signal renaming: check isinstance(node, Identifier) 
+            # - For module changes: check isinstance(node, ModuleDef)
+            # - For port changes: check isinstance(node, Ioport)
+            # - For width changes: check node.width attributes
+            # - For counter/enable: check isinstance(node, NonblockingSubstitution)
             
-            Returns:
-                bool: True if successful, False otherwise
-            \"\"\"
-            try:
-                # Read input file
-                with open(input_file, "r") as f:
-                    content = f.read()
-
-                # Parse with PyVerilog to analyze structure
-                ast, directives = parse([input_file])
-
-                # Use visitor to identify what needs to be changed
-                visitor = [TransformationName]Visitor([params])
-                visitor.visit(ast)
-
-                # Check if anything was found to transform
-                if not visitor.changes_made:
-                    print("Warning: No targets found for transformation")
-                    return False
-
-                # Apply transformations using regex on the original text
-                modified_content = content
-                for element in visitor.target_elements:
-                    # Use regex to make the actual text changes
-                    # Pattern depends on transformation type:
-                    # - Wire to reg: rf"\\bwire\\s+{name}\\b" -> f"reg {name}"
-                    # - Signal rename: rf"\\b{old_name}\\b" -> f"{new_name}"
-                    # - Width change: rf"\\[{old_width}\\]" -> f"[{new_width}]"
-                    # - Add ports: insert into module declaration
-                    # - Enable logic: wrap statements with if conditions
-                    pass  # Implement specific regex transformations here
-
-                # Write output
-                with open(output_file, "w") as f:
-                    f.write(modified_content)
-
-                print(f"Transformation completed. Output: {output_file}")
-                return True
-
-            except Exception as e:
-                print(f"Error: {e}")
-                import traceback
-                traceback.print_exc()
-                return False
-
-        def main():
-            \"\"\"Command line interface.\"\"\"
-            parser = argparse.ArgumentParser(description="[Description]")
-            parser.add_argument("input_file", help="Input Verilog file")
-            parser.add_argument("output_file", help="Output Verilog file")
-            # Add transformation-specific arguments here
+            # STORE information about what was found
+            # Always append to self.target_elements and self.changes_made
             
-            args = parser.parse_args()
+            # ALWAYS visit children
+            for child in node.children():
+                self.visit(child)
 
-            if not os.path.exists(args.input_file):
-                print(f"Error: Input file '{args.input_file}' not found")
-                return 1
+def transform_operation(input_file, output_file, target_param=None):
+    \"\"\"
+    Main transformation function.
+    
+    Returns:
+        bool: True if successful, False otherwise
+    \"\"\"
+    try:
+        # Read input file
+        with open(input_file, "r") as f:
+            content = f.read()
 
-            success = transform_[name](args.input_file, args.output_file, [args])
-            return 0 if success else 1
+        # Parse with PyVerilog to analyze structure
+        ast, directives = parse([input_file])
 
-        if __name__ == "__main__":
-            sys.exit(main())
-        ```
+        # Use visitor to identify what needs to be changed
+        visitor = TransformationVisitor(target_param)
+        visitor.visit(ast)
 
-        ANALYSIS PATTERNS FOR DIFFERENT TRANSFORMATIONS:
-        - Wire/Reg conversions: Look for Decl nodes containing Wire or Reg items
-        - Signal renaming: Look for Identifier nodes with target name
-        - Module modifications: Look for ModuleDef nodes  
-        - Port changes: Look for Ioport nodes in portlist
-        - Width changes: Look for nodes with width attributes
-        - Enable/control logic: Look for assignment statements (NonblockingSubstitution)
-        - Reset condition changes: Look for if statements with reset conditions
+        # Check if anything was found to transform
+        if not visitor.changes_made:
+            print("Warning: No targets found for transformation")
+            return False
 
-        REGEX TRANSFORMATION PATTERNS:
-        - Simple replacements: Use re.sub() with word boundaries \\b
-        - Structured changes: Use capturing groups and replacement functions
-        - Multi-line patterns: Use re.DOTALL flag for module declarations
-        - Preserve formatting: Match and preserve indentation patterns
+        # Apply transformations using regex on the original text
+        modified_content = content
+        for element in visitor.target_elements:
+            # Use regex to make the actual text changes
+            # Pattern depends on transformation type:
+            # - Wire to reg: rf"\\\\bwire\\\\s+SIGNAL_NAME\\\\b" -> f"reg SIGNAL_NAME"
+            # - Signal rename: rf"\\\\bOLD_NAME\\\\b" -> f"NEW_NAME"
+            # - Width change: rf"\\\\[OLD_WIDTH\\\\]" -> f"[NEW_WIDTH]"
+            # - Add ports: insert into module declaration
+            # - Enable logic: wrap statements with if conditions
+            
+            # Implement specific regex transformations based on element type
+            element_name = element.get("name", "")
+            element_type = element.get("type", "")
+            
+            if element_type == "wire" and "wire" in input_file:
+                # Example: Transform wire to reg
+                pattern = rf"\\\\bwire\\\\s+({re.escape(element_name)})\\\\b"
+                replacement = rf"reg \\\\1"
+                modified_content = re.sub(pattern, replacement, modified_content)
+            
+            # Add more transformation patterns as needed
 
-        GENERATE code that implements the SPECIFIC transformation requested.
-        DO NOT use the hardcoded examples above - adapt the pattern to the user's request.
-        ENSURE every function is complete and executable.
-        """
+        # Write output
+        with open(output_file, "w") as f:
+            f.write(modified_content)
+
+        print(f"Transformation completed. Output written to: " + output_file)
+        return True
+
+    except Exception as e:
+        print(f"Error: " + str(e))
+        import traceback
+        traceback.print_exc()
+        return False
+
+def main():
+    \"\"\"Command line interface.\"\"\"
+    parser = argparse.ArgumentParser(description="Verilog transformation tool")
+    parser.add_argument("input_file", help="Input Verilog file")
+    parser.add_argument("output_file", help="Output Verilog file")
+    parser.add_argument("--target", help="Target parameter for transformation")
+    
+    args = parser.parse_args()
+
+    if not os.path.exists(args.input_file):
+        print("Error: Input file not found: " + args.input_file)
+        return 1
+
+    success = transform_operation(args.input_file, args.output_file, args.target)
+    return 0 if success else 1
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+ANALYSIS PATTERNS FOR DIFFERENT TRANSFORMATIONS:
+- Wire/Reg conversions: Look for Decl nodes containing Wire or Reg items
+- Signal renaming: Look for Identifier nodes with target name
+- Module modifications: Look for ModuleDef nodes  
+- Port changes: Look for Ioport nodes in portlist
+- Width changes: Look for nodes with width attributes
+- Enable/control logic: Look for assignment statements (NonblockingSubstitution)
+- Reset condition changes: Look for if statements with reset conditions
+
+REGEX TRANSFORMATION PATTERNS:
+- Simple replacements: Use re.sub() with word boundaries \\\\b
+- Structured changes: Use capturing groups and replacement functions
+- Multi-line patterns: Use re.DOTALL flag for module declarations
+- Preserve formatting: Match and preserve indentation patterns
+
+GENERATE code that implements the SPECIFIC transformation requested.
+DO NOT use the hardcoded examples above - adapt the pattern to the user's request.
+ENSURE every function is complete and executable.
+Replace all placeholder brackets with actual transformation-specific code."""
 
         return PromptTemplate(
             template=template_text, input_variables=["context", "question"]
@@ -697,384 +707,3 @@ if __name__ == "__main__":
         # Take first few meaningful words
         name_words = filtered_words[:3] if len(filtered_words) >= 3 else filtered_words
         return "_".join(name_words) if name_words else "custom_transform"
-        template = f'''#!/usr/bin/env python3
-"""
-{description}
-"""
-
-import sys
-import os
-import re
-import argparse
-from pyverilog.vparser.parser import parse
-from pyverilog.vparser.ast import *
-
-
-class FindCounterVisitor:
-    """
-    AST visitor that identifies counter increment statements.
-    """
-
-    def __init__(self, counter_name):
-        self.counter_name = counter_name
-        self.changes_made = []
-        self.counter_increments = []
-        self.module_name = None
-        self.ports = []
-
-    def visit(self, node):
-        """Visit a node and identify counter increments."""
-        if isinstance(node, Node):
-            # Get the module name
-            if isinstance(node, ModuleDef):
-                self.module_name = node.name
-                # Collect ports to check if enable signal already exists
-                for item in node.portlist.ports:
-                    if isinstance(item, Ioport) and hasattr(item.first, "name"):
-                        self.ports.append(item.first.name)
-
-            # Find counter increments (x <= x + 1)
-            if isinstance(node, NonblockingSubstitution):
-                # Check if left side is the counter
-                lhs = node.left
-                if isinstance(lhs, Identifier) and lhs.name == self.counter_name:
-                    # Check if right side is counter + 1
-                    rhs = node.right
-                    if (
-                        isinstance(rhs, Plus)
-                        and isinstance(rhs.left, Identifier)
-                        and rhs.left.name == self.counter_name
-                    ):
-                        if isinstance(rhs.right, IntConst) and rhs.right.value == "1":
-                            # Found a counter increment
-                            self.counter_increments.append({{
-                                "statement": node,
-                                "line": getattr(node, "lineno", None),
-                            }})
-                            self.changes_made.append(
-                                f"Added enable condition to '{{self.counter_name}}' increment"
-                            )
-
-            # Continue visiting all child nodes
-            for child in node.children():
-                self.visit(child)
-
-
-def transform_{transform_name}(input_file, output_file, enable_name, counter_name):
-    """
-    Add an enable signal to a counter.
-
-    Args:
-        input_file (str): Path to input Verilog file
-        output_file (str): Path to output Verilog file
-        enable_name (str): Name of the enable signal to add
-        counter_name (str): Name of the counter to control
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    try:
-        # Read the input file
-        with open(input_file, "r") as f:
-            content = f.read()
-
-        # Parse the Verilog file to get the AST
-        ast, directives = parse([input_file])
-
-        # Create and apply the visitor to identify counter increments
-        visitor = FindCounterVisitor(counter_name)
-        visitor.visit(ast)
-
-        # Check if counter increments were found
-        if not visitor.counter_increments:
-            print(f"Warning: No increment statements found for counter '{{counter_name}}'")
-            return False
-
-        # Check if enable signal already exists
-        if enable_name in visitor.ports:
-            print(f"Warning: Enable signal '{{enable_name}}' already exists in module ports")
-            return False
-
-        # Print summary of changes
-        for change in visitor.changes_made:
-            print(change)
-
-        # Apply transformations using regex
-        modified_content = content
-
-        # 1. Add enable signal to port list
-        port_pattern = r"(module\\s+\\w+\\s*\\()(.*?)(\\);)"
-        def add_enable_port(match):
-            module_decl = match.group(1)
-            ports = match.group(2).strip()
-            module_end = match.group(3)
-            
-            if ports:
-                return f"{{module_decl}}{{ports}},\\n    input {{enable_name}}{{module_end}}"
-            else:
-                return f"{{module_decl}}input {{enable_name}}{{module_end}}"
-
-        modified_content = re.sub(port_pattern, add_enable_port, modified_content, flags=re.DOTALL)
-
-        # 2. Wrap counter increments with enable condition
-        increment_pattern = rf"(\\s*)({{counter_name}}\\s*<=\\s*{{counter_name}}\\s*\\+\\s*1\\s*;)"
-        def wrap_with_enable(match):
-            indent = match.group(1)
-            statement = match.group(2)
-            return f"{{indent}}if ({{enable_name}})\\n{{indent}}    {{statement}}"
-
-        modified_content = re.sub(increment_pattern, wrap_with_enable, modified_content)
-
-        # Write the modified content to the output file
-        with open(output_file, "w") as f:
-            f.write(modified_content)
-
-        print(f"Output written to {{output_file}}")
-        return True
-
-    except Exception as e:
-        print(f"Error processing file: {{e}}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-
-def main():
-    """Main function to parse command line arguments and process the file."""
-    parser = argparse.ArgumentParser(description="{description}")
-    parser.add_argument("input_file", help="Input Verilog file")
-    parser.add_argument("output_file", help="Output Verilog file")
-    parser.add_argument("enable_name", help="Name of the enable signal to add")
-    parser.add_argument("counter_name", help="Name of the counter to control")
-
-    args = parser.parse_args()
-
-    # Ensure input file exists
-    if not os.path.exists(args.input_file):
-        print(f"Error: Input file '{{args.input_file}}' not found")
-        return 1
-
-    # Process the file
-    success = transform_{transform_name}(args.input_file, args.output_file, args.enable_name, args.counter_name)
-
-    return 0 if success else 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
-'''
-        return template
-
-    def _get_generic_template(self, transform_name: str, description: str) -> str:
-        """Get generic template for other transformations"""
-        template = f'''#!/usr/bin/env python3
-"""
-{description}
-"""
-
-import sys
-import os
-import re
-import argparse
-from pyverilog.vparser.parser import parse
-from pyverilog.vparser.ast import *
-
-
-class {transform_name.title().replace('_', '')}Visitor:
-    """
-    AST visitor that identifies elements to transform.
-    """
-
-    def __init__(self, target_param=None):
-        self.target_param = target_param
-        self.changes_made = []
-        self.target_elements = []
-
-    def visit(self, node):
-        """Visit a node and identify transformation targets."""
-        if isinstance(node, Node):
-            # Check for declarations and identifiers
-            if isinstance(node, Decl):
-                for item in node.list:
-                    if hasattr(item, "name"):
-                        self.target_elements.append({{"name": item.name, "type": type(item).__name__.lower()}})
-                        self.changes_made.append(f"Found {{type(item).__name__.lower()}} '{{item.name}}'")
-            
-            elif isinstance(node, Identifier) and self.target_param:
-                if node.name == self.target_param:
-                    self.target_elements.append({{"type": "identifier", "name": node.name}})
-                    self.changes_made.append(f"Found identifier '{{node.name}}'")
-            
-            elif isinstance(node, ModuleDef):
-                self.target_elements.append({{"type": "module", "name": node.name}})
-                self.changes_made.append(f"Found module '{{node.name}}'")
-            
-            # Visit children
-            for child in node.children():
-                self.visit(child)
-
-
-def transform_{transform_name}(input_file, output_file, target_param=None):
-    """
-    Main transformation function.
-
-    Args:
-        input_file (str): Path to input Verilog file
-        output_file (str): Path to output Verilog file
-        target_param: Target parameter for transformation
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    try:
-        # Read the input file
-        with open(input_file, "r") as f:
-            content = f.read()
-
-        # Parse the Verilog file to get the AST
-        ast, directives = parse([input_file])
-
-        # Create and apply the visitor
-        visitor = {transform_name.title().replace('_', '')}Visitor(target_param)
-        visitor.visit(ast)
-
-        # Check if any changes were identified
-        if not visitor.changes_made:
-            print("Warning: No changes identified")
-            return False
-
-        # Print summary of changes
-        for change in visitor.changes_made:
-            print(change)
-
-        # Apply transformations using regex
-        modified_content = content
-        
-        # Generic transformation logic - customize based on specific needs
-        for element in visitor.target_elements:
-            name = element["name"]
-            element_type = element.get("type", "")
-            
-            # Example transformation pattern
-            print(f"Processing {{element_type}} '{{name}}'")
-
-        # Write the modified content to the output file
-        with open(output_file, "w") as f:
-            f.write(modified_content)
-
-        print(f"Output written to {{output_file}}")
-        return True
-
-    except Exception as e:
-        print(f"Error processing file: {{e}}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-
-def main():
-    """Main function to parse command line arguments and process the file."""
-    parser = argparse.ArgumentParser(description="{description}")
-    parser.add_argument("input_file", help="Input Verilog file")
-    parser.add_argument("output_file", help="Output Verilog file")
-    parser.add_argument("--target", help="Target parameter for transformation")
-
-    args = parser.parse_args()
-
-    # Ensure input file exists
-    if not os.path.exists(args.input_file):
-        print(f"Error: Input file '{{args.input_file}}' not found")
-        return 1
-
-    # Process the file
-    success = transform_{transform_name}(args.input_file, args.output_file, args.target)
-
-    return 0 if success else 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
-'''
-        return template
-
-    def _inject_template_structure(self, generated_code: str, user_request: str) -> str:
-        """Inject proper template structure if the generated code is incomplete"""
-        # Extract transformation name from user request
-        transform_name = self._generate_transform_name(user_request)
-
-        # If the code is too short or missing key components, use template
-        if (
-            len(generated_code) < 500
-            or "def main(" not in generated_code
-            or "class" not in generated_code
-        ):
-            self.logger.warning(
-                "Generated code appears incomplete, using template structure"
-            )
-            template = self._get_code_template(transform_name, user_request)
-
-            # Try to extract any useful logic from the generated code
-            visitor_logic = self._extract_visitor_logic(generated_code)
-            transform_logic = self._extract_transform_logic(generated_code)
-
-            # Inject the extracted logic into the template
-            if visitor_logic:
-                template = template.replace(
-                    "# Check for wire declarations to transform", visitor_logic
-                )
-            if transform_logic:
-                template = template.replace(
-                    "# Transform each identified element", transform_logic
-                )
-
-            return template
-
-        return generated_code
-
-    def _generate_transform_name(self, user_request: str) -> str:
-        """Generate a proper transform function name from user request"""
-        # Clean and create name
-        clean_request = re.sub(r"[^a-zA-Z0-9\s]", "", user_request.lower())
-        words = clean_request.split()[:3]  # Take first 3 words
-        return "_".join(words)
-
-    def _extract_visitor_logic(self, code: str) -> str:
-        """Extract visitor logic from partially generated code"""
-        # Look for AST-related code patterns
-        patterns = [
-            r"if isinstance\(.*?Node.*?\):.*?$",
-            r"elif isinstance\(.*?\):.*?$",
-            r"node\..*?=.*?$",
-            r"self\..*?\.append.*?$",
-        ]
-
-        extracted_lines = []
-        for line in code.split("\n"):
-            for pattern in patterns:
-                if re.search(pattern, line.strip(), re.MULTILINE):
-                    extracted_lines.append(line)
-                    break
-
-        return "\n".join(extracted_lines) if extracted_lines else ""
-
-    def _extract_transform_logic(self, code: str) -> str:
-        """Extract transformation logic from partially generated code"""
-        # Look for regex transformation patterns
-        patterns = [
-            r"re\.sub\(.*?\)",
-            r"re\.search\(.*?\)",
-            r"modified_content\s*=.*?$",
-            r"pattern\s*=.*?$",
-            r"replacement\s*=.*?$",
-        ]
-
-        extracted_lines = []
-        for line in code.split("\n"):
-            for pattern in patterns:
-                if re.search(pattern, line.strip(), re.MULTILINE):
-                    extracted_lines.append(line)
-                    break
-
-        return "\n".join(extracted_lines) if extracted_lines else ""
-
-    # ...existing code...
