@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Change the width of a signal from 8 bits to 16 bits
+Transform a signal's width in a Verilog module.
 """
 
 import sys
@@ -10,97 +10,112 @@ import argparse
 from pyverilog.vparser.parser import parse
 from pyverilog.vparser.ast import *
 
+class SignalWidthVisitor:
+    """AST visitor that identifies signals whose width needs to be changed."""
 
-class ChangeTheWidthVisitor:
-    """
-    AST visitor that identifies elements to transform.
-    """
-
-    def __init__(self, target_param=None):
-        self.target_param = target_param
+    def __init__(self, signal_name, new_width):
+        self.signal_name = signal_name
+        # Parse the new width as a tuple of integers
+        self.new_width = tuple(int(x) for x in new_width.split(':'))
         self.changes_made = []
         self.target_elements = []
 
     def visit(self, node):
-        """Visit a node and identify transformation targets."""
+        """Visit AST nodes and identify transformation targets."""
         if isinstance(node, Node):
-            # TODO: Implement specific node processing logic
+            # ANALYZE what needs to be transformed based on user request
+            # Examples:
+            # - For wire/reg changes: check isinstance(node, Decl) and item types
+            # - For signal renaming: check isinstance(node, Identifier) 
+            # - For module changes: check isinstance(node, ModuleDef)
+            # - For port changes: check isinstance(node, Ioport)
+            # - For width changes: check node.width attributes
+            # - For counter/enable: check isinstance(node, NonblockingSubstitution)
             
-            # Visit children
+            # STORE information about what was found
+            # Always append to self.target_elements and self.changes_made
+            
+            # ALWAYS visit children
             for child in node.children():
                 self.visit(child)
 
-
-def transform_change_the_width(input_file, output_file, target_param=None):
+def transform_signal_width(input_file, output_file, signal_name, new_width):
     """
     Main transformation function.
-
-    Args:
-        input_file (str): Path to input Verilog file
-        output_file (str): Path to output Verilog file
-        target_param: Target parameter for transformation
-
+    
     Returns:
         bool: True if successful, False otherwise
     """
     try:
-        # Read the input file
+        # Read input file
         with open(input_file, "r") as f:
             content = f.read()
 
-        # Parse the Verilog file to get the AST
+        # Parse with PyVerilog to analyze structure
         ast, directives = parse([input_file])
 
-        # Create and apply the visitor
-        visitor = ChangeTheWidthVisitor(target_param)
+        # Use visitor to identify what needs to be changed
+        visitor = SignalWidthVisitor(signal_name, new_width)
         visitor.visit(ast)
 
-        # Check if any changes were identified
+        # Check if anything was found to transform
         if not visitor.changes_made:
-            print("Warning: No changes identified")
+            print("Warning: No targets found for transformation")
             return False
 
-        # Print summary of changes
-        for change in visitor.changes_made:
-            print(change)
-
-        # Apply transformations using regex
+        # Apply transformations using regex on the original text
         modified_content = content
-        # TODO: Implement specific regex transformations
+        for element in visitor.target_elements:
+            # Use regex to make the actual text changes
+            # Pattern depends on transformation type:
+            # - Wire to reg: Use word boundaries and escape special characters
+            # - Signal rename: Replace all occurrences with word boundaries
+            # - Width change: Match bracket patterns for signal widths
+            # - Add ports: Insert into module declaration patterns
+            # - Enable logic: Wrap statements with conditional patterns
+            
+            # Implement specific regex transformations based on element type
+            element_name = element.get("name", "")
+            element_type = element.get("type", "")
+            
+            # Example transformation logic - customize based on request
+            if element_type == "wire":
+                # Transform wire declarations to reg declarations
+                pattern = r"\\bwire\\s+" + element_name + r"\\b"
+                replacement = "reg " + element_name
+                modified_content = re.sub(pattern, replacement, modified_content)
+            
+            # Add more transformation patterns as needed based on the request
 
-        # Write the modified content to the output file
+        # Write output
         with open(output_file, "w") as f:
             f.write(modified_content)
 
-        print(f"Output written to {output_file}")
+        print(f"Transformation completed. Output written to: " + output_file)
         return True
 
     except Exception as e:
-        print(f"Error processing file: {e}")
+        print(f"Error: " + str(e))
         import traceback
         traceback.print_exc()
         return False
 
-
 def main():
-    """Main function to parse command line arguments and process the file."""
-    parser = argparse.ArgumentParser(description="Change the width of a signal from 8 bits to 16 bits")
+    """Command line interface."""
+    parser = argparse.ArgumentParser(description="Verilog transformation tool")
     parser.add_argument("input_file", help="Input Verilog file")
     parser.add_argument("output_file", help="Output Verilog file")
-    parser.add_argument("--target", help="Target parameter for transformation")
-
+    parser.add_argument("--signal-name", help="Name of signal to change width for")
+    parser.add_argument("--new-width", help="New width for the signal (e.g., 16:0)")
+    
     args = parser.parse_args()
 
-    # Ensure input file exists
     if not os.path.exists(args.input_file):
-        print(f"Error: Input file '{args.input_file}' not found")
+        print("Error: Input file not found: " + args.input_file)
         return 1
 
-    # Process the file
-    success = transform_change_the_width(args.input_file, args.output_file, args.target)
-
+    success = transform_signal_width(args.input_file, args.output_file, args.signal_name, args.new_width)
     return 0 if success else 1
-
 
 if __name__ == "__main__":
     sys.exit(main())
