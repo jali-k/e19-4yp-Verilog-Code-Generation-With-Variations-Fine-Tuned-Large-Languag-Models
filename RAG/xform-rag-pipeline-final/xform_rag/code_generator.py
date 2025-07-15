@@ -133,23 +133,24 @@ def transform_operation(input_file, output_file, target_param=None):
         for element in visitor.target_elements:
             # Use regex to make the actual text changes
             # Pattern depends on transformation type:
-            # - Wire to reg: rf"\\\\bwire\\\\s+SIGNAL_NAME\\\\b" -> f"reg SIGNAL_NAME"
-            # - Signal rename: rf"\\\\bOLD_NAME\\\\b" -> f"NEW_NAME"
-            # - Width change: rf"\\\\[OLD_WIDTH\\\\]" -> f"[NEW_WIDTH]"
-            # - Add ports: insert into module declaration
-            # - Enable logic: wrap statements with if conditions
+            # - Wire to reg: Use word boundaries and escape special characters
+            # - Signal rename: Replace all occurrences with word boundaries
+            # - Width change: Match bracket patterns for signal widths
+            # - Add ports: Insert into module declaration patterns
+            # - Enable logic: Wrap statements with conditional patterns
             
             # Implement specific regex transformations based on element type
             element_name = element.get("name", "")
             element_type = element.get("type", "")
             
-            if element_type == "wire" and "wire" in input_file:
-                # Example: Transform wire to reg
-                pattern = rf"\\\\bwire\\\\s+({re.escape(element_name)})\\\\b"
-                replacement = rf"reg \\\\1"
+            # Example transformation logic - customize based on request
+            if element_type == "wire":
+                # Transform wire declarations to reg declarations
+                pattern = r"\\\\bwire\\\\s+" + element_name + r"\\\\b"
+                replacement = "reg " + element_name
                 modified_content = re.sub(pattern, replacement, modified_content)
             
-            # Add more transformation patterns as needed
+            # Add more transformation patterns as needed based on the request
 
         # Write output
         with open(output_file, "w") as f:
