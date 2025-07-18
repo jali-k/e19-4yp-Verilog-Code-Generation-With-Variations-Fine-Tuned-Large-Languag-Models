@@ -43,18 +43,19 @@ class CodeGenerator:
         )
 
     def _create_prompt_template(self) -> PromptTemplate:
-        """Create a balanced, flexible prompt template for any xform generation"""
+        """Create an enhanced prompt template with few-shot examples and better guidance"""
+
         template_text = """You are an expert Verilog transformation code generator. You must create COMPLETE, EXECUTABLE Python scripts that transform Verilog code using PyVerilog AST parsing and regex-based modifications.
 
-CONTEXT: Here are examples of existing working transformations:
+EXISTING TRANSFORMATION EXAMPLES:
 {context}
 
 USER REQUEST: {question}
 
 CRITICAL REQUIREMENTS - FOLLOW EXACTLY:
 1. START with proper shebang: #!/usr/bin/env python3
-2. CREATE a visitor class that inherits from no base class (plain Python class)
-3. IMPLEMENT a complete transform function with signature: transform_FUNCTION_NAME(input_file, output_file, ...)
+2. CREATE a visitor class (plain Python class, no inheritance)
+3. IMPLEMENT complete transform function with proper signature
 4. INCLUDE complete main() function with argparse
 5. USE PyVerilog AST for ANALYSIS ONLY - identify what to change
 6. USE regex for ACTUAL TRANSFORMATIONS - modify the text directly
@@ -63,13 +64,9 @@ CRITICAL REQUIREMENTS - FOLLOW EXACTLY:
 9. ABSOLUTELY NO TODO COMMENTS - implement everything completely
 10. NO PLACEHOLDER CODE - all logic must be functional
 
-MANDATORY STRUCTURE PATTERN:
-```python
-#!/usr/bin/env python3
-\"\"\"
-Brief description of what this transformation does
-\"\"\"
+PROVEN TRANSFORMATION PATTERN - FOLLOW THIS STRUCTURE:
 
+#!/usr/bin/env python3
 import sys
 import os
 import re
@@ -78,132 +75,70 @@ from pyverilog.vparser.parser import parse
 from pyverilog.vparser.ast import *
 
 class TransformationVisitor:
-    \"\"\"AST visitor that identifies elements to transform.\"\"\"
-
     def __init__(self, target_param=None):
         self.target_param = target_param
         self.changes_made = []
         self.target_elements = []
 
     def visit(self, node):
-        \"\"\"Visit AST nodes and identify transformation targets.\"\"\"
         if isinstance(node, Node):
-            # ANALYZE what needs to be transformed based on user request
-            # Examples:
-            # - For wire/reg changes: check isinstance(node, Decl) and item types
-            # - For signal renaming: check isinstance(node, Identifier) 
-            # - For module changes: check isinstance(node, ModuleDef)
-            # - For port changes: check isinstance(node, Ioport)
-            # - For width changes: check node.width attributes
-            # - For counter/enable: check isinstance(node, NonblockingSubstitution)
-            
-            # STORE information about what was found
-            # Always append to self.target_elements and self.changes_made
+            # ANALYZE based on transformation type:
+            # Wire/Reg: Check isinstance(node, Decl) and look for Wire/Reg items
+            # Renaming: Check isinstance(node, Identifier) for target names
+            # Modules: Check isinstance(node, ModuleDef) for module operations
+            # Ports: Check isinstance(node, Ioport) for port modifications
             
             # ALWAYS visit children
             for child in node.children():
                 self.visit(child)
 
 def transform_operation(input_file, output_file, target_param=None):
-    \"\"\"
-    Main transformation function.
-    
-    Returns:
-        bool: True if successful, False otherwise
-    \"\"\"
     try:
-        # Read input file
         with open(input_file, "r") as f:
             content = f.read()
-
-        # Parse with PyVerilog to analyze structure
+        
         ast, directives = parse([input_file])
-
-        # Use visitor to identify what needs to be changed
         visitor = TransformationVisitor(target_param)
         visitor.visit(ast)
-
-        # Check if anything was found to transform
+        
         if not visitor.changes_made:
             print("Warning: No targets found for transformation")
             return False
-
-        # Apply transformations using regex on the original text
+        
         modified_content = content
-        for element in visitor.target_elements:
-            # Use regex to make the actual text changes
-            # Pattern depends on transformation type:
-            # - Wire to reg: Use word boundaries and escape special characters
-            # - Signal rename: Replace all occurrences with word boundaries
-            # - Width change: Match bracket patterns for signal widths
-            # - Add ports: Insert into module declaration patterns
-            # - Enable logic: Wrap statements with conditional patterns
-            
-            # Implement specific regex transformations based on element type
-            element_name = element.get("name", "")
-            element_type = element.get("type", "")
-            
-            # Example transformation logic - customize based on request
-            if element_type == "wire":
-                # Transform wire declarations to reg declarations
-                pattern = r"\\\\bwire\\\\s+" + element_name + r"\\\\b"
-                replacement = "reg " + element_name
-                modified_content = re.sub(pattern, replacement, modified_content)
-            
-            # Add more transformation patterns as needed based on the request
-
-        # Write output
+        # Apply regex transformations based on visitor findings
+        
         with open(output_file, "w") as f:
             f.write(modified_content)
-
-        print(f"Transformation completed. Output written to: " + output_file)
         return True
-
+        
     except Exception as e:
-        print(f"Error: " + str(e))
-        import traceback
-        traceback.print_exc()
+        print(f"Error: {e}")
         return False
 
 def main():
-    \"\"\"Command line interface.\"\"\"
     parser = argparse.ArgumentParser(description="Verilog transformation tool")
     parser.add_argument("input_file", help="Input Verilog file")
     parser.add_argument("output_file", help="Output Verilog file")
     parser.add_argument("--target", help="Target parameter for transformation")
     
     args = parser.parse_args()
-
     if not os.path.exists(args.input_file):
-        print("Error: Input file not found: " + args.input_file)
+        print(f"Error: Input file not found: {args.input_file}")
         return 1
-
+    
     success = transform_operation(args.input_file, args.output_file, args.target)
     return 0 if success else 1
 
 if __name__ == "__main__":
     sys.exit(main())
-```
 
-ANALYSIS PATTERNS FOR DIFFERENT TRANSFORMATIONS:
-- Wire/Reg conversions: Look for Decl nodes containing Wire or Reg items
-- Signal renaming: Look for Identifier nodes with target name
-- Module modifications: Look for ModuleDef nodes  
-- Port changes: Look for Ioport nodes in portlist
-- Width changes: Look for nodes with width attributes
-- Enable/control logic: Look for assignment statements (NonblockingSubstitution)
-- Reset condition changes: Look for if statements with reset conditions
+COMMON REGEX PATTERNS:
+- Wire to reg: r'\\bwire\\s+' + re.escape(signal_name) + r'\\b' → 'reg ' + signal_name
+- Signal rename: r'\\b' + re.escape(old_name) + r'\\b' → new_name
+- Module rename: r'\\bmodule\\s+' + re.escape(module_name) + r'\\b' → 'module ' + new_name
 
-REGEX TRANSFORMATION PATTERNS:
-- Simple replacements: Use re.sub() with word boundaries \\\\b
-- Structured changes: Use capturing groups and replacement functions
-- Multi-line patterns: Use re.DOTALL flag for module declarations
-- Preserve formatting: Match and preserve indentation patterns
-
-GENERATE code that implements the SPECIFIC transformation requested.
-DO NOT use the hardcoded examples above - adapt the pattern to the user's request.
-ENSURE every function is complete and executable.
-Replace all placeholder brackets with actual transformation-specific code."""
+Generate the COMPLETE transformation now, implementing all logic without any TODO comments:"""
 
         return PromptTemplate(
             template=template_text, input_variables=["context", "question"]
