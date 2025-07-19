@@ -45,13 +45,27 @@ class CodeBERTEmbeddings:
     def __init__(self, model_name: str = "microsoft/codebert-base"):
         if not TRANSFORMERS_AVAILABLE:
             raise ImportError(
-                "transformers and torch are required for CodeBERT embeddings"
+                "transformers and torch are required for CodeBERT embeddings. "
+                "Install with: pip install transformers torch"
             )
 
         self.model_name = model_name
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModel.from_pretrained(model_name)
-        self.model.eval()
+
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+            self.model = AutoModel.from_pretrained(model_name)
+            self.model.eval()
+
+            # Test the model with a sample to ensure it works
+            test_embedding = self._embed_single("test code sample")
+            if len(test_embedding) == 0:
+                raise RuntimeError("Model produced empty embeddings")
+
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to initialize CodeBERT model '{model_name}': {e}. "
+                "Please check internet connection and model availability."
+            )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of documents"""
@@ -67,19 +81,27 @@ class CodeBERTEmbeddings:
 
     def _embed_single(self, text: str) -> torch.Tensor:
         """Generate embedding for a single text"""
-        # Tokenize and truncate to model's max length
-        inputs = self.tokenizer(
-            text, return_tensors="pt", truncation=True, padding=True, max_length=512
-        )
+        try:
+            # Handle empty or None text
+            if not text or not text.strip():
+                text = "empty"
 
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-            # Use [CLS] token embedding
-            embeddings = outputs.last_hidden_state[:, 0, :]
-            # Normalize for cosine similarity
-            embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+            # Tokenize and truncate to model's max length
+            inputs = self.tokenizer(
+                text, return_tensors="pt", truncation=True, padding=True, max_length=512
+            )
 
-        return embeddings.squeeze()
+            with torch.no_grad():
+                outputs = self.model(**inputs)
+                # Use [CLS] token embedding
+                embeddings = outputs.last_hidden_state[:, 0, :]
+                # Normalize for cosine similarity
+                embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+
+            return embeddings.squeeze()
+
+        except Exception as e:
+            raise RuntimeError(f"Error generating embedding for text: {e}")
 
 
 class VectorStoreManager:
@@ -138,8 +160,18 @@ class VectorStoreManager:
         )
 
     def _load_existing_vector_store(self) -> Chroma:
-        """Load existing vector store from disk"""
+        """Load existing vector store from disk with dimension compatibility checking"""
         try:
+            # First, check if embedding dimensions are compatible
+            if not self._check_embedding_compatibility():
+                self.logger.warning(
+                    "Embedding dimension mismatch detected. Recreating vector store..."
+                )
+                # Remove incompatible vector store to force recreation
+                if self.config.vector_store_dir.exists():
+                    shutil.rmtree(self.config.vector_store_dir)
+                return self._create_new_vector_store()
+
             vector_store = Chroma(
                 persist_directory=str(self.config.vector_store_dir),
                 embedding_function=self.embeddings,
@@ -157,8 +189,22 @@ class VectorStoreManager:
 
         except Exception as e:
             self.logger.error(f"Error loading vector store: {e}")
-            self.logger.info("Creating new vector store...")
-            return self._create_new_vector_store()
+            # Check if it's a dimension mismatch error
+            if "dimension" in str(e).lower():
+                self.logger.warning(
+                    "Detected embedding dimension mismatch in exception. Recreating vector store..."
+                )
+                # Remove incompatible vector store
+                if self.config.vector_store_dir.exists():
+                    shutil.rmtree(self.config.vector_store_dir)
+                # Recursively call this method to try again with clean state
+                return self._create_new_vector_store()
+            else:
+                # For other errors, also try recreating
+                self.logger.warning("Loading failed, creating new vector store...")
+                if self.config.vector_store_dir.exists():
+                    shutil.rmtree(self.config.vector_store_dir)
+                return self._create_new_vector_store()
 
     def _create_new_vector_store(self) -> Chroma:
         """Create new vector store from documents"""
@@ -180,6 +226,9 @@ class VectorStoreManager:
             embedding=self.embeddings,
             persist_directory=str(self.config.vector_store_dir),
         )
+
+        # Save embedding metadata for future compatibility checks
+        self._save_embedding_metadata()
 
         self.logger.info(f"Created vector store with {len(documents)} documents")
         return vector_store
@@ -305,6 +354,75 @@ class VectorStoreManager:
         except Exception as e:
             self.logger.error(f"Error listing transformations: {e}")
             return []
+
+    def _check_embedding_compatibility(self) -> bool:
+        """Check if current embeddings are compatible with existing vector store"""
+        try:
+            # Save embedding metadata when creating vector store
+            metadata_file = self.config.vector_store_dir / "embedding_metadata.json"
+
+            if not metadata_file.exists():
+                # No metadata file, assume compatible (will be created)
+                return True
+
+            # Load existing metadata
+            with open(metadata_file, "r") as f:
+                existing_metadata = json.load(f)
+
+            # Get current embedding dimensions
+            current_dim = self._get_embedding_dimension()
+            existing_dim = existing_metadata.get("dimension")
+            current_model = self.config.embedding_model
+            existing_model = existing_metadata.get("model_name")
+
+            # Check compatibility
+            if existing_dim and current_dim != existing_dim:
+                self.logger.warning(
+                    f"Embedding dimension mismatch: existing={existing_dim}, current={current_dim}"
+                )
+                return False
+
+            if existing_model and current_model != existing_model:
+                self.logger.warning(
+                    f"Embedding model changed: {existing_model} -> {current_model}"
+                )
+                # Model change might still be compatible if dimensions match
+                return current_dim == existing_dim if existing_dim else False
+
+            return True
+
+        except Exception as e:
+            self.logger.warning(f"Error checking embedding compatibility: {e}")
+            return False  # Assume incompatible on error
+
+    def _get_embedding_dimension(self) -> int:
+        """Get the dimension of current embedding model"""
+        try:
+            # Test with a small sample text
+            test_embedding = self.embeddings.embed_query("test")
+            return len(test_embedding)
+        except Exception as e:
+            self.logger.warning(f"Could not determine embedding dimension: {e}")
+            return 0
+
+    def _save_embedding_metadata(self):
+        """Save embedding metadata for compatibility checking"""
+        try:
+            metadata = {
+                "model_name": self.config.embedding_model,
+                "embedding_type": self.config.embedding_type,
+                "dimension": self._get_embedding_dimension(),
+                "created_at": time.time(),
+            }
+
+            metadata_file = self.config.vector_store_dir / "embedding_metadata.json"
+            with open(metadata_file, "w") as f:
+                json.dump(metadata, f, indent=2)
+
+            self.logger.info(f"Saved embedding metadata: {metadata}")
+
+        except Exception as e:
+            self.logger.warning(f"Could not save embedding metadata: {e}")
 
     def get_stats(self) -> dict:
         """Get vector store statistics"""
