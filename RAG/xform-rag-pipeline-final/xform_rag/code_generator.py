@@ -113,7 +113,7 @@ def transform_operation(input_file, output_file, target_param=None):
         return True
         
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error: {{e}}")
         return False
 
 def main():
