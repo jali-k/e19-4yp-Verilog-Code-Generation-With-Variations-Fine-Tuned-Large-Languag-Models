@@ -68,16 +68,48 @@ def test_optimized_generation():
         output_dir="./generated",
     )
 
+    print(f"🔧 Attempting to initialize with CodeBERT embeddings...")
+
     try:
         pipeline = XformRAGPipeline(config)
+        print(f"✅ Successfully initialized with CodeBERT!")
     except Exception as e:
-        print(f"❌ Failed to initialize pipeline: {e}")
-        print("💡 Falling back to sentence-transformers...")
+        print(f"❌ CodeBERT initialization failed: {e}")
 
-        # Fallback to sentence transformers if CodeBERT fails
-        config.embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
-        config.embedding_type = "huggingface"
-        pipeline = XformRAGPipeline(config)
+        # Check if it's a dimension mismatch
+        if "dimension" in str(e).lower():
+            print("🔄 Detected embedding dimension mismatch. Cleaning vector store...")
+            import shutil
+            from pathlib import Path
+
+            vector_store_path = Path("./vector_store")
+            if vector_store_path.exists():
+                shutil.rmtree(vector_store_path)
+                print("🗑️ Removed incompatible vector store")
+
+            # Retry with CodeBERT
+            try:
+                print("🔄 Retrying CodeBERT initialization with clean vector store...")
+                pipeline = XformRAGPipeline(config)
+                print("✅ Successfully initialized with CodeBERT after cleanup!")
+            except Exception as e2:
+                print(f"❌ CodeBERT still failed: {e2}")
+                print("💡 Falling back to sentence-transformers...")
+
+                # Fallback to sentence transformers
+                config.embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
+                config.embedding_type = "huggingface"
+                pipeline = XformRAGPipeline(config)
+                print(
+                    "✅ Successfully initialized with sentence-transformers fallback!"
+                )
+        else:
+            print("💡 Falling back to sentence-transformers...")
+
+            # Fallback to sentence transformers if CodeBERT fails
+            config.embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
+            config.embedding_type = "huggingface"
+            pipeline = XformRAGPipeline(config)
 
     # Test system components
     print("\n🧪 Testing System Components...")
