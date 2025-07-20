@@ -292,7 +292,7 @@ Generate the COMPLETE transformation now, implementing all logic without any TOD
 
         return filename
 
-    def validate_generated_code(self, code: str) -> Dict[str, Any]:
+    def _validate_code_quality(self, code: str) -> Dict[str, Any]:
         """Comprehensive validation of the generated code"""
         validation_result = {
             "is_valid": True,
@@ -409,6 +409,10 @@ Generate the COMPLETE transformation now, implementing all logic without any TOD
 
         return validation_result
 
+    def validate_generated_code(self, code: str) -> Dict[str, Any]:
+        """Legacy method name for backward compatibility"""
+        return self._validate_code_quality(code)
+
     def test_connection(self) -> bool:
         """Test if the code generator is working"""
         try:
@@ -488,8 +492,10 @@ Generate the COMPLETE transformation now, implementing all logic without any TOD
                     parsed_result["code"], user_request
                 )
 
-                # Validate the generated code
-                validation_result = self.validate_generated_code(parsed_result["code"])
+                # Validate the generated code with enhanced functional testing
+                validation_result = self._validate_code_enhanced(
+                    parsed_result["code"], user_request
+                )
 
                 # Generate filename
                 filename = self._generate_filename(user_request)
@@ -643,3 +649,266 @@ if __name__ == "__main__":
         # Take first few meaningful words
         name_words = filtered_words[:3] if len(filtered_words) >= 3 else filtered_words
         return "_".join(name_words) if name_words else "custom_transform"
+
+    def _validate_code_enhanced(
+        self, code: str, user_request: str = ""
+    ) -> Dict[str, Any]:
+        """Enhanced validation including functional testing with real Verilog execution"""
+
+        # First do static validation
+        validation_result = self._validate_code_quality(code)
+
+        # Add functional validation
+        functional_result = self._validate_functional_execution(code, user_request)
+
+        # Combine results
+        validation_result.update(functional_result)
+
+        # Update overall quality score based on functional testing
+        base_score = validation_result.get("completeness_score", 0.0)
+        if functional_result.get("execution_success", False):
+            validation_result["quality_score"] = min(1.0, base_score + 0.2)
+            validation_result["completeness_score"] = validation_result["quality_score"]
+        else:
+            validation_result["quality_score"] = max(0.0, base_score - 0.3)
+            validation_result["completeness_score"] = validation_result["quality_score"]
+
+        return validation_result
+
+    def _validate_functional_execution(
+        self, code: str, user_request: str = ""
+    ) -> Dict[str, Any]:
+        """Step 2: Functional validation - actually execute the transformation with test Verilog"""
+        import tempfile
+        import subprocess
+        import os
+
+        result = {
+            "execution_success": False,
+            "execution_error": None,
+            "test_results": [],
+            "output_valid": False,
+            "transformation_applied": False,
+        }
+
+        try:
+            # Create temporary files
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".py", delete=False
+            ) as temp_script:
+                temp_script.write(code)
+                script_path = temp_script.name
+
+            # Create test Verilog files based on transformation type
+            test_verilog = self._create_test_verilog(user_request)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".v", delete=False
+            ) as temp_input:
+                temp_input.write(test_verilog)
+                input_path = temp_input.name
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".v", delete=False
+            ) as temp_output:
+                output_path = temp_output.name
+
+            # Execute the transformation script
+            try:
+                # Determine arguments based on transformation type
+                args = self._determine_transformation_args(
+                    user_request, input_path, output_path
+                )
+
+                # Use sys.executable to get the current Python interpreter
+                import sys
+                cmd = [sys.executable, script_path] + args
+
+                process = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    cwd=os.path.dirname(script_path),
+                )
+
+                if process.returncode == 0:
+                    result["execution_success"] = True
+
+                    # Check if output file was created and modified
+                    if os.path.exists(output_path):
+                        with open(output_path, "r") as f:
+                            output_content = f.read()
+
+                        # Compare input and output to see if transformation was applied
+                        if output_content != test_verilog:
+                            result["transformation_applied"] = True
+
+                            # Basic syntax validation of output Verilog
+                            if self._validate_verilog_syntax(output_content):
+                                result["output_valid"] = True
+
+                        result["test_results"].append(
+                            {
+                                "test_type": "basic_execution",
+                                "success": True,
+                                "input_size": len(test_verilog),
+                                "output_size": len(output_content),
+                                "transformation_detected": result[
+                                    "transformation_applied"
+                                ],
+                            }
+                        )
+
+                else:
+                    result["execution_error"] = f"Script failed: {process.stderr}"
+
+            except subprocess.TimeoutExpired:
+                result["execution_error"] = "Script execution timed out"
+            except Exception as e:
+                result["execution_error"] = f"Execution error: {str(e)}"
+
+        except Exception as e:
+            result["execution_error"] = f"Setup error: {str(e)}"
+
+        finally:
+            # Cleanup temporary files
+            for filepath in [script_path, input_path, output_path]:
+                try:
+                    if os.path.exists(filepath):
+                        os.unlink(filepath)
+                except:
+                    pass
+
+        return result
+
+    def _create_test_verilog(self, user_request: str) -> str:
+        """Create appropriate test Verilog code based on transformation type"""
+        request_lower = user_request.lower()
+
+        if "module" in request_lower and "rename" in request_lower:
+            return """module counter(
+    input clk,
+    input reset,
+    output reg [7:0] count
+);
+    always @(posedge clk or posedge reset) begin
+        if (reset)
+            count <= 8'b0;
+        else
+            count <= count + 1;
+    end
+endmodule"""
+
+        elif "wire" in request_lower and "reg" in request_lower:
+            return """module test_module(
+    input clk,
+    output data_out
+);
+    wire internal_signal;
+    wire [7:0] data_bus;
+    
+    assign internal_signal = clk;
+    assign data_out = internal_signal;
+endmodule"""
+
+        elif "port" in request_lower and "add" in request_lower:
+            return """module simple_module(
+    input clk,
+    input reset,
+    output reg data_out
+);
+    always @(posedge clk) begin
+        if (reset)
+            data_out <= 1'b0;
+        else
+            data_out <= ~data_out;
+    end
+endmodule"""
+
+        elif "signal" in request_lower and "width" in request_lower:
+            return """module width_test(
+    input clk,
+    input [7:0] data_in,
+    output reg [7:0] data_out
+);
+    always @(posedge clk) begin
+        data_out <= data_in;
+    end
+endmodule"""
+
+        else:
+            # Generic test module
+            return """module generic_test(
+    input clk,
+    input reset,
+    input [7:0] data_in,
+    output reg [7:0] data_out
+);
+    wire internal_wire;
+    
+    always @(posedge clk) begin
+        if (reset)
+            data_out <= 8'b0;
+        else
+            data_out <= data_in;
+    end
+    
+    assign internal_wire = clk;
+endmodule"""
+
+    def _determine_transformation_args(
+        self, user_request: str, input_path: str, output_path: str
+    ) -> list:
+        """Determine appropriate command line arguments for the transformation"""
+        args = [input_path, output_path]
+
+        request_lower = user_request.lower()
+
+        if "module" in request_lower and "rename" in request_lower:
+            if "counter" in request_lower and "timer" in request_lower:
+                args.extend(["--old-name", "counter", "--new-name", "timer"])
+            else:
+                args.extend(
+                    ["--old-name", "generic_test", "--new-name", "renamed_module"]
+                )
+
+        elif "wire" in request_lower and "reg" in request_lower:
+            if "specific" in request_lower:
+                args.extend(["--signal", "internal_wire"])
+            # For general wire-to-reg, no additional args needed
+
+        elif "port" in request_lower and "add" in request_lower:
+            if "enable" in request_lower:
+                args.extend(["--port-name", "debug_enable", "--port-type", "input"])
+
+        elif "signal" in request_lower and "width" in request_lower:
+            args.extend(["--signal", "data_out", "--new-width", "16"])
+
+        return args
+
+    def _validate_verilog_syntax(self, verilog_code: str) -> bool:
+        """Basic Verilog syntax validation"""
+        try:
+            # Check for basic Verilog structure
+            required_patterns = [
+                r"module\s+\w+",  # Module declaration
+                r"endmodule",  # Module end
+            ]
+
+            for pattern in required_patterns:
+                if not re.search(pattern, verilog_code):
+                    return False
+
+            # Check for balanced parentheses and brackets
+            paren_count = verilog_code.count("(") - verilog_code.count(")")
+            bracket_count = verilog_code.count("[") - verilog_code.count("]")
+            brace_count = verilog_code.count("{") - verilog_code.count("}")
+
+            if paren_count != 0 or bracket_count != 0 or brace_count != 0:
+                return False
+
+            return True
+
+        except Exception:
+            return False
