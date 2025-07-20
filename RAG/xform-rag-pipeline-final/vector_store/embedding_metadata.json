@@ -1,0 +1,6 @@
+{
+  "model_name": "microsoft/codebert-base",
+  "embedding_type": "codebert",
+  "dimension": 768,
+  "created_at": 1752937649.336879
+}
