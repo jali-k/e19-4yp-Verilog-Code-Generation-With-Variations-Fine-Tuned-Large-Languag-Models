@@ -1,0 +1,354 @@
+{
+  "test_session": {
+    "timestamp": "20250720_152928",
+    "total_scenarios": 8,
+    "successful_scenarios": 7,
+    "success_rate": "87.5%",
+    "pipeline_available": true
+  },
+  "scenario_evaluations": [
+    {
+      "scenario_id": "wire_to_reg_basic",
+      "scenario_name": "Wire to Reg - Basic",
+      "complexity": "simple",
+      "timestamp": "2025-07-20T15:29:55.540465",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 0,
+        "stdout": "Converted wire 'data_wire' to reg\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 1.114502,
+        "output_file_created": true,
+        "content_changed": true,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": true,
+          "executes": true,
+          "transforms_content": true
+        },
+        "transformation_quality": "functional",
+        "expected_changes_detected": [],
+        "functional_score": 1.0
+      },
+      "overall_score": 1.0
+    },
+    {
+      "scenario_id": "module_rename_basic",
+      "scenario_name": "Module Rename - Basic",
+      "complexity": "simple",
+      "timestamp": "2025-07-20T15:29:58.865650",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 0,
+        "stdout": "Renamed module 'adder' to 'arithmetic_unit'\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 0.982382,
+        "output_file_created": true,
+        "content_changed": true,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": true,
+          "executes": true,
+          "transforms_content": true
+        },
+        "transformation_quality": "functional",
+        "expected_changes_detected": [],
+        "functional_score": 1.0
+      },
+      "overall_score": 1.0
+    },
+    {
+      "scenario_id": "signal_width_modify",
+      "scenario_name": "Signal Width Modification",
+      "complexity": "medium",
+      "timestamp": "2025-07-20T15:30:01.999461",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 0,
+        "stdout": "Template transformation for Signal Width Modification\nAnalysis completed: 3 items found\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 1.155948,
+        "output_file_created": true,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": true,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.6666666666666666
+      },
+      "overall_score": 0.9
+    },
+    {
+      "scenario_id": "port_addition",
+      "scenario_name": "Port Addition",
+      "complexity": "medium",
+      "timestamp": "2025-07-20T15:30:05.279227",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 0,
+        "stdout": "Template transformation for Port Addition\nAnalysis completed: 1 items found\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 1.391984,
+        "output_file_created": true,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": true,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.6666666666666666
+      },
+      "overall_score": 0.9
+    },
+    {
+      "scenario_id": "clock_domain_crossing",
+      "scenario_name": "Clock Domain Crossing",
+      "complexity": "complex",
+      "timestamp": "2025-07-20T15:30:08.840644",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 0,
+        "stdout": "Template transformation for Clock Domain Crossing\nAnalysis completed: 4 items found\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 1.177406,
+        "output_file_created": true,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": true,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.6666666666666666
+      },
+      "overall_score": 0.9
+    },
+    {
+      "scenario_id": "fsm_modification",
+      "scenario_name": "FSM State Addition",
+      "complexity": "complex",
+      "timestamp": "2025-07-20T15:30:12.242195",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 1,
+        "stdout": "Error:  line:7: before: \"logic\"\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 1.12551,
+        "output_file_created": false,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": false,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.3333333333333333
+      },
+      "overall_score": 0.4
+    },
+    {
+      "scenario_id": "parameter_modification",
+      "scenario_name": "Parameter Modification",
+      "complexity": "complex",
+      "timestamp": "2025-07-20T15:30:15.513342",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 0,
+        "stdout": "Template transformation for Parameter Modification\nAnalysis completed: 3 items found\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 1.243388,
+        "output_file_created": true,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": true,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.6666666666666666
+      },
+      "overall_score": 0.9
+    },
+    {
+      "scenario_id": "interface_conversion",
+      "scenario_name": "Interface Conversion",
+      "complexity": "complex",
+      "timestamp": "2025-07-20T15:30:18.940655",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 0,
+        "stdout": "Template transformation for Interface Conversion\nAnalysis completed: 2 items found\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 1.144367,
+        "output_file_created": true,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": true,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.6666666666666666
+      },
+      "overall_score": 0.9
+    }
+  ],
+  "summary_statistics": {
+    "average_overall_score": 0.8625,
+    "average_syntax_score": 1.0,
+    "execution_success_rate": 0.875,
+    "content_transformation_rate": 0.25,
+    "complexity_breakdown": {
+      "simple": 2,
+      "medium": 2,
+      "complex": 4
+    },
+    "transformation_quality_breakdown": {
+      "functional": 2,
+      "executes_only": 6
+    }
+  }
+}
