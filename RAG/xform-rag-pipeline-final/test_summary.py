@@ -89,18 +89,22 @@ and can be extended to test new transformation types and evaluation criteria.
 import sys
 from pathlib import Path
 
+
 def show_help():
     """Display help information"""
     print(__doc__)
 
+
 def main():
     """Main function for the summary script"""
-    if len(sys.argv) > 1 and sys.argv[1] in ['-h', '--help', 'help']:
+    if len(sys.argv) > 1 and sys.argv[1] in ["-h", "--help", "help"]:
         show_help()
     else:
         print("🔍 Comprehensive Xform Generation Test Framework Summary")
         print("=" * 60)
-        print("This framework tests xform generation across 8 scenarios with comprehensive evaluation.")
+        print(
+            "This framework tests xform generation across 8 scenarios with comprehensive evaluation."
+        )
         print()
         print("📋 Available Commands:")
         print("  python run_comprehensive_test.py    # Run full test suite")
@@ -118,6 +122,7 @@ def main():
         print("📁 Results saved with timestamp-based directories")
         print()
         print("Use --help for detailed documentation.")
+
 
 if __name__ == "__main__":
     main()

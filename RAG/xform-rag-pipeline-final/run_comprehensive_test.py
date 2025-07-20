@@ -12,17 +12,19 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from comprehensive_xform_test import XformScenarioTester
 
+
 def main():
     """Quick runner function"""
     print("🚀 Starting Comprehensive Xform Test Suite")
     print("=" * 60)
-    
+
     tester = XformScenarioTester()
     results_dir, evaluations = tester.run_comprehensive_test()
-    
+
     print(f"\n✨ Test completed!")
     print(f"📁 Results: {results_dir}")
     print(f"📊 Evaluated: {len(evaluations)} scenarios")
+
 
 if __name__ == "__main__":
     main()
