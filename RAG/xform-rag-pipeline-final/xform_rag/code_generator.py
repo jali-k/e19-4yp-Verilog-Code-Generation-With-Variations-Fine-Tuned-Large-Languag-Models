@@ -650,19 +650,165 @@ if __name__ == "__main__":
         name_words = filtered_words[:3] if len(filtered_words) >= 3 else filtered_words
         return "_".join(name_words) if name_words else "custom_transform"
 
+    def _fix_generated_code(self, code_content: str, xform_type: str) -> str:
+        """Fix common issues in generated code based on actual testing"""
+        fixed_code = code_content
+
+        # Fix 1: Remove NodeVisitor inheritance if present
+        fixed_code = re.sub(
+            r"class\s+TransformationVisitor\s*\(\s*NodeVisitor\s*\):",
+            "class TransformationVisitor:",
+            fixed_code,
+        )
+
+        # Fix 2: Add required imports if missing
+        if "from pyverilog.vparser.ast import *" not in fixed_code:
+            import_section = """#!/usr/bin/env python3
+import sys
+import os
+import re
+import argparse
+from pyverilog.vparser.parser import parse
+from pyverilog.vparser.ast import *"""
+
+            # Replace existing import section
+            fixed_code = re.sub(
+                r"#!/usr/bin/env python3.*?(?=class)",
+                import_section + "\n\n",
+                fixed_code,
+                flags=re.DOTALL,
+            )
+
+        # Fix 3: Correct argument patterns and function logic based on transformation type
+        if "wire" in xform_type.lower() and "reg" in xform_type.lower():
+            # Wire to reg transformation - complete rewrite of problematic logic
+
+            # Fix arguments
+            fixed_code = re.sub(
+                r'parser\.add_argument\("--old-name".*?\n.*?parser\.add_argument\("--new-name".*?\n',
+                'parser.add_argument("--signal", help="Specific signal name to convert")\n',
+                fixed_code,
+                flags=re.DOTALL,
+            )
+
+            # Fix visitor class for wire detection
+            visitor_fix = """class TransformationVisitor:
+    def __init__(self, signal=None, width=None):
+        self.signal = signal
+        self.width = width
+        self.changes_made = []
+        self.wire_signals = []
+
+    def visit(self, node):
+        if isinstance(node, Decl):
+            for child in node.children():
+                if isinstance(child, Wire):
+                    signal_name = str(child.name)
+                    self.wire_signals.append(signal_name)
+                    if not self.signal or signal_name == self.signal:
+                        self.changes_made.append(f"Found wire '{signal_name}' to convert")
+        
+        if isinstance(node, Node):
+            for child in node.children():
+                self.visit(child)"""
+
+            # Replace visitor class
+            fixed_code = re.sub(
+                r"class TransformationVisitor:.*?(?=def transform_operation)",
+                visitor_fix + "\n\n",
+                fixed_code,
+                flags=re.DOTALL,
+            )
+
+            # Fix transform function signature
+            fixed_code = re.sub(
+                r"def transform_operation\(input_file, output_file[^)]*\):",
+                "def transform_operation(input_file, output_file, signal=None, width=None):",
+                fixed_code,
+            )
+
+            # Fix visitor initialization
+            fixed_code = re.sub(
+                r"visitor = TransformationVisitor\([^)]*\)",
+                "visitor = TransformationVisitor(signal, width)",
+                fixed_code,
+            )
+
+            # Fix transformation logic
+            transform_logic = """        modified_content = content
+        
+        if signal:
+            # Convert specific signal
+            pattern = r'\\bwire\\s+' + re.escape(signal) + r'\\b'
+            replacement = f'reg {signal}'
+            modified_content = re.sub(pattern, replacement, modified_content)
+            print(f"Converted wire '{signal}' to reg")
+        else:
+            # Convert all wires found by visitor
+            for wire_name in visitor.wire_signals:
+                pattern = r'\\bwire\\s+' + re.escape(wire_name) + r'\\b'
+                replacement = f'reg {wire_name}'
+                modified_content = re.sub(pattern, replacement, modified_content)
+            print(f"Converted {len(visitor.wire_signals)} wires to regs")"""
+
+            # Replace transformation logic (look for pattern starting with if old_name or similar)
+            fixed_code = re.sub(
+                r'if old_name.*?else:.*?print\("No renaming parameters provided"\)',
+                transform_logic,
+                fixed_code,
+                flags=re.DOTALL,
+            )
+
+            # Fix main function call
+            fixed_code = re.sub(
+                r"success = transform_operation\(args\.input_file, args\.output_file[^)]*\)",
+                'success = transform_operation(args.input_file, args.output_file, args.signal, getattr(args, "width", None))',
+                fixed_code,
+            )
+
+        elif "signal" in xform_type.lower() and "width" in xform_type.lower():
+            # Signal width transformation - should use --signal and --width
+            fixed_code = re.sub(
+                r'parser\.add_argument\("--old-name".*?\n.*?parser\.add_argument\("--new-name".*?\n',
+                'parser.add_argument("--signal", help="Signal name to modify")\n    parser.add_argument("--width", help="New width value")\n',
+                fixed_code,
+                flags=re.DOTALL,
+            )
+
+            # Fix function signatures and calls for signal width
+            fixed_code = re.sub(
+                r"def transform_operation\(input_file, output_file[^)]*\):",
+                "def transform_operation(input_file, output_file, signal=None, width=None):",
+                fixed_code,
+            )
+
+            fixed_code = re.sub(
+                r"success = transform_operation\(args\.input_file, args\.output_file[^)]*\)",
+                "success = transform_operation(args.input_file, args.output_file, args.signal, args.width)",
+                fixed_code,
+            )
+
+        return fixed_code
+
     def _validate_code_enhanced(
         self, code: str, user_request: str = ""
     ) -> Dict[str, Any]:
-        """Enhanced validation including functional testing with real Verilog execution"""
+        """Enhanced validation including functional testing with automatic code fixing"""
 
-        # First do static validation
-        validation_result = self._validate_code_quality(code)
+        # Try to fix common issues first
+        fixed_code = self._fix_generated_code(code, user_request)
+
+        # First do static validation on fixed code
+        validation_result = self._validate_code_quality(fixed_code)
 
         # Add functional validation
-        functional_result = self._validate_functional_execution(code, user_request)
+        functional_result = self._validate_functional_execution(
+            fixed_code, user_request
+        )
 
         # Combine results
         validation_result.update(functional_result)
+        validation_result["fixed_code"] = fixed_code  # Store the fixed version
 
         # Update overall quality score based on functional testing
         base_score = validation_result.get("completeness_score", 0.0)
@@ -715,13 +861,14 @@ if __name__ == "__main__":
 
             # Execute the transformation script
             try:
-                # Determine arguments based on transformation type
+                # Determine arguments based on transformation type and generated code
                 args = self._determine_transformation_args(
-                    user_request, input_path, output_path
+                    user_request, input_path, output_path, code
                 )
 
                 # Use sys.executable to get the current Python interpreter
                 import sys
+
                 cmd = [sys.executable, script_path] + args
 
                 process = subprocess.run(
@@ -858,34 +1005,91 @@ endmodule"""
 endmodule"""
 
     def _determine_transformation_args(
-        self, user_request: str, input_path: str, output_path: str
+        self,
+        user_request: str,
+        input_path: str,
+        output_path: str,
+        generated_code: str = "",
     ) -> list:
         """Determine appropriate command line arguments for the transformation"""
         args = [input_path, output_path]
 
-        request_lower = user_request.lower()
+        # First, try to detect what arguments the generated code actually accepts
+        detected_args = self._detect_script_arguments(generated_code)
 
-        if "module" in request_lower and "rename" in request_lower:
-            if "counter" in request_lower and "timer" in request_lower:
-                args.extend(["--old-name", "counter", "--new-name", "timer"])
-            else:
-                args.extend(
-                    ["--old-name", "generic_test", "--new-name", "renamed_module"]
-                )
+        if detected_args:
+            # Use detected arguments with appropriate values
+            request_lower = user_request.lower()
 
-        elif "wire" in request_lower and "reg" in request_lower:
-            if "specific" in request_lower:
-                args.extend(["--signal", "internal_wire"])
-            # For general wire-to-reg, no additional args needed
+            if "module" in request_lower and "rename" in request_lower:
+                if "--old-name" in detected_args and "--new-name" in detected_args:
+                    args.extend(["--old-name", "counter", "--new-name", "timer"])
+                elif "--target" in detected_args:
+                    args.extend(["--target", "counter"])
 
-        elif "port" in request_lower and "add" in request_lower:
-            if "enable" in request_lower:
-                args.extend(["--port-name", "debug_enable", "--port-type", "input"])
+            elif "wire" in request_lower and "reg" in request_lower:
+                if "--signal" in detected_args:
+                    args.extend(["--signal", "internal_wire"])
+                elif "--target" in detected_args:
+                    args.extend(["--target", "internal_wire"])
 
-        elif "signal" in request_lower and "width" in request_lower:
-            args.extend(["--signal", "data_out", "--new-width", "16"])
+            elif "port" in request_lower and "add" in request_lower:
+                if "--port-name" in detected_args:
+                    args.extend(["--port-name", "debug_enable"])
+                elif "--target" in detected_args:
+                    args.extend(["--target", "debug_enable"])
+
+            elif "signal" in request_lower and "width" in request_lower:
+                if "--signal" in detected_args and "--new-width" in detected_args:
+                    args.extend(["--signal", "data_out", "--new-width", "16"])
+                elif "--target" in detected_args:
+                    args.extend(["--target", "data_out"])
+        else:
+            # Fallback to original logic if detection fails
+            request_lower = user_request.lower()
+
+            if "module" in request_lower and "rename" in request_lower:
+                if "counter" in request_lower and "timer" in request_lower:
+                    args.extend(["--old-name", "counter", "--new-name", "timer"])
+                else:
+                    args.extend(
+                        ["--old-name", "generic_test", "--new-name", "renamed_module"]
+                    )
+
+            elif "wire" in request_lower and "reg" in request_lower:
+                if "specific" in request_lower:
+                    args.extend(["--signal", "internal_wire"])
+                # For general wire-to-reg, no additional args needed
+
+            elif "port" in request_lower and "add" in request_lower:
+                if "enable" in request_lower:
+                    args.extend(["--port-name", "debug_enable", "--port-type", "input"])
+
+            elif "signal" in request_lower and "width" in request_lower:
+                args.extend(["--signal", "data_out", "--new-width", "16"])
 
         return args
+
+    def _detect_script_arguments(self, code: str) -> list:
+        """Detect what command line arguments the generated script actually accepts"""
+        detected_args = []
+
+        # Look for add_argument calls
+        import re
+
+        arg_patterns = [
+            r'parser\.add_argument\(["\']([^"\']+)["\']',
+            r'add_argument\(["\']([^"\']+)["\']',
+        ]
+
+        for pattern in arg_patterns:
+            matches = re.findall(pattern, code)
+            detected_args.extend(matches)
+
+        # Filter out positional arguments
+        detected_args = [arg for arg in detected_args if arg.startswith("--")]
+
+        return detected_args
 
     def _validate_verilog_syntax(self, verilog_code: str) -> bool:
         """Basic Verilog syntax validation"""

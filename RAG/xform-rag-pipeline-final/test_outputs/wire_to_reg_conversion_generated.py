@@ -10,6 +10,7 @@ import argparse
 from pyverilog.vparser.parser import parse
 from pyverilog.vparser.ast import *
 
+
 class WireToRegVisitor:
     """AST visitor that identifies wire declarations to transform."""
 
@@ -46,6 +47,7 @@ class WireToRegVisitor:
             # Visit children
             for c in node.children():
                 self.visit(c)
+
 
 def transform_wire_to_reg(input_file, output_file, target_variable=None):
     """
@@ -94,8 +96,10 @@ def transform_wire_to_reg(input_file, output_file, target_variable=None):
     except Exception as e:
         print(f"Error: " + str(e))
         import traceback
+
         traceback.print_exc()
         return False
+
 
 def main():
     """Command line interface."""
@@ -103,7 +107,7 @@ def main():
     parser.add_argument("input_file", help="Input Verilog file")
     parser.add_argument("output_file", help="Output Verilog file")
     parser.add_argument("--target", help="Target variable for transformation")
-    
+
     args = parser.parse_args()
 
     if not os.path.exists(args.input_file):
@@ -112,6 +116,7 @@ def main():
 
     success = transform_wire_to_reg(args.input_file, args.output_file, args.target)
     return 0 if success else 1
+
 
 if __name__ == "__main__":
     sys.exit(main())
