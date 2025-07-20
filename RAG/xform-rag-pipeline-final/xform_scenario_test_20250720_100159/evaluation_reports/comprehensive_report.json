@@ -1,0 +1,353 @@
+{
+  "test_session": {
+    "timestamp": "20250720_100159",
+    "total_scenarios": 8,
+    "successful_scenarios": 0,
+    "success_rate": "0.0%",
+    "pipeline_available": true
+  },
+  "scenario_evaluations": [
+    {
+      "scenario_id": "wire_to_reg_basic",
+      "scenario_name": "Wire to Reg - Basic",
+      "complexity": "simple",
+      "timestamp": "2025-07-20T10:02:39.045624",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 1,
+        "stdout": "Error: [Errno 2] No such file or directory: 'iverilog'\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 0.857952,
+        "output_file_created": false,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": false,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.3333333333333333
+      },
+      "overall_score": 0.4
+    },
+    {
+      "scenario_id": "module_rename_basic",
+      "scenario_name": "Module Rename - Basic",
+      "complexity": "simple",
+      "timestamp": "2025-07-20T10:02:59.797225",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 1,
+        "stdout": "Error: [Errno 2] No such file or directory: 'iverilog'\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 0.856914,
+        "output_file_created": false,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": false,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.3333333333333333
+      },
+      "overall_score": 0.4
+    },
+    {
+      "scenario_id": "signal_width_modify",
+      "scenario_name": "Signal Width Modification",
+      "complexity": "medium",
+      "timestamp": "2025-07-20T10:03:30.849068",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": false,
+        "has_transform_function": false,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 0.8
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/home/ubuntu/e19-4yp-Verilog-Code-Generation-With-Variations-Fine-Tuned-Large-Languag-Models/RAG/xform-rag-pipeline-final/xform_scenario_test_20250720_100159/generated_xforms/signal_width_modify_fixed.py\", line 10, in <module>\n    class SignalWidthVisitor(NodeVisitor):\n                             ^^^^^^^^^^^\nNameError: name 'NodeVisitor' is not defined\n",
+        "execution_time": 0.050331,
+        "output_file_created": false,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": false,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.3333333333333333
+      },
+      "overall_score": 0.34
+    },
+    {
+      "scenario_id": "port_addition",
+      "scenario_name": "Port Addition",
+      "complexity": "medium",
+      "timestamp": "2025-07-20T10:03:49.700363",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 1,
+        "stdout": "Error: [Errno 2] No such file or directory: 'iverilog'\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 0.856663,
+        "output_file_created": false,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": false,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.3333333333333333
+      },
+      "overall_score": 0.4
+    },
+    {
+      "scenario_id": "clock_domain_crossing",
+      "scenario_name": "Clock Domain Crossing",
+      "complexity": "complex",
+      "timestamp": "2025-07-20T10:24:03.634570",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 2,
+        "stdout": "",
+        "stderr": "usage: clock_domain_crossing_fixed.py [-h] [--target TARGET]\n                                      input_file output_file\nclock_domain_crossing_fixed.py: error: unrecognized arguments: --source-clock clk_a --dest-clock clk_b\n",
+        "execution_time": 0.049679,
+        "output_file_created": false,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": false,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.3333333333333333
+      },
+      "overall_score": 0.4
+    },
+    {
+      "scenario_id": "fsm_modification",
+      "scenario_name": "FSM State Addition",
+      "complexity": "complex",
+      "timestamp": "2025-07-20T10:44:17.659657",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 2,
+        "stdout": "",
+        "stderr": "usage: fsm_modification_fixed.py [-h] [--target TARGET] input_file output_file\nfsm_modification_fixed.py: error: unrecognized arguments: --new-state ERROR --error-condition error_flag\n",
+        "execution_time": 0.050704,
+        "output_file_created": false,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": false,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.3333333333333333
+      },
+      "overall_score": 0.4
+    },
+    {
+      "scenario_id": "parameter_modification",
+      "scenario_name": "Parameter Modification",
+      "complexity": "complex",
+      "timestamp": "2025-07-20T10:44:39.852800",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 1,
+        "stdout": "Error: [Errno 2] No such file or directory: 'iverilog'\n",
+        "stderr": "Generating LALR tables\nWARNING: 183 shift/reduce conflicts\n",
+        "execution_time": 0.860245,
+        "output_file_created": false,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": false,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.3333333333333333
+      },
+      "overall_score": 0.4
+    },
+    {
+      "scenario_id": "interface_conversion",
+      "scenario_name": "Interface Conversion",
+      "complexity": "complex",
+      "timestamp": "2025-07-20T11:04:53.076278",
+      "syntax_analysis": {
+        "has_shebang": true,
+        "has_required_imports": true,
+        "has_pyverilog_imports": true,
+        "has_ast_imports": true,
+        "has_visitor_class": true,
+        "has_transform_function": true,
+        "has_main_function": true,
+        "has_argument_parser": true,
+        "has_proper_execution": true,
+        "no_todo_comments": true,
+        "line_count": 1,
+        "syntax_score": 1.0
+      },
+      "execution_analysis": {
+        "executed": true,
+        "return_code": 2,
+        "stdout": "",
+        "stderr": "usage: interface_conversion_fixed.py [-h] [--target TARGET]\n                                     input_file output_file\ninterface_conversion_fixed.py: error: unrecognized arguments: --interface-name data_intf --signals data,valid,ready\n",
+        "execution_time": 0.049969,
+        "output_file_created": false,
+        "content_changed": false,
+        "error_message": null
+      },
+      "functional_analysis": {
+        "meets_success_criteria": {
+          "syntax_valid": false,
+          "executes": true,
+          "transforms_content": false
+        },
+        "transformation_quality": "executes_only",
+        "expected_changes_detected": [],
+        "functional_score": 0.3333333333333333
+      },
+      "overall_score": 0.4
+    }
+  ],
+  "summary_statistics": {
+    "average_overall_score": 0.3925,
+    "average_syntax_score": 0.975,
+    "execution_success_rate": 0.0,
+    "content_transformation_rate": 0.0,
+    "complexity_breakdown": {
+      "simple": 2,
+      "medium": 2,
+      "complex": 4
+    },
+    "transformation_quality_breakdown": {
+      "executes_only": 8
+    }
+  }
+}
