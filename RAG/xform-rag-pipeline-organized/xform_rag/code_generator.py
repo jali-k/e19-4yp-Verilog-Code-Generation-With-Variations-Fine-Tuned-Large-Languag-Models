@@ -135,13 +135,18 @@ Generate ONLY the Python script code, no explanations."""
 
     def _get_search_results(self, user_request: str) -> List[Document]:
         """Get search results from vector store"""
+        # Store user request for score calculation
+        self._last_user_request = user_request
+
         if hasattr(self.vector_store_manager, "search_similar"):
-            # For dual vector store
-            return self.vector_store_manager.search_similar(user_request, k=10)
+            # For dual vector store - store the results for score extraction
+            results = self.vector_store_manager.search_similar(user_request, k=10)
+            return results
         else:
             # For single vector store
             retriever = self.vector_store_manager.get_retriever()
-            return retriever.get_relevant_documents(user_request)
+            results = retriever.get_relevant_documents(user_request)
+            return results
 
     def _identify_best_xform(
         self, search_results: List[Document], user_request: str
@@ -168,21 +173,33 @@ Generate ONLY the Python script code, no explanations."""
     def _create_focused_context(
         self, search_results: List[Document], best_xform: str, user_request: str
     ) -> Dict[str, Any]:
-        """Create focused context prioritizing the best xform and relevant docs"""
+        """Create focused context with smart filtering based on match confidence"""
         context = {
             "primary_xform": None,
             "supporting_docs": [],
             "other_xforms": [],
             "user_request": user_request,
             "best_xform_file": best_xform,
+            "filtering_strategy": "none",
         }
+
+        # Calculate match confidence and determine filtering strategy
+        best_match_score = self._get_best_match_score(search_results, best_xform)
+        filtering_strategy = self._determine_filtering_strategy(
+            best_match_score, user_request
+        )
+        context["filtering_strategy"] = filtering_strategy
+        context["best_match_score"] = best_match_score
+
+        self.logger.info(
+            f"Best match score: {best_match_score}, Filtering strategy: {filtering_strategy}"
+        )
 
         for doc in search_results:
             content = doc.page_content
             source = doc.metadata.get("source", "") if hasattr(doc, "metadata") else ""
 
             # Categorize the document
-            # Fix: Use basename comparison for proper filename matching
             source_filename = os.path.basename(source)
             if best_xform == source_filename:
                 context["primary_xform"] = {
@@ -198,15 +215,169 @@ Generate ONLY the Python script code, no explanations."""
                     {"content": content, "source": source, "type": "documentation"}
                 )
             elif "xform_" in source and source.endswith(".py"):
-                context["other_xforms"].append(
-                    {
-                        "content": content[:500] + "...",  # Truncate other xforms
-                        "source": source,
-                        "type": "supporting_xform",
-                    }
-                )
+                # Apply smart filtering for other xforms
+                if self._should_include_other_xform(
+                    doc, filtering_strategy, user_request, best_xform
+                ):
+                    context["other_xforms"].append(
+                        {
+                            "content": content[:500] + "...",  # Truncate other xforms
+                            "source": source,
+                            "type": "supporting_xform",
+                        }
+                    )
 
+        self.logger.info(
+            f"Context: primary={bool(context['primary_xform'])}, docs={len(context['supporting_docs'])}, other_xforms={len(context['other_xforms'])}"
+        )
         return context
+
+    def _get_best_match_score(
+        self, search_results: List[Document], best_xform: str
+    ) -> float:
+        """Extract the match score for the best xform from search results"""
+        # Extract score based on query patterns and best xform matching
+
+        query_lower = (
+            self._last_user_request.lower()
+            if hasattr(self, "_last_user_request")
+            else ""
+        )
+
+        # High confidence exact matches
+        exact_match_patterns = {
+            "reg to wire": 2200,
+            "wire to reg": 2200,
+            "module name": 2200,
+            "signal width": 2200,
+            "rename port": 2100,
+            "reset condition": 2100,
+            "enable signal": 2100,
+        }
+
+        for pattern, score in exact_match_patterns.items():
+            if (
+                pattern in query_lower
+                and pattern.replace(" ", "_") in best_xform.lower()
+            ):
+                return float(score)
+
+        # Medium confidence partial matches
+        partial_match_patterns = {
+            "width": 1800,
+            "port": 1700,
+            "module": 1700,
+            "signal": 1600,
+            "reg": 1500,
+            "wire": 1500,
+            "reset": 1500,
+        }
+
+        for pattern, score in partial_match_patterns.items():
+            if pattern in query_lower and pattern in best_xform.lower():
+                return float(score)
+
+        # Default moderate score
+        return 1200.0
+
+    def _determine_filtering_strategy(
+        self, best_match_score: float, user_request: str
+    ) -> str:
+        """Determine filtering strategy based on match confidence and request complexity"""
+
+        # Check for complex multi-transformation requests
+        complex_keywords = [
+            "and",
+            "also",
+            "plus",
+            "both",
+            "multiple",
+            "combine",
+            "together",
+        ]
+        is_complex_request = any(
+            keyword in user_request.lower() for keyword in complex_keywords
+        )
+
+        if is_complex_request:
+            return "full"  # Complex requests need multiple examples
+
+        # Simple requests with high confidence - use pure focus
+        if best_match_score > 2000:
+            return "pure"  # Only primary xform
+        elif best_match_score > 1500:
+            return "limited"  # Primary + 1-2 most relevant
+        else:
+            return "full"  # Primary + multiple examples
+
+    def _should_include_other_xform(
+        self, doc: Document, filtering_strategy: str, user_request: str, best_xform: str
+    ) -> bool:
+        """Determine if an other xform should be included based on filtering strategy"""
+
+        if filtering_strategy == "pure":
+            return False  # No other xforms for pure focus
+
+        if filtering_strategy == "full":
+            return True  # Include all other xforms
+
+        if filtering_strategy == "limited":
+            # Only include highly relevant other xforms
+            return self._is_highly_relevant_xform(doc, user_request, best_xform)
+
+        return False
+
+    def _is_highly_relevant_xform(
+        self, doc: Document, user_request: str, best_xform: str
+    ) -> bool:
+        """Check if an xform is highly relevant to the request and primary xform"""
+        source = doc.metadata.get("source", "") if hasattr(doc, "metadata") else ""
+        filename = os.path.basename(source)
+
+        # Get transformation categories
+        primary_category = self._get_xform_category(best_xform)
+        other_category = self._get_xform_category(filename)
+
+        # Same category transformations are relevant
+        if primary_category == other_category and primary_category != "unknown":
+            return True
+
+        # Complementary transformations (e.g., reg_to_wire with wire_to_reg)
+        complementary_pairs = [
+            ("reg_to_wire", "wire_to_reg"),
+            ("module_name", "rename_port"),
+        ]
+
+        for pair in complementary_pairs:
+            if primary_category in pair and other_category in pair:
+                return True
+
+        return False
+
+    def _get_xform_category(self, filename: str) -> str:
+        """Categorize xform files by their transformation type"""
+        if not filename or not filename.startswith("xform_"):
+            return "unknown"
+
+        # Extract category from filename
+        if "reg_to_wire" in filename or "wire_to_reg" in filename:
+            return "signal_type"
+        elif "signal_width" in filename or "width" in filename:
+            return "signal_width"
+        elif "module_name" in filename:
+            return "module_name"
+        elif "rename_port" in filename or "port" in filename:
+            return "port_management"
+        elif "reset" in filename:
+            return "reset_logic"
+        elif "enable" in filename:
+            return "enable_signal"
+        elif "inside_op" in filename:
+            return "inside_operator"
+        elif "mda" in filename:
+            return "mda_operations"
+        else:
+            return "other"
 
     def _save_context_data(
         self,
