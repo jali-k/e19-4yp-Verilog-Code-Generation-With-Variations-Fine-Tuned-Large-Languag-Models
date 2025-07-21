@@ -46,7 +46,10 @@ def main():
         "request", help="Description of the transformation to generate"
     )
     gen_parser.add_argument(
-        "--save", "-s", action="store_true", help="Save generated code to file"
+        "--save",
+        "-s",
+        action="store_true",
+        help="Also display generated code in terminal (code is always saved to file)",
     )
     gen_parser.add_argument(
         "--verbose", "-v", action="store_true", help="Verbose output"
@@ -102,12 +105,15 @@ def main():
                 print("✅ Generation successful!")
                 print(f"📝 Generated {len(result['code'])} characters of code")
 
-                if args.save:
-                    if pipeline.save_generated_code(result):
-                        print(f"💾 Saved to: {result['filename']}")
-                    else:
-                        print("❌ Failed to save generated code")
+                # Always save the generated code automatically
+                if pipeline.save_generated_code(result):
+                    output_path = pipeline.config.output_dir / result["filename"]
+                    print(f"💾 Saved to: {output_path}")
                 else:
+                    print("❌ Failed to save generated code")
+
+                # Also display the code if verbose or save flag is used
+                if args.save or args.verbose:
                     print("\n--- Generated Code ---")
                     print(result["code"])
             else:
