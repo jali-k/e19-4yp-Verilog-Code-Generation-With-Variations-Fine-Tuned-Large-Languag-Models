@@ -287,6 +287,40 @@ Generate ONLY the complete Python script code, no explanations or comments outsi
                 "source_type": source,
                 "function_name": f"transform_{source}_to_{target}",
                 "description": f"Transform {source} variables to {target}",
+                "main_logic": f"""# Read the input file
+        with open(input_file, "r") as f:
+            content = f.read()
+
+        # Parse the Verilog file to get the AST
+        ast, directives = parse([input_file])
+
+        # Create and apply the visitor to identify {source} declarations
+        visitor = {source.capitalize()}To{target.capitalize()}Visitor(target_variable)
+        visitor.visit(ast)
+
+        # Print summary of changes
+        for change in visitor.changes_made:
+            print(change)
+
+        # Replace {source} declarations with {target} in the content
+        modified_content = content
+        for decl in visitor.{source}_declarations:
+            # Match {source} declaration with the correct width
+            pattern = (
+                r"\\b{source}\\s+"
+                + re.escape(decl["width"])
+                + r"\\b"
+                + re.escape(decl["name"])
+                + r"\\b"
+            )
+            replacement = f'{target} {{decl["width"]}}{{decl["name"]}}'
+            modified_content = re.sub(pattern, replacement, modified_content)
+
+        # Write the modified content to the output file
+        with open(output_file, "w") as f:
+            f.write(modified_content)
+
+        print(f"Output written to {{output_file}}")""",
                 "pattern_specific_logic": f"""# Store information about the {source} declaration
                             width = ""
                             if item.width:
@@ -312,6 +346,26 @@ Generate ONLY the complete Python script code, no explanations or comments outsi
                 "source_type": "signal",
                 "function_name": "transform_signal",
                 "description": "Transform signal",
+                "main_logic": """# Read the input file
+        with open(input_file, "r") as f:
+            content = f.read()
+
+        # Parse the Verilog file to get the AST
+        ast, directives = parse([input_file])
+
+        # Create and apply the visitor
+        visitor = SignalVisitor(target_variable)
+        visitor.visit(ast)
+
+        # Apply transformations
+        modified_content = content
+        # Add transformation logic here
+
+        # Write the modified content to the output file
+        with open(output_file, "w") as f:
+            f.write(modified_content)
+
+        print(f"Output written to {output_file}")""",
                 "pattern_specific_logic": "# Pattern-specific logic here",
             }
 
