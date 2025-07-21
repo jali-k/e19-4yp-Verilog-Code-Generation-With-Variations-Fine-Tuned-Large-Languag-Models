@@ -53,13 +53,29 @@ class DocumentProcessor:
         doc_files = self._load_documentation_files()
         documents.extend(doc_files)
 
-        # Split all documents into chunks
-        split_docs = self.text_splitter.split_documents(documents)
+        # Split documents - but handle xform files differently
+        split_docs = []
 
-        # Add chunk metadata
-        for i, doc in enumerate(split_docs):
-            doc.metadata["chunk_id"] = i
-            doc.metadata["chunk_type"] = self._classify_chunk(doc.page_content)
+        for doc in documents:
+            source_type = doc.metadata.get("source_type", "")
+
+            # Keep xform files as complete documents (no chunking)
+            if source_type == "xform_example":
+                doc.metadata["chunk_id"] = len(split_docs)
+                doc.metadata["chunk_type"] = "complete_xform"
+                split_docs.append(doc)
+                self.logger.info(
+                    f"Kept complete xform file: {doc.metadata.get('filename')} ({len(doc.page_content)} chars)"
+                )
+            else:
+                # Split documentation files normally
+                doc_chunks = self.text_splitter.split_documents([doc])
+                for i, chunk in enumerate(doc_chunks):
+                    chunk.metadata["chunk_id"] = len(split_docs) + i
+                    chunk.metadata["chunk_type"] = self._classify_chunk(
+                        chunk.page_content
+                    )
+                split_docs.extend(doc_chunks)
 
         self.logger.info(
             f"Created {len(split_docs)} chunks from {len(documents)} documents"

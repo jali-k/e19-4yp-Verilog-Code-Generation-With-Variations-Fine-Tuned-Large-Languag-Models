@@ -182,7 +182,9 @@ Generate ONLY the Python script code, no explanations."""
             source = doc.metadata.get("source", "") if hasattr(doc, "metadata") else ""
 
             # Categorize the document
-            if best_xform in source:
+            # Fix: Use basename comparison for proper filename matching
+            source_filename = os.path.basename(source)
+            if best_xform == source_filename:
                 context["primary_xform"] = {
                     "content": content,
                     "source": source,
