@@ -25,6 +25,7 @@ class RAGConfig:
 
     # Embedding settings - CodeBERT for code understanding
     embedding_model: str = "microsoft/codebert-base"
+    use_hybrid_embeddings: bool = True  # Use hybrid embeddings for better doc retrieval
 
     # Text splitting settings - optimized for code
     chunk_size: int = 1500  # Smaller chunks for better precision

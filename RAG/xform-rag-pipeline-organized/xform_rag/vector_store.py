@@ -13,6 +13,7 @@ from langchain_chroma import Chroma
 
 from .config import RAGConfig
 from .embeddings import CodeBERTEmbeddings
+from .hybrid_embeddings import HybridEmbeddings
 from .document_processor import DocumentProcessor
 
 
@@ -22,7 +23,17 @@ class VectorStoreManager:
     def __init__(self, config: RAGConfig):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self.embeddings = CodeBERTEmbeddings(self.config.embedding_model)
+
+        # Choose embedding strategy
+        if config.use_hybrid_embeddings:
+            self.logger.info(
+                "Using hybrid embeddings (CodeBERT + SentenceTransformers)"
+            )
+            self.embeddings = HybridEmbeddings()
+        else:
+            self.logger.info("Using CodeBERT embeddings only")
+            self.embeddings = CodeBERTEmbeddings(self.config.embedding_model)
+
         self.vector_store = None
         self.document_processor = DocumentProcessor(config)
 
@@ -112,34 +123,240 @@ class VectorStoreManager:
         return self.vector_store
 
     def _vector_store_exists(self) -> bool:
-        """Check if vector store exists and has content"""
+        """Check if vector store exists and has content, prefer most recent timestamped version"""
+        # First, try to find the most recent timestamped vector store
+        base_dir = self.config.vector_store_dir.parent
+        pattern = f"{self.config.vector_store_dir.name}_*"
+
+        timestamped_dirs = []
+        for path in base_dir.glob(pattern):
+            if path.is_dir() and any(path.iterdir()):
+                timestamped_dirs.append(path)
+
+        if timestamped_dirs:
+            # Sort by name (timestamp) and use the most recent
+            most_recent = sorted(timestamped_dirs)[-1]
+            self.logger.info(f"Found timestamped vector store: {most_recent}")
+            self.config.vector_store_dir = most_recent
+            return True
+
+        # Fallback to original path
         return self.config.vector_store_dir.exists() and any(
             self.config.vector_store_dir.iterdir()
         )
 
     def search_similar(self, query: str, k: int = None) -> List[Document]:
-        """Search for similar documents with exact filename matching boost"""
+        """Search for similar documents using dual-track retrieval: documentation + xforms"""
         if k is None:
             k = self.config.retrieval_k
 
         vector_store = self.get_vector_store()
 
-        # Get more results initially for post-processing (increase for better coverage)
-        search_k = min(k * 5, 30)  # Get 5x more results to re-rank
-        results = vector_store.similarity_search(query, k=search_k)
+        # Dual-track approach: get both documentation and xforms separately
+        docs_results = self._search_documentation(
+            query, k // 2 + 1
+        )  # Get ~half for docs
+        xform_results = self._search_xforms(query, k // 2 + 1)  # Get ~half for xforms
 
-        self.logger.debug(f"Initial similarity search returned {len(results)} results")
+        # Combine results with documentation first for better context
+        combined_results = docs_results + xform_results
 
-        # Apply filename-based boosting
-        boosted_results = self._boost_exact_matches(query, results)
+        # Limit to requested k
+        final_results = combined_results[:k]
 
-        # Return top k after boosting
-        final_results = boosted_results[:k]
+        # Log the composition
+        doc_count = len([r for r in final_results if self._is_documentation(r)])
+        xform_count = len([r for r in final_results if not self._is_documentation(r)])
 
+        self.logger.info(
+            f"Dual-track retrieval: {doc_count} docs, {xform_count} xforms"
+        )
         self.logger.info(
             f"Found {len(final_results)} similar documents for query: {query[:50]}..."
         )
+
         return final_results
+
+    def _search_documentation(self, query: str, k: int) -> List[Document]:
+        """Search specifically for documentation using keyword filtering + similarity"""
+        vector_store = self.get_vector_store()
+
+        # First, get ALL documentation chunks
+        all_docs = vector_store.similarity_search("", k=254)  # Get all documents
+        doc_chunks = [doc for doc in all_docs if self._is_documentation(doc)]
+
+        if not doc_chunks:
+            return []
+
+        # Score documentation chunks based on keyword relevance
+        query_lower = query.lower()
+        query_terms = query_lower.split()
+
+        scored_docs = []
+        for doc in doc_chunks:
+            score = self._score_doc_relevance(query_lower, query_terms, doc)
+            scored_docs.append((score, doc))
+
+        # Sort by relevance score and return top k
+        scored_docs.sort(key=lambda x: x[0], reverse=True)
+
+        # Log for debugging
+        if scored_docs:
+            self.logger.info(
+                f"Top doc scores for '{query}': {[(score, doc.metadata.get('source', '')[-30:]) for score, doc in scored_docs[:3]]}"
+            )
+
+        return [doc for score, doc in scored_docs[:k] if score > 0]
+
+    def _score_doc_relevance(
+        self, query_lower: str, query_terms: list, doc: Document
+    ) -> float:
+        """Score documentation relevance based on keyword matching"""
+        content_lower = doc.page_content.lower()
+        source_lower = doc.metadata.get("source", "").lower()
+        score = 0.0
+
+        # High-value keyword mapping for transformation queries
+        keyword_boost = {
+            "signal": 20,
+            "width": 20,
+            "transform": 15,
+            "pattern": 15,
+            "ast": 15,
+            "node": 15,
+            "pyverilog": 15,
+            "visitor": 10,
+            "module": 10,
+            "wire": 10,
+            "reg": 10,
+            "port": 10,
+            "change": 10,
+            "modify": 10,
+            "implementation": 10,
+        }
+
+        # Score based on query terms
+        for term in query_terms:
+            if term in content_lower:
+                boost = keyword_boost.get(term, 5)
+                score += boost
+
+        # Extra scoring for exact phrase matches
+        if query_lower in content_lower:
+            score += 30
+
+        # Boost documentation about specific transformation patterns
+        if "signal width" in query_lower and "signal width" in content_lower:
+            score += 50
+        if "transformation" in query_lower and "pattern" in content_lower:
+            score += 30
+
+        # Source-based scoring
+        if "pattern" in source_lower and any(
+            term in query_lower for term in ["transform", "pattern", "change"]
+        ):
+            score += 25
+        if "ast" in source_lower and any(
+            term in query_lower for term in ["ast", "node", "visitor"]
+        ):
+            score += 25
+
+        return score
+
+    def _search_xforms(self, query: str, k: int) -> List[Document]:
+        """Search specifically for xform examples"""
+        vector_store = self.get_vector_store()
+
+        # Search with original query (good for code)
+        search_results = vector_store.similarity_search(query, k=k * 3)
+
+        # Filter to only xforms and apply boosting
+        xform_results = []
+        for doc in search_results:
+            if not self._is_documentation(doc):  # Xforms and other code
+                xform_results.append(doc)
+                if len(xform_results) >= k:
+                    break
+
+        # Apply existing boost logic for exact matches
+        boosted_xforms = self._boost_exact_matches(query, xform_results)
+
+        return boosted_xforms[:k]
+
+    def _expand_query_for_docs(self, query: str) -> str:
+        """Expand query with code-specific terms that appear in documentation"""
+        query_lower = query.lower()
+
+        # Map natural language to code/AST terms that appear in docs
+        expansions = {
+            "traverse": "visit children node pyverilog ast",
+            "ast": "node visitor moduledef wire reg port",
+            "find": "visitor visit children traverse",
+            "module": "moduledef pyverilog ast node",
+            "signal": "wire reg port identifier ast node",
+            "pattern": "visitor example transform pyverilog",
+            "how to": "example visitor pattern traverse",
+            "transformation": "ast node visitor pyverilog moduledef example pattern",
+            "transform": "ast node visitor pyverilog example",
+            "change": "modify ast node visitor pyverilog",
+            "width": "signal wire reg port identifier ast",
+            "create": "ast node visitor pyverilog example pattern",
+            "implement": "ast node visitor pyverilog example pattern",
+        }
+
+        expanded_terms = [query]
+        for key, expansion in expansions.items():
+            if key in query_lower:
+                expanded_terms.append(expansion)
+
+        return " ".join(expanded_terms)
+
+    def _find_exact_keyword_matches(self, query: str, k: int) -> List[Document]:
+        """Find documentation that contains exact keyword matches from the query"""
+        vector_store = self.get_vector_store()
+
+        # Get all documents in the collection for keyword matching
+        all_results = vector_store.similarity_search("", k=k * 5)  # Cast a wide net
+
+        # Extract important keywords from query
+        query_words = query.lower().split()
+        important_keywords = []
+
+        # Look for important technical terms, class names, etc.
+        for word in query_words:
+            if len(word) > 3 and word not in [  # Skip short words
+                "pattern",
+                "implementation",
+                "how",
+                "the",
+                "and",
+                "for",
+                "with",
+            ]:
+                important_keywords.append(word)
+
+        matched_docs = []
+        for doc in all_results:
+            if self._is_documentation(doc):  # Only consider documentation
+                content_lower = doc.page_content.lower()
+                # Check if any important keywords appear in the content
+                for keyword in important_keywords:
+                    if keyword in content_lower:
+                        matched_docs.append(doc)
+                        self.logger.debug(
+                            f"Found exact match for '{keyword}' in {doc.metadata.get('source', 'unknown')}"
+                        )
+                        break  # Avoid duplicates
+
+        return matched_docs[:3]  # Limit to top 3 keyword matches
+
+    def _is_documentation(self, doc: Document) -> bool:
+        """Check if document is documentation"""
+        source = doc.metadata.get("source", "").lower()
+        return any(
+            doc_type in source
+            for doc_type in ["documentation", "pyverilog", "patterns", ".md"]
+        )
 
     def _boost_exact_matches(
         self, query: str, results: List[Document]
@@ -221,7 +438,7 @@ class VectorStoreManager:
                 (score, doc.metadata.get("source", "unknown")[-30:])
                 for score, doc in scored_docs[:5]
             ]  # Show top 5
-            self.logger.info(f"DEBUG: Top matches for '{query}': {top_scores}")
+            self.logger.debug(f"Top matches for '{query}': {top_scores}")
 
             # Also log if we found any module_name related files
             module_name_files = [
@@ -230,11 +447,11 @@ class VectorStoreManager:
                 if "module_name" in doc.metadata.get("source", "").lower()
             ]
             if module_name_files:
-                self.logger.info(
-                    f"DEBUG: Found module_name files: {[doc.metadata.get('source', '') for doc in module_name_files]}"
+                self.logger.debug(
+                    f"Found module_name files: {[doc.metadata.get('source', '') for doc in module_name_files]}"
                 )
             else:
-                self.logger.info("DEBUG: No module_name files found in results")
+                self.logger.debug("No module_name files found in results")
 
         return [doc for score, doc in scored_docs]
 

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .config import RAGConfig
 from .vector_store import VectorStoreManager
+from .dual_vector_store import DualVectorStoreManager
 from .code_generator import CodeGenerator
 from .document_processor import DocumentProcessor
 
@@ -16,17 +17,24 @@ from .document_processor import DocumentProcessor
 class XformRAGPipeline:
     """Simple, focused RAG pipeline for Verilog transformation generation"""
 
-    def __init__(self, config: RAGConfig = None):
+    def __init__(self, config: RAGConfig = None, use_dual_stores: bool = True):
         """Initialize the RAG pipeline"""
         self.config = config or RAGConfig()
         self.config.validate()
+        self.use_dual_stores = use_dual_stores
 
         # Setup logging
         self.logger = logging.getLogger(__name__)
         self.logger.info("Initializing Xform RAG Pipeline")
 
-        # Initialize components
-        self.vector_store_manager = VectorStoreManager(self.config)
+        # Initialize components - choose vector store strategy
+        if use_dual_stores:
+            self.vector_store_manager = DualVectorStoreManager(self.config)
+            self.logger.info("Using dual vector stores (separate for docs and code)")
+        else:
+            self.vector_store_manager = VectorStoreManager(self.config)
+            self.logger.info("Using single hybrid vector store")
+
         self.code_generator = CodeGenerator(self.config)
         self.document_processor = DocumentProcessor(self.config)
 
@@ -35,7 +43,10 @@ class XformRAGPipeline:
     def setup_vector_store(self) -> bool:
         """Setup the vector store with existing documents"""
         self.logger.info("Setting up vector store...")
-        return self.vector_store_manager.create_vector_store()
+        if self.use_dual_stores:
+            return self.vector_store_manager.create_dual_vector_stores()
+        else:
+            return self.vector_store_manager.create_vector_store()
 
     def generate_transformation(self, user_request: str) -> Dict[str, Any]:
         """Generate a transformation script based on user request"""

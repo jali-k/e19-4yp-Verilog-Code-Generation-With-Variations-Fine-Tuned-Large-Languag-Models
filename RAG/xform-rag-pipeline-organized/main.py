@@ -11,6 +11,13 @@ from pathlib import Path
 from xform_rag import create_pipeline, RAGConfig
 
 
+def create_pipeline_with_config():
+    """Create pipeline with default dual-store configuration"""
+    config = RAGConfig()
+    # Use dual stores by default for better separation of docs and code
+    return create_pipeline(config, use_dual_stores=True)
+
+
 def setup_logging(verbose: bool = False):
     """Setup logging configuration"""
     level = logging.DEBUG if verbose else logging.INFO
@@ -77,7 +84,7 @@ def main():
 
     try:
         # Create pipeline
-        pipeline = create_pipeline()
+        pipeline = create_pipeline(use_dual_stores=True)
 
         if args.command == "setup":
             print("🔧 Setting up vector store...")

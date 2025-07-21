@@ -24,6 +24,7 @@ def create_pipeline(
     documentation_dir="./documentation",
     # model_name="qwen2.5-coder:1.5b",
     model_name="codellama:7b",
+    use_dual_stores=True,
     **kwargs
 ) -> XformRAGPipeline:
     """
@@ -33,6 +34,7 @@ def create_pipeline(
         xform_examples_dir: Directory containing xform example files
         documentation_dir: Directory containing PyVerilog documentation
         model_name: LLM model name
+        use_dual_stores: Whether to use separate vector stores for docs and code
         **kwargs: Additional configuration options
 
     Returns:
@@ -45,4 +47,4 @@ def create_pipeline(
         **kwargs
     )
 
-    return XformRAGPipeline(config)
+    return XformRAGPipeline(config, use_dual_stores=use_dual_stores)
