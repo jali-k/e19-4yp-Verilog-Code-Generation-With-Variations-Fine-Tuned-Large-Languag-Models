@@ -154,6 +154,12 @@ Generate ONLY the Python script code, no explanations."""
         """Identify the best matching xform file from search results"""
         xform_files = []
 
+        # First, check for complementary transformations
+        complement_xform = self._find_complementary_xform(search_results, user_request)
+        if complement_xform:
+            self.logger.info(f"Found complementary transformation: {complement_xform}")
+            return complement_xform
+
         for doc in search_results:
             if hasattr(doc, "metadata") and "source" in doc.metadata:
                 source = doc.metadata["source"]
@@ -169,6 +175,38 @@ Generate ONLY the Python script code, no explanations."""
         best_xform = xform_files[0]
         self.logger.info(f"Best matching xform identified: {best_xform}")
         return best_xform
+
+    def _find_complementary_xform(
+        self, search_results: List[Document], user_request: str
+    ) -> str:
+        """Find complementary transformation in search results"""
+
+        query_lower = user_request.lower()
+
+        # Define what to look for based on user request
+        complementary_mapping = {
+            "wire to reg": "reg_to_wire",
+            "reg to wire": "wire_to_reg",
+            "input to output": "output_to_input",
+            "output to input": "input_to_output",
+        }
+
+        for request_pattern, target_file_pattern in complementary_mapping.items():
+            if request_pattern in query_lower:
+                # Look for the complementary xform in search results
+                for doc in search_results:
+                    if hasattr(doc, "metadata") and "source" in doc.metadata:
+                        source = doc.metadata["source"]
+                        filename = os.path.basename(source)
+
+                        if (
+                            target_file_pattern in filename
+                            and "xform_" in filename
+                            and filename.endswith(".py")
+                        ):
+                            return filename
+
+        return None  # No complementary transformation found
 
     def _create_focused_context(
         self, search_results: List[Document], best_xform: str, user_request: str
@@ -262,6 +300,13 @@ Generate ONLY the Python script code, no explanations."""
             ):
                 return float(score)
 
+        # Check for complementary transformations (inverse operations)
+        complementary_score = self._get_complementary_transformation_score(
+            query_lower, best_xform
+        )
+        if complementary_score > 0:
+            return float(complementary_score)
+
         # Medium confidence partial matches
         partial_match_patterns = {
             "width": 1800,
@@ -279,6 +324,45 @@ Generate ONLY the Python script code, no explanations."""
 
         # Default moderate score
         return 1200.0
+
+    def _get_complementary_transformation_score(
+        self, query_lower: str, best_xform: str
+    ) -> float:
+        """Detect complementary transformations and assign high confidence scores"""
+
+        # Define complementary transformation pairs with their patterns
+        complementary_pairs = {
+            # Wire/Reg type conversions
+            ("wire to reg", "wire_to_reg"): ("reg to wire", "reg_to_wire"),
+            ("reg to wire", "reg_to_wire"): ("wire to reg", "wire_to_reg"),
+            # Other potential complementary pairs
+            ("input to output", "input_to_output"): (
+                "output to input",
+                "output_to_input",
+            ),
+            ("output to input", "output_to_input"): (
+                "input to output",
+                "input_to_output",
+            ),
+        }
+
+        for (query_pattern, query_file_pattern), (
+            complement_pattern,
+            complement_file_pattern,
+        ) in complementary_pairs.items():
+            # Check if query matches one pattern and best_xform matches its complement
+            if (
+                query_pattern in query_lower
+                and complement_file_pattern in best_xform.lower()
+            ):
+
+                self.logger.info(
+                    f"Detected complementary transformation: '{query_pattern}' -> '{complement_file_pattern}' "
+                    f"in {best_xform}"
+                )
+                return 2150.0  # High confidence for complementary transformations
+
+        return 0.0  # No complementary match found
 
     def _determine_filtering_strategy(
         self, best_match_score: float, user_request: str
