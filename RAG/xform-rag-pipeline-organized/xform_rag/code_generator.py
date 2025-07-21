@@ -16,6 +16,8 @@ from langchain.schema import Document
 from .config import RAGConfig
 from .llm_manager import LLMManager
 from .vector_store import VectorStoreManager
+from .pattern_library import PatternLibrary
+from .progressive_retrieval import ProgressiveRetrievalManager
 
 
 class CodeGenerator:
@@ -33,6 +35,12 @@ class CodeGenerator:
             self.vector_store_manager = vector_store_manager
         else:
             self.vector_store_manager = VectorStoreManager(config)
+
+        # Initialize pattern-guided components
+        self.pattern_library = PatternLibrary()
+        self.progressive_retrieval = ProgressiveRetrievalManager(
+            self.vector_store_manager, self.pattern_library
+        )
 
         # Create output directory for saving context data
         self.output_dir = os.path.join("generated", "context_data")
@@ -100,34 +108,23 @@ Generate ONLY the Python script code, no explanations."""
         )
 
     def generate_xform(self, user_request: str) -> Dict[str, Any]:
-        """Generate a transformation script based on user request with focused approach"""
+        """Generate transformation script using Pattern-Guided Progressive Retrieval"""
         self.logger.info(f"Generating transformation for: {user_request}")
 
         try:
-            # Get search results from vector store
-            search_results = self._get_search_results(user_request)
-
-            # Identify the best matching xform
-            best_xform = self._identify_best_xform(search_results, user_request)
-
-            # Extract transformation strategy from best matches
-            transformation_strategy = self._extract_transformation_strategy(
-                search_results, user_request
+            # Use progressive retrieval for enhanced context
+            enhanced_context = self.progressive_retrieval.progressive_retrieve(
+                user_request
             )
 
-            # Filter and organize context
-            focused_context = self._create_focused_context(
-                search_results, best_xform, user_request
+            # Generate code using pattern-guided approach
+            generated_code = self._generate_with_pattern_guidance(
+                user_request, enhanced_context
             )
 
-            # Save context data for inspection
-            context_file = self._save_context_data(
-                user_request, search_results, focused_context
-            )
-
-            # Generate code using focused prompt with strategy
-            generated_code = self._generate_with_focused_prompt(
-                user_request, focused_context, transformation_strategy
+            # Save enhanced context for inspection
+            context_file = self._save_enhanced_context_data(
+                user_request, enhanced_context
             )
 
             # Create filename from request
@@ -138,9 +135,11 @@ Generate ONLY the Python script code, no explanations."""
                 "code": generated_code,
                 "filename": filename,
                 "user_request": user_request,
-                "best_xform": best_xform,
+                "best_xform": enhanced_context["best_xform"],
+                "transformation_type": enhanced_context["transformation_type"],
                 "context_file": context_file,
-                "search_results_count": len(search_results),
+                "enhancement_stage": enhanced_context["enhancement_stage"],
+                "total_examples": enhanced_context["total_examples"],
             }
 
             self.logger.info(f"Generated transformation script: {filename}")
@@ -150,20 +149,209 @@ Generate ONLY the Python script code, no explanations."""
             self.logger.error(f"Error generating transformation: {e}")
             return {"success": False, "error": str(e), "user_request": user_request}
 
-    def _get_search_results(self, user_request: str) -> List[Document]:
-        """Get search results from vector store"""
-        # Store user request for score calculation
-        self._last_user_request = user_request
+    def _generate_with_pattern_guidance(
+        self, user_request: str, enhanced_context: Dict[str, Any]
+    ) -> str:
+        """Generate code using pattern-guided approach with quality focus"""
 
-        if hasattr(self.vector_store_manager, "search_similar"):
-            # For dual vector store - store the results for score extraction
-            results = self.vector_store_manager.search_similar(user_request, k=10)
-            return results
+        # Create pattern-guided prompt
+        prompt = self._create_pattern_guided_prompt(user_request, enhanced_context)
+
+        # Generate using LLM
+        llm = self.llm_manager.get_llm()
+        result = llm.invoke(prompt)
+
+        return result
+
+    def _create_pattern_guided_prompt(
+        self, user_request: str, enhanced_context: Dict[str, Any]
+    ) -> str:
+        """Create enhanced prompt with pattern guidance"""
+
+        prompt_parts = []
+
+        # Header with explicit quality requirements
+        prompt_parts.append(
+            """You are an expert at generating PRODUCTION-QUALITY Python scripts for Verilog transformations using PyVerilog.
+
+CRITICAL QUALITY REQUIREMENTS:
+- Generate PRODUCTION-QUALITY code that handles real-world Verilog complexity
+- Use flexible constructors with optional parameters and comprehensive state tracking  
+- Implement defensive programming with proper null checks and attribute validation
+- Apply sophisticated regex patterns with proper escaping and width preservation
+- Include comprehensive error handling with specific user feedback
+- Follow the exact architectural patterns shown in HIGH-QUALITY examples
+
+"""
+        )
+
+        # Add transformation type and quality guidelines
+        transformation_type = enhanced_context["transformation_type"]
+        quality_guidelines = enhanced_context["quality_guidelines"]
+
+        prompt_parts.append(f"TRANSFORMATION TYPE: {transformation_type.upper()}\n")
+        prompt_parts.append("QUALITY GUIDELINES:")
+        for aspect, guideline in quality_guidelines.items():
+            prompt_parts.append(f"- {guideline}")
+        prompt_parts.append("")
+
+        # Add anti-patterns to avoid
+        prompt_parts.append("ANTI-PATTERNS TO AVOID:")
+        for anti_pattern in enhanced_context["anti_patterns"]:
+            prompt_parts.append(f"- {anti_pattern}")
+        prompt_parts.append("")
+
+        # Add pattern templates
+        relevant_patterns = enhanced_context["relevant_patterns"]
+        prompt_parts.append("=== REQUIRED PATTERN TEMPLATES ===")
+
+        for pattern in relevant_patterns:
+            # Format pattern with transformation-specific details
+            pattern_kwargs = self._get_pattern_kwargs(transformation_type, user_request)
+            formatted_pattern = self.pattern_library.format_pattern_for_prompt(
+                pattern, **pattern_kwargs
+            )
+            prompt_parts.append(formatted_pattern)
+
+        # Add primary high-quality example
+        if enhanced_context["primary_example"]:
+            prompt_parts.append("=== PRIMARY HIGH-QUALITY EXAMPLE ===")
+            primary = enhanced_context["primary_example"]
+            if hasattr(primary, "metadata") and "source" in primary.metadata:
+                prompt_parts.append(f"Source: {primary.metadata['source']}")
+            prompt_parts.append(primary.page_content)
+            prompt_parts.append("")
+
+        # Add supporting examples
+        if enhanced_context["supporting_examples"]:
+            prompt_parts.append("=== SUPPORTING EXAMPLES ===")
+            for i, example in enumerate(enhanced_context["supporting_examples"][:2]):
+                if hasattr(example, "metadata") and "source" in example.metadata:
+                    prompt_parts.append(f"Example {i+1}: {example.metadata['source']}")
+                prompt_parts.append(example.page_content[:800] + "...")
+                prompt_parts.append("")
+
+        # Add the user request
+        prompt_parts.append(f"USER REQUEST: {user_request}")
+        prompt_parts.append("")
+
+        # Add generation instructions
+        prompt_parts.append(
+            """GENERATION APPROACH:
+1. ANALYZE the user request and identify the specific transformation needed
+2. APPLY the required pattern templates above - use them as your structural foundation
+3. ADAPT the high-quality examples to match the user's specific requirements
+4. ENSURE all quality guidelines are followed and anti-patterns are avoided
+5. GENERATE complete, production-ready code that handles edge cases
+
+SCRIPT STRUCTURE (MANDATORY):
+- Start with #!/usr/bin/env python3 and proper docstring
+- Import ALL necessary modules (sys, os, re, argparse, PyVerilog)
+- Create visitor class using DEFENSIVE_AST_VISITOR pattern with flexible constructor
+- Implement transformation function using SOPHISTICATED_REGEX pattern
+- Include COMPREHENSIVE_ERROR_HANDLING with specific messages
+- Add ROBUST_ARGUMENT_PARSER with proper validation
+- Return True/False for success/failure in main function
+
+Generate ONLY the complete Python script code, no explanations or comments outside the code."""
+        )
+
+        return "\n".join(prompt_parts)
+
+    def _get_pattern_kwargs(
+        self, transformation_type: str, user_request: str
+    ) -> Dict[str, str]:
+        """Get pattern template arguments based on transformation type"""
+        request_lower = user_request.lower()
+
+        if transformation_type == "data_type":
+            # Detect source and target types
+            if "wire" in request_lower and "reg" in request_lower:
+                if request_lower.find("wire") < request_lower.find("reg"):
+                    source, target = "wire", "reg"
+                else:
+                    source, target = "reg", "wire"
+            elif "wire" in request_lower and "int" in request_lower:
+                source, target = "wire", "int"
+            elif "reg" in request_lower and "wire" in request_lower:
+                source, target = "reg", "wire"
+            else:
+                source, target = "reg", "wire"  # Default
+
+            return {
+                "target": source,
+                "NodeType": source.capitalize(),
+                "source": source,
+                "target": target,
+                "type": source,
+                "source_type": source,
+                "function_name": f"transform_{source}_to_{target}",
+                "description": f"Transform {source} variables to {target}",
+                "pattern_specific_logic": f"""# Store information about the {source} declaration
+                            width = ""
+                            if item.width:
+                                msb = item.width.msb.value
+                                lsb = item.width.lsb.value
+                                width = f"[{{msb}}:{{lsb}}] "
+
+                            self.{source}_declarations.append(
+                                {{"name": item.name, "width": width}}
+                            )
+                            self.changes_made.append(
+                                f"Changed '{{item.name}}' from '{source}' to '{target}'"
+                            )""",
+            }
         else:
-            # For single vector store
-            retriever = self.vector_store_manager.get_retriever()
-            results = retriever.get_relevant_documents(user_request)
-            return results
+            # Generic fallback
+            return {
+                "target": "signal",
+                "NodeType": "Signal",
+                "source": "signal",
+                "target": "modified_signal",
+                "type": "signal",
+                "source_type": "signal",
+                "function_name": "transform_signal",
+                "description": "Transform signal",
+                "pattern_specific_logic": "# Pattern-specific logic here",
+            }
+
+    def _save_enhanced_context_data(
+        self, user_request: str, enhanced_context: Dict[str, Any]
+    ) -> str:
+        """Save enhanced context data for inspection"""
+        timestamp = datetime.now().strftime("%H%M%S")
+
+        # Create safe filename
+        safe_request = "".join(
+            c if c.isalnum() or c in " -_" else "" for c in user_request
+        )
+        safe_request = "_".join(safe_request.split())[:50]
+
+        context_filename = f"enhanced_context_{timestamp}_{safe_request}.json"
+        context_path = os.path.join(self.output_dir, context_filename)
+
+        # Prepare serializable data
+        save_data = {
+            "timestamp": datetime.now().isoformat(),
+            "user_request": user_request,
+            "transformation_type": enhanced_context["transformation_type"],
+            "best_xform": enhanced_context["best_xform"],
+            "enhancement_stage": enhanced_context["enhancement_stage"],
+            "total_examples": enhanced_context["total_examples"],
+            "quality_guidelines": enhanced_context["quality_guidelines"],
+            "anti_patterns": enhanced_context["anti_patterns"],
+            "pattern_count": len(enhanced_context["relevant_patterns"]),
+            "pattern_names": [p.name for p in enhanced_context["relevant_patterns"]],
+            "has_primary_example": enhanced_context["primary_example"] is not None,
+            "supporting_examples_count": len(enhanced_context["supporting_examples"]),
+            "pattern_examples_count": len(enhanced_context["pattern_examples"]),
+        }
+
+        with open(context_path, "w", encoding="utf-8") as f:
+            json.dump(save_data, f, indent=2, ensure_ascii=False)
+
+        self.logger.info(f"Enhanced context saved to: {context_path}")
+        return context_path
 
     def _identify_best_xform(
         self, search_results: List[Document], user_request: str
