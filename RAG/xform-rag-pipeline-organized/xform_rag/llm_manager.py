@@ -9,12 +9,12 @@ from langchain.llms.base import LLM
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 
 try:
-    from langchain_ollama import OllamaLLM as Ollama
+    from langchain_ollama import OllamaLLM
 except ImportError:
     try:
-        from langchain_community.llms import Ollama
+        from langchain_community.llms import Ollama as OllamaLLM
     except ImportError:
-        from langchain.llms import Ollama
+        from langchain.llms import Ollama as OllamaLLM
 
 from .config import RAGConfig
 
@@ -40,7 +40,7 @@ class LLMManager:
         )
 
         if self.config.model_type == "ollama":
-            return Ollama(
+            return OllamaLLM(
                 model=self.config.model_name,
                 temperature=self.config.temperature,
                 num_predict=self.config.max_tokens,

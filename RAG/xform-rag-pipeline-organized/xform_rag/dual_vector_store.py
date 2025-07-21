@@ -8,7 +8,11 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Optional
 
-from langchain_community.vectorstores import Chroma
+try:
+    from langchain_chroma import Chroma
+except ImportError:
+    from langchain_community.vectorstores import Chroma
+
 from langchain.schema import Document
 from langchain_core.retrievers import BaseRetriever
 
@@ -393,3 +397,50 @@ class DualVectorStoreManager:
     def get_retriever(self):
         """Get a retriever that searches both stores"""
         return DualRetriever(self)
+
+    def get_stats(self) -> dict:
+        """Get statistics from both vector stores"""
+        # Extract timestamp from path
+        timestamp = "unknown"
+        if hasattr(self, "code_store_path") and self.code_store_path:
+            timestamp = self.code_store_path.split("_")[-1]
+
+        stats = {
+            "store_type": "dual_vector_stores",
+            "timestamp": timestamp,
+            "total_documents": 0,
+            "code_documents": 0,
+            "documentation_documents": 0,
+            "stores_exist": False,
+        }
+
+        try:
+            code_store = self.get_code_vector_store()
+            doc_store = self.get_doc_vector_store()
+
+            if code_store and doc_store:
+                # Get collection info from both stores
+                code_collection = code_store._collection
+                doc_collection = doc_store._collection
+
+                code_count = code_collection.count() if code_collection else 0
+                doc_count = doc_collection.count() if doc_collection else 0
+
+                stats.update(
+                    {
+                        "stores_exist": True,
+                        "code_documents": code_count,
+                        "documentation_documents": doc_count,
+                        "total_documents": code_count + doc_count,
+                        "code_store_path": self.code_store_path,
+                        "doc_store_path": self.doc_store_path,
+                    }
+                )
+
+                self.logger.info(f"Stats: {code_count} code docs, {doc_count} doc docs")
+
+        except Exception as e:
+            self.logger.warning(f"Error getting stats: {e}")
+            stats["error"] = str(e)
+
+        return stats

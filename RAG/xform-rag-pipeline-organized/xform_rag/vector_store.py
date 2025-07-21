@@ -9,7 +9,11 @@ import time
 import gc
 from typing import List
 from langchain.schema import Document
-from langchain_chroma import Chroma
+
+try:
+    from langchain_chroma import Chroma
+except ImportError:
+    from langchain_community.vectorstores import Chroma
 
 from .config import RAGConfig
 from .embeddings import CodeBERTEmbeddings

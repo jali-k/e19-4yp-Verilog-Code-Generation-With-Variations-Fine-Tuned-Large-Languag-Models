@@ -56,18 +56,27 @@ class CodeGenerator:
         )
 
     def _create_prompt_template(self) -> PromptTemplate:
-        """Create a focused prompt for Verilog transformation generation"""
+        """Create an enhanced prompt for transformation generation with pattern extraction"""
 
         template = """You are an expert at generating Python scripts for Verilog code transformations using PyVerilog.
+
+TRANSFORMATION STRATEGY:
+{transformation_strategy}
 
 REFERENCE EXAMPLES:
 {context}
 
 USER REQUEST: {question}
 
+APPROACH:
+1. ANALYZE the transformation strategy above to understand the pattern
+2. ADAPT the pattern to the specific requirements in the user request
+3. USE the reference examples as templates for implementation details
+4. APPLY the transformation logic to handle the specific case requested
+
 REQUIREMENTS:
 1. Generate a COMPLETE Python script that transforms Verilog code
-2. Use PyVerilog AST for ANALYSIS to understand the code structure
+2. Use PyVerilog AST for ANALYSIS to understand the code structure  
 3. Use REGEX for ACTUAL MODIFICATIONS to transform the text
 4. Include proper argument parsing with argparse
 5. Handle errors gracefully with try/except blocks
@@ -81,10 +90,13 @@ SCRIPT STRUCTURE:
 - Include complete main() function with argument parsing
 - Add proper error handling throughout
 
+CRITICAL: Focus on adapting the transformation strategy to the user's specific request, even if the exact keywords differ from the examples.
+
 Generate ONLY the Python script code, no explanations."""
 
         return PromptTemplate(
-            template=template, input_variables=["context", "question"]
+            template=template,
+            input_variables=["context", "question", "transformation_strategy"],
         )
 
     def generate_xform(self, user_request: str) -> Dict[str, Any]:
@@ -98,6 +110,11 @@ Generate ONLY the Python script code, no explanations."""
             # Identify the best matching xform
             best_xform = self._identify_best_xform(search_results, user_request)
 
+            # Extract transformation strategy from best matches
+            transformation_strategy = self._extract_transformation_strategy(
+                search_results, user_request
+            )
+
             # Filter and organize context
             focused_context = self._create_focused_context(
                 search_results, best_xform, user_request
@@ -108,9 +125,9 @@ Generate ONLY the Python script code, no explanations."""
                 user_request, search_results, focused_context
             )
 
-            # Generate code using focused prompt
+            # Generate code using focused prompt with strategy
             generated_code = self._generate_with_focused_prompt(
-                user_request, focused_context
+                user_request, focused_context, transformation_strategy
             )
 
             # Create filename from request
@@ -207,6 +224,126 @@ Generate ONLY the Python script code, no explanations."""
                             return filename
 
         return None  # No complementary transformation found
+
+    def _extract_transformation_strategy(
+        self, search_results: List[Document], user_request: str
+    ) -> str:
+        """Extract general transformation strategy from retrieved examples"""
+
+        # Analyze user request to understand transformation type
+        request_lower = user_request.lower()
+
+        # Common transformation patterns and their strategies
+        transformation_patterns = {
+            "wire.*reg|reg.*wire": {
+                "pattern": "Data Type Transformation",
+                "strategy": """
+TRANSFORMATION PATTERN: Change Verilog data type declarations
+- ANALYZE: Find declarations of one data type (wire/reg/logic/int)
+- TRANSFORM: Replace with target data type while preserving signal names and widths
+- METHOD: Use regex to match type declarations and substitute type keywords
+- PRESERVE: Signal names, bit widths, array dimensions, and initialization values
+- EXAMPLE: 'wire [7:0] signal;' becomes 'reg [7:0] signal;'
+                """,
+            },
+            "input.*output|output.*input": {
+                "pattern": "Port Direction Transformation",
+                "strategy": """
+TRANSFORMATION PATTERN: Change module port directions
+- ANALYZE: Find port declarations in module headers
+- TRANSFORM: Replace input/output keywords while maintaining port structure
+- METHOD: Use regex to match port declarations and substitute direction keywords
+- PRESERVE: Port names, data types, bit widths, and port ordering
+- EXAMPLE: 'input wire [7:0] data' becomes 'output wire [7:0] data'
+                """,
+            },
+            "width|bit": {
+                "pattern": "Signal Width Transformation",
+                "strategy": """
+TRANSFORMATION PATTERN: Modify signal bit widths
+- ANALYZE: Find signal declarations with bit width specifications
+- TRANSFORM: Replace bit width values while preserving signal structure  
+- METHOD: Use regex to match width patterns like [7:0] and substitute values
+- PRESERVE: Signal names, data types, and other attributes
+- EXAMPLE: 'wire [7:0] signal' becomes 'wire [15:0] signal'
+                """,
+            },
+            "module.*name|name.*module": {
+                "pattern": "Module Name Transformation",
+                "strategy": """
+TRANSFORMATION PATTERN: Change module names
+- ANALYZE: Find module declarations and instantiations
+- TRANSFORM: Replace module name while updating all references
+- METHOD: Use regex to find module declarations and all instantiations
+- PRESERVE: Module structure, ports, and internal logic
+- EXAMPLE: 'module counter' becomes 'module timer' (with all instances updated)
+                """,
+            },
+        }
+
+        # Find matching pattern
+        for pattern_regex, pattern_info in transformation_patterns.items():
+            import re
+
+            if re.search(pattern_regex, request_lower):
+                self.logger.info(
+                    f"Detected transformation pattern: {pattern_info['pattern']}"
+                )
+                return pattern_info["strategy"]
+
+        # Fallback: extract strategy from best matching example
+        return self._extract_strategy_from_examples(search_results, user_request)
+
+    def _extract_strategy_from_examples(
+        self, search_results: List[Document], user_request: str
+    ) -> str:
+        """Extract transformation strategy from best matching examples"""
+
+        # Find the best code example
+        best_example = None
+        for doc in search_results:
+            if hasattr(doc, "metadata") and "source" in doc.metadata:
+                source = doc.metadata["source"]
+                if "xform_" in source and source.endswith(".py"):
+                    best_example = doc.page_content
+                    break
+
+        if not best_example:
+            return """
+GENERAL TRANSFORMATION PATTERN: Modify Verilog code structure
+- ANALYZE: Use PyVerilog AST to understand code structure and find target elements
+- TRANSFORM: Apply regex-based replacements to modify specific code patterns
+- METHOD: Combine AST analysis for accuracy with regex for text manipulation
+- PRESERVE: Overall code structure and functionality while making targeted changes
+            """
+
+        # Extract key patterns from the example (simplified analysis)
+        strategy_lines = []
+        lines = best_example.split("\n")
+
+        # Look for comments that explain the transformation
+        for line in lines:
+            line = line.strip()
+            if line.startswith("#") and any(
+                keyword in line.lower()
+                for keyword in ["transform", "change", "replace", "modify"]
+            ):
+                strategy_lines.append(line[1:].strip())
+
+        if strategy_lines:
+            strategy = "EXTRACTED TRANSFORMATION STRATEGY:\n" + "\n".join(
+                f"- {line}" for line in strategy_lines
+            )
+        else:
+            strategy = """
+DERIVED TRANSFORMATION PATTERN: Based on retrieved examples
+- ANALYZE: Use PyVerilog AST to parse and understand the Verilog code structure
+- IDENTIFY: Locate the specific elements that need to be transformed
+- TRANSFORM: Apply appropriate modifications using regex pattern matching
+- PRESERVE: Code functionality while making the requested structural changes
+            """
+
+        return strategy
 
     def _create_focused_context(
         self, search_results: List[Document], best_xform: str, user_request: str
@@ -508,9 +645,12 @@ Generate ONLY the Python script code, no explanations."""
         return context_path
 
     def _generate_with_focused_prompt(
-        self, user_request: str, focused_context: Dict[str, Any]
+        self,
+        user_request: str,
+        focused_context: Dict[str, Any],
+        transformation_strategy: str = "",
     ) -> str:
-        """Generate code using focused prompt with prioritized context"""
+        """Generate code using focused prompt with prioritized context and transformation strategy"""
 
         # Build focused prompt
         prompt_parts = []
@@ -540,40 +680,16 @@ Generate ONLY the Python script code, no explanations."""
 
         context_text = "\n".join(prompt_parts)
 
-        # Create focused prompt template
-        template = """You are an expert at generating Python scripts for Verilog code transformations using PyVerilog.
-
-{context}
-
-USER REQUEST: {question}
-
-CRITICAL INSTRUCTIONS:
-1. FOCUS PRIMARILY on the "PRIMARY REFERENCE XFORM" above - this is your main template
-2. The PRIMARY XFORM is the best match for the user's request - follow its pattern closely
-3. Use supporting documentation for understanding PyVerilog concepts
-4. Secondary xforms are for additional reference only - don't mix their functionality
-
-REQUIREMENTS:
-1. Generate a COMPLETE Python script that transforms Verilog code
-2. Use PyVerilog AST for ANALYSIS to understand the code structure  
-3. Use REGEX for ACTUAL MODIFICATIONS to transform the text
-4. Include proper argument parsing with argparse
-5. Handle errors gracefully with try/except blocks
-6. Return True/False for success/failure in main function
-
-SCRIPT STRUCTURE:
-- Start with #!/usr/bin/env python3
-- Import necessary modules (sys, os, re, argparse, PyVerilog)
-- Create a visitor class for AST analysis (follow PRIMARY XFORM pattern)
-- Implement transformation function using regex (adapt PRIMARY XFORM logic)
-- Include complete main() function with argument parsing
-- Add proper error handling throughout
-
-Generate ONLY the Python script code, no explanations. Focus on the specific transformation requested."""
-
-        # Use LLM directly instead of QA chain for more control
+        # Use LLM directly with enhanced prompt template
         llm = self.llm_manager.get_llm()
-        prompt = template.format(context=context_text, question=user_request)
+
+        # Get the enhanced prompt template
+        prompt_template = self._create_prompt_template()
+        prompt = prompt_template.format(
+            context=context_text,
+            question=user_request,
+            transformation_strategy=transformation_strategy,
+        )
 
         result = llm.invoke(prompt)
         return result
