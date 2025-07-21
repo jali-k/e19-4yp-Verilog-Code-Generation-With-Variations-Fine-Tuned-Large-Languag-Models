@@ -22,8 +22,8 @@ from .llm_manager import LLMManager
 def create_pipeline(
     xform_examples_dir="./xform_examples",
     documentation_dir="./documentation",
-    # model_name="qwen2.5-coder:1.5b",
-    model_name="codellama:7b",
+    model_name="qwen2.5-coder:1.5b",
+    # model_name="codellama:7b",
     use_dual_stores=True,
     **kwargs
 ) -> XformRAGPipeline:

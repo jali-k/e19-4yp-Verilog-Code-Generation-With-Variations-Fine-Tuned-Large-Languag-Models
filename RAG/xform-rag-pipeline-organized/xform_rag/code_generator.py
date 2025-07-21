@@ -4,9 +4,11 @@ Code generation using RAG pipeline for Verilog transformations
 """
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+from langchain_core.retrievers import BaseRetriever
+from langchain.schema import Document
 
 from .config import RAGConfig
 from .llm_manager import LLMManager
@@ -16,23 +18,32 @@ from .vector_store import VectorStoreManager
 class CodeGenerator:
     """Generate Verilog transformation code using RAG"""
 
-    def __init__(self, config: RAGConfig):
+    def __init__(self, config: RAGConfig, vector_store_manager=None):
         self.config = config
         self.logger = logging.getLogger(__name__)
 
         # Initialize components
         self.llm_manager = LLMManager(config)
-        self.vector_store_manager = VectorStoreManager(config)
+
+        # Use provided vector store manager or create default
+        if vector_store_manager:
+            self.vector_store_manager = vector_store_manager
+        else:
+            self.vector_store_manager = VectorStoreManager(config)
+
         self.qa_chain = self._create_qa_chain()
 
     def _create_qa_chain(self):
         """Create the QA chain with optimized prompt"""
         prompt_template = self._create_prompt_template()
 
+        # Get retriever from vector store manager (works for both types)
+        retriever = self.vector_store_manager.get_retriever()
+
         return RetrievalQA.from_chain_type(
             llm=self.llm_manager.get_llm(),
             chain_type="stuff",
-            retriever=self.vector_store_manager.get_retriever(),
+            retriever=retriever,
             chain_type_kwargs={"prompt": prompt_template},
             return_source_documents=True,
         )

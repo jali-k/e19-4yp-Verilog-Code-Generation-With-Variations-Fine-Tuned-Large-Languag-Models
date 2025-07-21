@@ -10,6 +10,7 @@ from typing import List, Optional
 
 from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
+from langchain_core.retrievers import BaseRetriever
 
 from .config import RAGConfig
 from .hybrid_embeddings import HybridEmbeddings
@@ -19,6 +20,19 @@ from .document_processor import DocumentProcessor
 def get_logger(name):
     """Simple logger helper"""
     return logging.getLogger(name)
+
+
+class DualRetriever(BaseRetriever):
+    """Custom retriever for dual vector store manager"""
+
+    def __init__(self, dual_manager):
+        super().__init__()
+        self._dual_manager = dual_manager
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager=None
+    ) -> List[Document]:
+        return self._dual_manager.search_similar(query)
 
 
 class SentenceTransformerEmbeddings:
@@ -378,14 +392,4 @@ class DualVectorStoreManager:
 
     def get_retriever(self):
         """Get a retriever that searches both stores"""
-
-        # Create a custom retriever class if needed
-        # For now, return a simple wrapper
-        class DualRetriever:
-            def __init__(self, manager):
-                self.manager = manager
-
-            def get_relevant_documents(self, query: str):
-                return self.manager.search_similar(query)
-
         return DualRetriever(self)

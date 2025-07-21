@@ -35,7 +35,8 @@ class XformRAGPipeline:
             self.vector_store_manager = VectorStoreManager(self.config)
             self.logger.info("Using single hybrid vector store")
 
-        self.code_generator = CodeGenerator(self.config)
+        # Pass the vector store manager to the code generator
+        self.code_generator = CodeGenerator(self.config, self.vector_store_manager)
         self.document_processor = DocumentProcessor(self.config)
 
         self.logger.info("Xform RAG Pipeline initialized successfully")
@@ -54,7 +55,11 @@ class XformRAGPipeline:
 
         # Ensure vector store is ready
         try:
-            self.vector_store_manager.get_vector_store()
+            # For dual stores, check if we can get the retriever
+            if self.use_dual_stores:
+                self.vector_store_manager.get_retriever()
+            else:
+                self.vector_store_manager.get_vector_store()
         except Exception as e:
             return {
                 "success": False,
@@ -148,8 +153,13 @@ class XformRAGPipeline:
 
         # Test vector store
         try:
-            vector_store = self.vector_store_manager.get_vector_store()
-            results["vector_store"] = vector_store is not None
+            if self.use_dual_stores:
+                # For dual stores, test if we can get retriever
+                retriever = self.vector_store_manager.get_retriever()
+                results["vector_store"] = retriever is not None
+            else:
+                vector_store = self.vector_store_manager.get_vector_store()
+                results["vector_store"] = vector_store is not None
         except Exception as e:
             self.logger.error(f"Vector store test failed: {e}")
             results["vector_store"] = False
